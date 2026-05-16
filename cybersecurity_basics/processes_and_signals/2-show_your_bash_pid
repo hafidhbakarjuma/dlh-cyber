@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Bash script that it show only the running processes of bash with ID
+ps auxf | grep bash

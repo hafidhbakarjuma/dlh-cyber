@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Process and PID file management script
+
+# Save my PID to file
+echo $$ > /tmp/myscript.pid
+
+# Handle SIGTERM - print message then cleanup and exit
+trap "echo 'I hate the kill command'; rm -f /tmp/myscript.pid; exit" SIGTERM
+
+# Handle SIGINT - just print message
+trap "echo 'Y U no love me?!'" SIGINT
+
+# Handle SIGOUT - cleanup ans exit
+trap "rm -f /tmp/myscript.pid; exit" SIGQUIT
+
+# Loop forever
+while true
+do
+	echo "To infinity and beyond"
+	sleep 2
+done
