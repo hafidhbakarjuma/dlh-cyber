@@ -1,6 +1,6 @@
 {
  "http_site_url": "http://neverssl.com",
- "htpp_has_padlock": "no",
+ "http_has_padlock": "no",
  "http_warning_message": "Not secure",
  "http_protocol_shown": "HTTP/1.1",
  "https_site_url": "https://www.wikipedia.org",
