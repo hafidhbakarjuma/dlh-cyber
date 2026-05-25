@@ -1,34 +1,109 @@
 # FORENSICS METHODOLOGIES
 
-# Forensic Methodologies
+## What is Digital Forensics?
 
-This project introduces core concepts and practical techniques in digital forensics and cybersecurity investigations.
+Digital forensics is the science of collecting, preserving, analyzing, and presenting
 
-## Topics Covered
+digital evidence in a way that is legally admissible. It plays a critical role in
 
-- **Metadata Analysis** — Using `exiftool` to extract hidden information from files
+cybersecurity investigations, helping analysts uncover what happened, how it happened,
 
-- **Geolocation Forensics** — Extracting GPS coordinates from image metadata and mapping locations
+and who was responsible.
 
-- **Intrusion Analysis** — Identifying attacker intent from access logs and command history
+> "Every contact leaves a trace." — Edmond Locard
 
-- **Vulnerability Identification** — Recognizing common attack vectors such as SQL Injection
+---
 
-- **Breach Impact Assessment** — Evaluating indirect consequences of data breaches
+## Types of Digital Forensics
 
-## Tools Used
+| Type | Description |
+|------|-------------|
+| **Network Forensics** | Monitoring and analyzing network traffic to detect intrusions |
 
-- `exiftool` — Extract and analyze file metadata
+| **File/Disk Forensics** | Recovering and analyzing data from storage devices |
 
-- `Google Maps` — Pinpoint locations from GPS coordinates
+| **Memory Forensics** | Extracting evidence from a system's RAM |
 
-- `base64` — Decode encoded data
+| **Image Forensics** | Analyzing image files for hidden metadata or embedded data |
+
+| **Mobile Forensics** | Extracting evidence from mobile devices |
+
+| **Log Forensics** | Reviewing system and access logs to trace attacker activity |
+
+---
 
 ## Key Concepts
 
-- Locard's Exchange Principle — every contact leaves a trace
+- **Metadata** — Hidden data embedded in files (author, GPS, timestamps, device info)
 
-- Metadata can reveal hidden information such as author, location, and device details
+- **Locard's Exchange Principle** — Every interaction leaves digital traces behind
 
-- Attackers leave digital footprints that forensic analysts can trace and interpret
+- **Chain of Custody** — Proper documentation of evidence handling to ensure integrity
 
+- **Geolocation Forensics** — Using GPS coordinates from metadata to pinpoint real-world locations
+
+- **Intrusion Analysis** — Tracing attacker steps through logs and command history
+
+- **Vulnerability Identification** — Recognizing how attackers exploit system weaknesses
+
+---
+
+## Common Attack Vectors
+
+- **SQL Injection (SQLi)** — Injecting malicious queries into databases through input forms
+
+- **Cross-Site Scripting (XSS)** — Injecting malicious scripts into web pages
+
+- **Brute Force** — Repeated login attempts to crack credentials
+
+- **Data Exfiltration** — Unauthorized transfer of sensitive data out of a network
+
+---
+
+## Tools Used
+
+| Tool | Purpose |
+|------|---------|
+
+| `exiftool` | Extract and analyze metadata from files |
+
+| `Google Maps` | Map GPS coordinates to real-world locations |
+
+| `base64` | Decode encoded strings |
+
+| `strings` | Extract readable text from binary files |
+
+| `grep` | Search through logs and files |
+
+---
+
+## Project Tasks
+
+| File | Description |
+|------|-------------|
+
+| `0-mystery.txt` | Author name extracted from image metadata |
+
+| `1-location.txt` | Street address identified from GPS coordinates |
+
+| `2-intruder_intent.txt` | Primary intent of a network intruder |
+
+| `3-vulnerability_type.txt` | Type of vulnerability exploited in a web attack |
+
+| `4-indirect_impact.txt` | Indirect impact of a subtle CRM data breach |
+
+---
+
+## Why Forensics Matters
+
+- Helps organizations **understand and respond** to security incidents
+
+- Provides **legal evidence** for prosecuting cybercriminals
+
+- Identifies **weaknesses** before attackers can exploit them again
+
+- Protects **customer trust** and brand reputation
+
+- Ensures **compliance** with data protection regulations
+
+---
