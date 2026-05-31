@@ -1,4 +1,4 @@
-#!/uusr/bin/env python3
+#!/usr/bin/env python3
 """DNS resolution module - resolves domain names to IPV4 addresses."""
 
 import socket
