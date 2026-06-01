@@ -1,42 +1,34 @@
 #!/usr/bin/env python3
-
-"""Module to recursively crawl a webiste and disccover in ternal links."""
-
+"""Module to recursively crawl a website and discover internal links."""
 import requests
-
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 
-def crawl_website(start_url, max_depth=2, visited=None):
-	"""Recursively crawl a webiste and return all visited internal URLs.
 
-	Args:
-		start_url (str): The URL to start crawling from.
-		max_depth (int): Maximum depth to crawl.
-		visited (set): Set of already visited URLs.
-	Returns:
-		set: All seccussfully visited URLs from the same domain.
-	"""
-	if visited is None:
-		visited = set()
+def crawl_website(start_url, max_depth=2):
+    """Recursively crawl a website and return all visited internal URLs."""
+    visited = set()
 
-	if max_depth == 0 or start_url in visited:
-		return visited
-	try:
-		response = requests.get(start_url, timeout=5)
-		print(f"Crawling: {start_url}")
-		visited.add(start_url)
+    def crawl(url, depth):
+        if depth == 0 or url in visited:
+            return
+        try:
+            response = requests.get(url, timeout=5)
+            print(f"Crawling: {url}")
+            visited.add(url)
 
-		base_domain = urlparse(start_url).netloc
-		soup = BeautifulSoup(response.text, 'html.parser')
+            base_domain = urlparse(start_url).netloc
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-		for tag in soup.find_all('a', href=True):
-			absolute_url = urljoin(start_url, tag['href'])
-			parsed = urlparse(absolute_url)
+            for tag in soup.find_all('a', href=True):
+                absolute_url = urljoin(url, tag['href'])
+                parsed = urlparse(absolute_url)
 
-		if parsed.netloc == base_domain and absolute_url not in visited:
-			crawl_website(absolute_url, max_depth - 1, visited)
+                if parsed.netloc == base_domain and absolute_url not in visited:
+                    crawl(absolute_url, depth - 1)
 
-	except requests.exceptions.RequestException:
-		pass
-	return visited
+        except requests.exceptions.RequestException:
+            pass
+
+    crawl(start_url, max_depth)
+    return visited
