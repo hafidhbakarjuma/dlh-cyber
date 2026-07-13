@@ -1,20 +1,31 @@
-# Board Briefing: MedDefense Security Posture
- 
-**Opening Statement**
-MedDefense's cybersecurity today is weak in the areas that matter most: our network, our medical devices, and our ability to recover from an attack. These gaps are addressable, but require immediate investment and Board approval.
- 
-**Critical Finding**
-Our biggest risk is that every device on our network — computers, medical monitors, and pumps that deliver medication — can all reach each other with no barriers between them. If one employee's password is stolen, an attacker could move from a front-desk computer straight to a medication pump, potentially changing a patient's dose in real time. This is not a hypothetical scenario; it reflects the exact pattern seen in recent hospital ransomware attacks nationwide, including incidents that forced weeks of paper-based patient care.
- 
-**Three Priority Actions**
-First, separate medical devices and clinical systems from general office computers so an attacker cannot jump between them. Cost: $30,000. Timeline: 6 to 8 weeks.
- 
-Second, require a second identity check — not just a password — for remote access and administrator accounts. Cost: $10,000. Timeline: 3 weeks.
- 
-Third, build backups that are stored securely off our main network and tested regularly, so we can recover quickly if attacked. Cost: $20,000. Timeline: 4 weeks.
- 
-**The Business Case**
-Together, these three actions cost $60,000 of our approved $120,000 budget, leaving $60,000 in reserve for further improvements. Ascension Health's 2024 ransomware attack cost over $130 million and weeks of paper-based care — our full investment is a fraction of one percent of that loss, and far less than what a serious incident would cost MedDefense in recovery, fines, and lost trust.
- 
-**Closing**
-If the Board takes no action, MedDefense remains one stolen password away from an attack that could disrupt patient care, expose patient data, and cost more than the fix.
+Board Briefing: MedDefense Security Posture
+
+Opening Statement
+
+MedDefense's security posture presents a high level of cyber risk. Critical weaknesses in network architecture, medical device security, identity protection, and backup resilience leave patient information and healthcare services vulnerable to ransomware, unauthorized access, and operational disruption.
+
+Critical Finding
+
+The most urgent concern is the combination of a flat network, insufficient protection for medical devices, and the absence of Multi-Factor Authentication. If an attacker gains access through a stolen password or an unpatched system, they could move across the network, disrupt patient care, encrypt critical systems, and prevent staff from accessing electronic medical records.
+
+Three Priority Actions
+
+1. Implement network segmentation to isolate clinical systems, medical devices, and business systems, reducing attacker movement.
+Estimated Cost: $30,000
+Timeline: More than 1 month
+
+2. Deploy Multi-Factor Authentication for remote access, administrator accounts, and critical clinical applications to reduce credential-based attacks.
+Estimated Cost: $10,000
+Timeline: Within 1 month
+
+3. Strengthen ransomware recovery by implementing immutable off-site backups and regularly testing recovery procedures.
+Estimated Cost: $20,000
+Timeline: Within 1 month
+
+The Business Case
+
+These priority initiatives require $105,000 of the approved $120,000 security budget, leaving $15,000 available for contingency and future improvements. This investment is substantially lower than the financial losses, regulatory penalties, operational downtime, and reputational damage that could result from a single successful ransomware attack.
+
+Closing
+
+Failure to approve these recommendations will leave MedDefense exposed to preventable cyber threats that could disrupt patient care, compromise sensitive health information, and create recovery costs far exceeding the proposed investment.
