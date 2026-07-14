@@ -2,38 +2,47 @@
 
 ## Technical Attack Vector Analysis
 
-| Vector Category (Sec+ 2.2) | MedDefense Evidence | Affected Assets | Actor Most Likely to Exploit | Exploitation Scenario | Current Protection | Gap Reference |
+Technical vectors represent non-human attack paths that attackers can exploit to gain access, maintain persistence, or move laterally inside MedDefense.
+
+| Vector Category (Sec+ 2.2) | MedDefense Evidence | Affected Asset(s) | Actor Most Likely to Exploit | Exploitation Scenario | Current Protection | Gap Reference |
 |---|---|---|---|---|---|---|
-| **Vulnerable Software** | Apache 2.4.29 on billing-srv-01, Ubuntu 18.04 LTS End of Life, outdated software identified during network assessment. | Billing server, web applications, Linux servers. | Ransomware Groups, Opportunistic Attackers, Nation-State APT. | Attackers exploit known vulnerabilities in outdated software to gain initial access or execute code. Compromised servers can be used for lateral movement across the network. | Basic patching processes exist but do not cover all systems. | G4 Patch Management Weakness, G5 Limited Monitoring. |
-| **Unsupported Systems** | Windows XP MRI workstation and Windows Server 2012 R2 print server are no longer fully supported. | MRI workstation, print server, medical systems. | Ransomware Groups, Nation-State APT. | Attackers exploit unpatched vulnerabilities in unsupported operating systems because security updates are unavailable. Compromised systems can become entry points into critical healthcare networks. | Existing antivirus and limited administrative controls. | G4 Unsupported Systems, G1 Flat Network Architecture. |
-| **Open Service Ports** | MySQL 3306 and PostgreSQL 5432 accessible across the network, RDP exposed on workstations, medical IoT web interfaces available. | Database servers, employee workstations, medical devices. | Opportunistic Attackers, Ransomware Groups. | Attackers scan exposed ports to identify vulnerable services and attempt unauthorized access. Successful compromise may allow data theft or movement to other systems. | Firewall rules provide some filtering but internal access is overly open. | G1 Network Segmentation Weakness, G5 Monitoring Gaps. |
-| **Default Credentials** | Shared PACS account, medical device interfaces using default/shared credentials such as BD Alaris pump systems. | PACS, medical devices, clinical systems. | Insider (Malicious), Ransomware Groups, Opportunistic Attackers. | Attackers use known default credentials or shared accounts to access systems without needing advanced exploits. This can expose patient information or allow control of medical devices. | Some account management exists but shared credentials remain. | G2 Weak Identity and Access Management, G8 Poor Account Governance. |
-| **Unsecure Networks** | Flat internal network without proper segmentation, Westside consumer router, uncertain WiFi isolation. | Entire hospital network, wireless devices, medical IoT. | Ransomware Groups, Insider Threats, Hacktivists. | Attackers who compromise one device can move easily across the network because systems are not isolated. Weak wireless controls increase the chance of unauthorized access. | Network firewall exists but segmentation controls are limited. | G1 Flat Network Architecture, G10 Wireless Security Weakness. |
-| **Removable Devices / Unmanaged Endpoints** | No USB restriction GPO, unmanaged iPads, shadow IT devices connected to environment. | Workstations, mobile devices, clinical endpoints. | Insider (Negligent), Insider (Malicious), Opportunistic Attackers. | Malware can enter through infected USB devices or unmanaged endpoints. Attackers can use these devices to steal data or gain access to internal systems. | Endpoint security tools provide partial protection. | G9 Security Awareness Gap, G10 Endpoint Management Weakness. |
+| **Vulnerable Software** | Apache 2.4.29 on billing-srv-01, Ubuntu 18.04 LTS EOL, and other outdated software identified during assessment. | Billing server, web applications, Linux systems. | Ransomware Groups, Nation-State APT, Opportunistic Attackers. | Attackers exploit known vulnerabilities in outdated software to gain initial access or execute malicious code. Compromised servers can become a pathway for lateral movement. | Basic patching processes and firewall controls. | G4 Patch Management Weakness, G5 Limited Monitoring. |
+| **Unsupported Systems** | Windows XP MRI workstation and Windows Server 2012 R2 print server are no longer fully supported. | MRI workstation, print server, medical systems. | Ransomware Groups, Nation-State APT. | Attackers target unsupported systems because security updates are unavailable. A compromised legacy device can provide access to critical healthcare systems. | Antivirus and limited system controls. | G4 Unsupported Systems, G1 Flat Network Architecture. |
+| **Open Service Ports** | MySQL 3306 on billing-srv-01 and PostgreSQL 5432 on ehr-db-01 accessible network-wide. RDP available on selected workstations. Medical IoT web interfaces exposed internally. | Database servers, workstations, medical devices. | Ransomware Groups, Opportunistic Attackers. | Attackers scan open ports to identify services and attempt unauthorized access. Database compromise could expose patient and financial information. | Firewall filtering exists but internal access is overly permissive. | G1 Network Segmentation Weakness, G5 Monitoring Gap. |
+| **Default Credentials** | PACS shared account and medical device interfaces using default/shared credentials (BD Alaris pumps). | PACS system, medical IoT devices, clinical systems. | Insider (Malicious), Ransomware Groups, Opportunistic Attackers. | Attackers use known or shared credentials to bypass authentication. Access could allow patient data theft or control of medical devices. | Some account management controls exist. | G2 Weak Identity and Access Management, G8 Poor Account Governance. |
+| **Unsecure Networks** | Flat internal network, Westside consumer router, uncertain WiFi isolation. | Entire hospital network, wireless devices, IoT systems. | Ransomware Groups, Insider Threats, Hacktivists. | Once an attacker compromises one device, lack of segmentation allows movement across the environment. Weak wireless controls increase unauthorized access risk. | Firewall protection and basic network controls. | G1 Flat Network Architecture, G10 Wireless Security Weakness. |
+| **Removable Devices / Unmanaged Endpoints** | No USB restriction GPO, unmanaged iPads, shadow IT devices connected to MedDefense. | User endpoints, mobile devices, clinical workstations. | Insider (Negligent), Insider (Malicious), Opportunistic Attackers. | Malware can enter through infected USB devices or unmanaged devices. Attackers may use these endpoints to access internal resources. | Endpoint security provides partial protection. | G9 Security Awareness Gap, G10 Endpoint Management Weakness. |
+| **External Remote Access Services** | VPN endpoints provide remote access into MedDefense systems. Microsoft 365 email provides external communication access. | VPN infrastructure, employee accounts, cloud services. | Ransomware Groups, Insider Threats. | Attackers target VPN credentials or email accounts through phishing and credential attacks. Successful access can bypass external defenses and lead to internal compromise. | VPN authentication and Microsoft security controls. | G2 Weak MFA/Authentication, G5 Limited Monitoring. |
+| **Management Interfaces** | NAS administration, FortiGate admin interface, and medical IoT management portals accessible internally. | Network devices, storage systems, medical devices. | Ransomware Groups, Insider (Malicious). | Attackers who gain access can target administrative interfaces to control systems, disable protections, or access sensitive data. | Administrative access restrictions exist but require stronger controls. | G2 Privilege Management Weakness, G5 Monitoring Gap. |
+| **Third-Party / Vendor Access** | External vendors and contractors have access paths into MedDefense systems. | Vendor-connected systems and services. | Supply Chain Attackers, Ransomware Groups. | Attackers compromise weaker vendors and use trusted connections to enter MedDefense. | Vendor agreements and limited access controls. | G6 Third-Party Risk Management Weakness. |
 
 ---
 
-# Technical Vector Risk Summary
+# Technical Vector Risk Ranking
 
-| Priority | Vector | Risk Level |
+| Rank | Technical Vector | Risk Level |
 |---|---|---|
 | 1 | Vulnerable Software & Unsupported Systems | Critical |
-| 2 | Open Service Ports | High |
-| 3 | Default Credentials | High |
-| 4 | Unsecure Networks | High |
-| 5 | Removable Devices / Unmanaged Endpoints | Medium-High |
+| 2 | Open Network Services & Flat Network Exposure | Critical |
+| 3 | Default / Shared Credentials | High |
+| 4 | Remote Access Services (VPN/O365) | High |
+| 5 | Unsecure Networks and IoT Interfaces | High |
+| 6 | Unmanaged Endpoints and Removable Devices | Medium-High |
+| 7 | Vendor Access | Medium-High |
 
 ---
 
-# Board Summary
+# Technical Assessment Summary
 
-MedDefense's largest technical risks come from outdated systems, exposed services, weak credentials, and insufficient network segmentation. These weaknesses provide attackers with multiple paths for initial access and lateral movement.
+MedDefense has a large technical attack surface caused by outdated systems, exposed services, weak authentication, and insufficient network segmentation. The most dangerous combination is the flat network architecture combined with vulnerable systems, allowing attackers who gain initial access to move easily toward critical healthcare assets.
 
-Priority improvements:
+Priority actions:
 
 - Replace unsupported operating systems.
-- Establish regular vulnerability and patch management.
-- Restrict unnecessary network ports.
-- Remove shared/default credentials and enforce MFA.
+- Establish continuous vulnerability management.
 - Segment medical devices, servers, and user networks.
-- Implement endpoint management and USB controls.
+- Remove default and shared credentials.
+- Enforce MFA for VPN and cloud services.
+- Monitor administrative activity through SIEM.
+- Control unmanaged devices and USB usage.
+- Review and restrict vendor access.
