@@ -1,5 +1,5 @@
 # MedDefense Health Systems
-# 1x01 – Task 1: The CVE Ecosystem
+# The CVE Ecosystem
 
 ## Objective
 
