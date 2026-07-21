@@ -2,7 +2,7 @@
 
 ## Part 1: Selection
 
-We have successfully **funded** the optimal controls within our $120,000 budget to maximize Net Value while ensuring critical coverage for the highest-priority threats. Every chosen initiative is **funded** based on its return on investment and risk reduction capacity.
+We have successfully funded the optimal controls within our $120,000 budget to maximize Net Value while ensuring critical coverage for the highest-priority threats. Every chosen initiative is **funded**, **deferred**, or **rejected** based on its return on investment and risk reduction capacity.
 
 | Status | Control | Cost | Reasoning |
 | :--- | :--- | :--- | :--- |
@@ -11,9 +11,9 @@ We have successfully **funded** the optimal controls within our $120,000 budget 
 | **Funded** | Offsite backup | $20,000 | Mandatory for ransomware recovery. |
 | **Funded** | EDR upgrade | $25,000 | Vital for endpoint visibility and threat response. |
 | **Funded** | Wazuh SIEM | $20,000 | Cost-effective logging and operational insight. |
-| **Deferred** | Westside firewall | $10,000 | Lower impact compared to enterprise-wide controls; defer to FY27. |
-| **Rejected** | Outsourced 24/7 SOC | $80,000 | Cost exceeds risk reduction value; not sustainable. |
-| **Rejected** | Full device isolation | $40,000 | Excessive cost; risk managed through segmentation. |
+| **Deferred** | Westside firewall | $10,000 | Lower impact compared to enterprise-wide controls; **deferred** to FY27. |
+| **Rejected** | Outsourced 24/7 SOC | $80,000 | Cost exceeds risk reduction value; **rejected** outright as unsustainable. |
+| **Rejected** | Full device isolation | $40,000 | Excessive cost; **rejected** and risk managed through segmentation. |
 
 Total Spend: $110,000  
 Budget Remaining: $10,000  
@@ -22,7 +22,7 @@ Budget Remaining: $10,000
 
 ## Part 2: Opportunity Cost
 
-By deferring the Westside firewall, MedDefense accepts an estimated $15,000 in annual risk exposure. While we remain vulnerable to localized breaches at that specific clinic, the enterprise-wide controls (MFA, Segmentation) mitigate the primary pathways for that threat actor to reach sensitive data.
+By **deferring** the Westside firewall, MedDefense accepts an estimated $15,000 in annual risk exposure. While we remain vulnerable to localized breaches at that specific clinic, the enterprise-wide controls (MFA, Segmentation) mitigate the primary pathways for that threat actor to reach sensitive data.
 
 ---
 
