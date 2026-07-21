@@ -1,39 +1,42 @@
-# The Budget Game: Final Resource Allocation
-
-## Part 1: The Selection
-
-We have successfully **funded** the optimal set of controls within our **$120,000** budget ceiling to maximize Net Value while ensuring critical coverage for the highest-priority threats. Every initiative is explicitly categorized as **funded**, **deferred**, or **rejected** based on risk reduction capacity and ROI.
-
-| Status | Control | Cost | Reasoning |
-| :--- | :--- | :--- | :--- |
-| **Funded** | MFA deployment | $15,000 | Highest ROI; essential for stopping primary credential-based entry vectors. |
-| **Funded** | Network segmentation | $30,000 | Critical for containing lateral movement and breaking ransomware propagation. |
-| **Funded** | Offsite backup | $20,000 | Mandatory for reliable ransomware recovery and data preservation. |
-| **Funded** | EDR upgrade | $25,000 | Vital for deep endpoint visibility and rapid threat response. |
-| **Funded** | Wazuh SIEM | $20,000 | Cost-effective log aggregation and centralized operational insight. |
-| **Deferred** | Westside firewall | $10,000 | Lower impact compared to enterprise-wide controls; **deferred** to FY27. |
-| **Rejected** | Outsourced 24/7 SOC | $80,000 | Cost exceeds total risk reduction value; **rejected** outright as unsustainable. |
-| **Rejected** | Full device isolation | $40,000 | Excessive cost; **rejected** because risk is adequately managed through segmentation. |
-
-* **Total spend**: $110,000
-* **Budget remaining**: $10,000 (reserved for emergency technical contingencies)
-* **Total budget limit**: $120,000
-
----
-
-## Part 2: The Opportunity Cost
-
-By **deferring** the Westside firewall, MedDefense accepts an estimated $15,000 in annual risk exposure. While we remain vulnerable to localized perimeter breaches at that specific clinic, our enterprise-wide controls (MFA, Segmentation) successfully mitigate the primary network pathways required for attackers to reach sensitive internal data systems.
-
----
-
-## Part 3: The Alternative
-
-We evaluated an alternative allocation prioritizing the Westside firewall over the Wazuh SIEM to test portfolio trade-offs:
-* **Alternative Allocation**: MFA ($15k), Network Segmentation ($30k), Backup ($20k), EDR ($25k), Westside firewall ($10k).
-* **Alternative Total Cost**: $100,000
-* **Alternative Total ALE Reduction**: $703,000
-* **Primary Recommendation ALE Reduction**: $728,000
-
-**Comparison & Trade-off Analysis**: 
-The primary recommendation is superior on paper, providing an additional $25,000 in risk reduction for a slightly higher overall spend. The Wazuh SIEM provides enterprise-wide visibility and behavioral log analysis across all segments, whereas the alternative firewall is constrained to a single physical location. However, dropping the SIEM in favor of the firewall trades broad operational visibility for localized perimeter hardening. We selected the primary recommendation because enterprise visibility yields a higher net reduction in systemic risk than localized firewall protection at this maturity stage.
+# Task 8 — The Budget Game
+MedDefense Health Systems — final $120,000 allocation across the 8 Task 7 controls.
+ 
+## Part 1 — The Selection
+ 
+Funded (6 controls, ranked by Net Value):
+ 
+| Control | Cost | Net Value |
+|---|---|---|
+| MFA deployment | $4,000 | $317,900 |
+| Offsite backup replication | $14,400 | $407,070 |
+| Network segmentation | $25,500 | $234,060 |
+| EDR upgrade | $22,000 | $49,640 |
+| Medical device isolation + monitoring | $20,000 | $35,890 |
+| Westside Clinic firewall | $1,600 | $5,900 |
+| **Total** | **$87,500** | |
+ 
+Deferred to next fiscal year (1 control):
+**Enterprise SIEM (Wazuh) — $30,000.** Weakest positive Net Value in the set ($23,400, "Marginal" verdict in Task 7). It also needs roughly 0.4 FTE of analyst time to deploy and tune — the same 2-person team (Task 4) is already stretched funding and rolling out the 6 controls above. Deferring frees labor bandwidth this cycle without losing the investment; revisit once MFA, segmentation, and backup isolation are stable.
+ 
+Rejected outright (1 control):
+**24/7 Outsourced SOC — $150,000.** Not a timing problem, a math problem: negative Net Value (-$107,706, Task 7). Costs more than the entire budget by itself for a fraction of the risk reduction the cheaper controls already deliver. Reject, don't defer — nothing changes next year that makes this cost-justified at MedDefense's current scale.
+ 
+**Total spend vs. budget: $87,500 spent of $120,000 (120000) total. $32,500 budget remaining.** This is not unspent slack — it is reserved for the four remaining Critical gaps (GAP-002, GAP-004, GAP-005, GAP-008) identified in Task 3 but not quantified in Task 6/7's top-5 risk set (backup coverage for ad-dc-02 and PACS, the shared PACS login, and the network closet's physical security).
+ 
+## Part 2 — The Opportunity Cost
+ 
+By deferring Enterprise SIEM (Wazuh), MedDefense accepts an estimated $53,400 in annual risk exposure — the ALE reduction Task 7 attributed specifically to this control against Risk 4 (undetected malware dwell time, GAP-014). One caveat: EDR (funded) already claims a partial 15% reduction on this same risk (~$16,020 of the $106,800 before-ALE), so the deferral is not a full return to the unmitigated baseline — but the remaining gap SIEM would have closed stays open until next cycle.
+ 
+The 24/7 SOC's opportunity cost is not calculated here — it was rejected, not deferred, so there is no "next year" figure to track against it.
+ 
+## Part 3 — The Alternative
+ 
+Alternative: swap EDR for the deferred SIEM. Drop EDR upgrade ($22,000) — its benefit overlaps heavily with segmentation and SIEM rather than closing a gap those don't already touch (flagged directly in Task 7's own recommendation for Control 5). Fund SIEM ($30,000) instead.
+ 
+| | Primary (this task) | Alternative (SIEM instead of EDR) |
+|---|---|---|
+| Controls funded | MFA, Backup, Segmentation, EDR, Medical device, Westside | MFA, Backup, Segmentation, SIEM, Medical device, Westside |
+| Total cost | $87,500 | $95,500 |
+| Total ALE reduction | $1,137,960 | $1,119,720 |
+ 
+Result: the primary selection has more total risk reduction at lower cost, but the swap has a real trade-off, not just a loss. SIEM gives MedDefense direct visibility into Risk 4 (undetected malware dwell time) — the exact gap that let the billing-srv-01 cryptominer run for 2+ weeks. EDR does not fully close that gap; it only reduces it by 15% as a side effect, not its main purpose. Dropping EDR to fund SIEM would remove EDR's broader endpoint protection across all 330+ devices — its main value — in exchange for deeper detection on one specific risk. On pure numbers, the primary plan wins ($1,137,960 vs. $1,119,720 total ALE reduction, at $87,500 vs. $95,500). But if MedDefense's leadership weighs detection visibility over broad endpoint coverage, SIEM is a defensible choice despite the lower total ALE reduction — this is a real trade-off, not a one-sided result.
