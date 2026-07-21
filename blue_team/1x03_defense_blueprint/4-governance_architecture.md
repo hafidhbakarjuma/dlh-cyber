@@ -25,17 +25,19 @@ Key: R = Responsible, A = Accountable, C = Consulted, I = Informed
 
 | Role | Position | Definition | Justification |
 | :--- | :--- | :--- | :--- |
-| Data Owner | Dept Heads | Ultimately responsible for the data's integrity, classification, and business use. | As medical and clinical department heads, they best understand the clinical criticality of patient records. |
-| Data Controller | CEO | Decides the purpose and means of data processing for the organization. | As the entity head, the CEO bears the ultimate legal and fiscal responsibility for HIPAA compliance. |
-| Data Processor | IT Director | Manages the systems, infrastructure, and hardware that store and process the data. | IT manages the underlying technical infrastructure where clinical data resides. |
-| Data Custodian / Steward | Security Analyst | Implements, maintains, and monitors the security controls to protect data day-to-day. As a data **steward**, the Security Analyst also ensures data quality, accurate labeling, and adherence to internal data governance policies. | The Security Analyst ensures technical safeguards (firewalls, encryption, access logs) remain operational while actively maintaining day-to-day data oversight. |
+| Data Owner | Dept Heads | Ultimately responsible for the data's integrity and classification. | As medical experts, they best understand the clinical criticality of patient records. |
+| Data Controller | CEO | Decides the purpose and means of data processing. | As the entity head, the CEO bears the ultimate legal and fiscal responsibility for HIPAA compliance. |
+| Data Processor | IT Director | Manages the systems that store and process the data. | IT manages the underlying infrastructure where clinical data resides. |
+| Data Custodian / Steward | Security Analyst | Implements the security controls to protect the data. Acts as a data **steward** to oversee data quality, labeling, and day-to-day governance compliance. | The Security Analyst ensures technical safeguards (firewalls, encryption) are operational and manages everyday data protection. |
 
 ---
 
 ## Part 3: The CISO Question
 
 ### Consequences of a Vacant CISO Position
+
 The absence of a full-time CISO creates a "governance vacuum" where security strategy is relegated to tactical, reactive firefighting rather than proactive risk management. Without a dedicated CISO, MedDefense lacks the authoritative voice required to hold Department Heads accountable for risk, fails to effectively bridge the gap between technical operations and Board-level risk appetite, and remains exposed to significant liability in the event of a HIPAA audit or catastrophic ransomware incident.
 
 ### Recommendation: vCISO
+
 MedDefense should outsource this function to a virtual CISO (vCISO). Given the severe budget constraints (only $15,000 remaining from the $120,000 allocation), hiring a full-time CISO is financially unfeasible. A vCISO provides the necessary strategic oversight, policy development, and Board reporting capability for a fraction of the cost, allowing the limited remaining budget to be directed toward high-impact technical remediation rather than executive salary overhead.
