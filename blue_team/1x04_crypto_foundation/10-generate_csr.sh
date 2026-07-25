@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/
 # ==============================================================================
 # Script Name: 10-generate_csr.sh
 # Description: Automates private key generation and CSR creation for MedDefense Portal
