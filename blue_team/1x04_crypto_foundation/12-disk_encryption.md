@@ -1,4 +1,4 @@
-# Task 12 — The Disk Encryption Lab & NAS-01 Backup Design
+# The Disk Encryption Lab & NAS-01 Backup Design
 
 ## Summary of Lab Activities: Disk Encryption & LUKS
 * **Part 1 — LUKS Setup & Execution:** Created a 500 MiB virtual disk container, formatted it securely with LUKS, opened the device mapper (`secure_vol`), initialized an ext4 filesystem, wrote and verified a test file, and safely unmounted and closed the volume.
