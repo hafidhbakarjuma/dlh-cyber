@@ -7,16 +7,15 @@
 Encryption cannot be applied uniformly across all enterprise data without causing immense administrative and financial friction. Data protection is a risk-driven spectrum governed by asset sensitivity. This policy establishes a systematic data classification matrix, defines four distinct classification tiers, provides an intuitive decision tree for employees, and addresses cloud data sovereignty and geographic compliance requirements for MedDefense.
 
 ---
+## Part 1: Data Type Inventory (Sec+ Data Types Alignment)
 
-## Part 1: Data Type Inventory
+MedDefense assets are mapped against the standard CompTIA Security+ data classification categories to ensure regulatory and operational compliance:
 
-MedDefense assets are categorized across six primary data types, mapped directly to their regulatory and operational profiles:
-* **Regulated (HIPAA / PHI):** Patient health records, medical imaging (DICOM), clinical notes, diagnoses, and treatment histories.
-* **PII (Personally Identifiable Information):** Employee and patient Social Security numbers, home addresses, dates of birth, and contact phone numbers.
-* **Financial:** Billing records, patient insurance details, credit card transactions, payroll data, and vendor contracts.
-* **Intellectual Property (IP):** Proprietary clinical research, custom medical device configurations, and internal treatment methodologies.
-* **Legal:** Compliance audits, active litigation files, regulatory correspondence, and policy legal reviews.
-* **Operational:** Staff directories, internal meeting schedules, non-public system architecture diagrams, and general IT ticketing data.
+* **Regulated Data (HIPAA / PHI):** Patient health records, medical imaging (DICOM), clinical notes, diagnoses, treatment histories, and electronic health records.
+* **Sensitive / Personally Identifiable Information (PII):** Employee and patient Social Security numbers, home addresses, dates of birth, personal phone numbers, and authentication credentials.
+* **Financial Data:** Billing records, patient insurance details, credit card transactions, payroll files, and commercial vendor contracts.
+* **Proprietary / Intellectual Property (IP):** Proprietary clinical research data, custom medical device configurations, and internal treatment methodologies.
+* **Public Data:** Hospital visiting hours, general public-facing medical directories, marketing materials, and published corporate policies.
 
 ---
 
