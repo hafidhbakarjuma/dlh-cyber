@@ -47,7 +47,6 @@ for idx, control in enumerate(controls):
     severity = control.get("severity", "medium")
     
     # Simple logic mapping based on severity and mock matching against findings
-    # In a full run, this evaluates real system state vs control criteria
     if idx % 15 == 0:
         status = "compliant"
         compliant_count += 1
@@ -70,7 +69,6 @@ for idx, control in enumerate(controls):
     gap_results.append(gap_entry)
 
     if status in ["non_compliant", "partially_compliant"]:
-        # Assign priority score based on severity
         if severity == "critical":
             priority_score = 95 - (idx * 2)
         elif severity == "high":
@@ -81,14 +79,18 @@ for idx, control in enumerate(controls):
         if priority_score < 1: priority_score = 1
 
         queue_item = {
+            "priority": priority_score,
             "priority_score": priority_score,
             "control_id": c_id,
             "title": control.get("title"),
             "severity": severity,
             "asset_scope": control.get("asset_scope", ["billing-srv-01"]),
+            "evidence": [f["test_id"] for f in findings if f["severity"] == "warning"][:2],
             "matching_lynis_findings": [f["test_id"] for f in findings if f["severity"] == "warning"][:2],
+            "script_mapping": f"remediate_{c_id.lower().replace('.', '_')}.sh",
             "remediation_script": f"remediate_{c_id.lower().replace('.', '_')}.sh",
             "operational_risk": f"Potential exposure to {control.get('threat_mapping', ['Unknown'])[0]} if left unpatched.",
+            "validation": control.get("verification_method"),
             "expected_validation": control.get("verification_method")
         }
         remediation_queue.append(queue_item)
