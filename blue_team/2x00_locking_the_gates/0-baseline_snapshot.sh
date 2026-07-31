@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Task 0: The Baseline Snapshot
 # Script: 0-baseline_snapshot.sh
@@ -36,6 +37,11 @@ SGID_COUNT=$(find / -xdev -type f -perm -2000 2>/dev/null | wc -l)
 # Gather World-Writable Files (excluding /proc, /sys, /dev)
 WORLD_WRITABLE_COUNT=$(find / -xdev -type f -perm -0002 ! -path "/proc/*" ! -path "/sys/*" ! -path "/dev/*" 2>/dev/null | wc -l)
 
+# Gather sysctl, SSH, and sudo/account information checks
+SYSCTL_SETTINGS=$(sysctl -a 2>/dev/null | grep -E "net.ipv4.tcp_syncookies|net.ipv4.ip_forward|kernel.randomize_va_space" || true)
+SSH_CONFIG_CHECK=$(sshd -T 2>/dev/null | grep -E "permitrootlogin|passwordauthentication" || grep -E "^[^#]" /etc/ssh/sshd_config 2>/dev/null || echo "Unavailable")
+SUDO_USERS=$(getent group sudo 2>/dev/null || echo "Unavailable")
+
 # Print Summary to STDOUT as requested by the expected output format
 echo "Hostname: $HOSTNAME"
 echo "OS: $OS_VERSION"
@@ -61,6 +67,11 @@ cat << EOF > "$OUTPUT_JSON"
     "suid_binaries": $SUID_COUNT,
     "sgid_binaries": $SGID_COUNT,
     "world_writable_files": $WORLD_WRITABLE_COUNT
+  },
+  "security_checks": {
+    "sysctl_parameters": "$(echo "$SYSCTL_SETTINGS" | tr '\n' '; ')",
+    "ssh_configuration": "$(echo "$SSH_CONFIG_CHECK" | tr '\n' '; ')",
+    "sudo_group_members": "$SUDO_USERS"
   }
 }
 EOF
