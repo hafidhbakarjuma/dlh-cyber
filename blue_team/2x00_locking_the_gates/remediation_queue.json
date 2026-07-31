@@ -1,0 +1,209 @@
+{
+  "remediation_actions_queued": 12,
+  "queue": [
+    {
+      "priority_score": 81,
+      "control_id": "CIS-4.1.1",
+      "title": "Ensure auditd is installed and enabled",
+      "severity": "critical",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-4_1_1.sh",
+      "operational_risk": "Potential exposure to Missing Audit Trail if left unpatched.",
+      "expected_validation": "systemctl is-active auditd"
+    },
+    {
+      "priority_score": 77,
+      "control_id": "CIS-5.2.1",
+      "title": "Ensure SSH access is restricted",
+      "severity": "critical",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-5_2_1.sh",
+      "operational_risk": "Potential exposure to Finding 009 if left unpatched.",
+      "expected_validation": "sshd -T | grep -E 'permitrootlogin|passwordauthentication'"
+    },
+    {
+      "priority_score": 69,
+      "control_id": "CIS-3.1.1",
+      "title": "Disable IP forwarding",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-3_1_1.sh",
+      "operational_risk": "Potential exposure to Network Pivoting if left unpatched.",
+      "expected_validation": "sysctl net.ipv4.ip_forward"
+    },
+    {
+      "priority_score": 69,
+      "control_id": "CIS-6.2.4",
+      "title": "Restrict access to the su command",
+      "severity": "critical",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-6_2_4.sh",
+      "operational_risk": "Potential exposure to Unauthorized Privilege Escalation if left unpatched.",
+      "expected_validation": "dpkg-statoverride --list | grep su"
+    },
+    {
+      "priority_score": 67,
+      "control_id": "CIS-3.2.1",
+      "title": "Ensure source routed packets are not accepted",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-3_2_1.sh",
+      "operational_risk": "Potential exposure to IP Spoofing if left unpatched.",
+      "expected_validation": "sysctl net.ipv4.conf.all.accept_source_route"
+    },
+    {
+      "priority_score": 67,
+      "control_id": "CIS-7.1.1",
+      "title": "Configure UFW default deny firewall posture",
+      "severity": "critical",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-7_1_1.sh",
+      "operational_risk": "Potential exposure to Unnecessary Service Exposure if left unpatched.",
+      "expected_validation": "ufw status verbose"
+    },
+    {
+      "priority_score": 65,
+      "control_id": "CIS-3.3.1",
+      "title": "Ensure ICMP redirects are not accepted",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-3_3_1.sh",
+      "operational_risk": "Potential exposure to Man-in-the-Middle if left unpatched.",
+      "expected_validation": "sysctl net.ipv4.conf.all.accept_redirects"
+    },
+    {
+      "priority_score": 63,
+      "control_id": "CIS-3.4.1",
+      "title": "Ensure TCP SYN Cookies are enabled",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-3_4_1.sh",
+      "operational_risk": "Potential exposure to Denial of Service (DoS) if left unpatched.",
+      "expected_validation": "sysctl net.ipv4.tcp_syncookies"
+    },
+    {
+      "priority_score": 59,
+      "control_id": "CIS-4.1.3",
+      "title": "Record events that modify date and time information",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-4_1_3.sh",
+      "operational_risk": "Potential exposure to Log Evasion if left unpatched.",
+      "expected_validation": "auditctl -l | grep time-change"
+    },
+    {
+      "priority_score": 55,
+      "control_id": "CIS-5.3.1",
+      "title": "Configure PAM password quality requirements",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-5_3_1.sh",
+      "operational_risk": "Potential exposure to Weak Credentials if left unpatched.",
+      "expected_validation": "grep -E 'minlen' /etc/security/pwquality.conf"
+    },
+    {
+      "priority_score": 53,
+      "control_id": "CIS-5.3.2",
+      "title": "Configure lockout for failed password attempts",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-5_3_2.sh",
+      "operational_risk": "Potential exposure to Brute-Force Attacks if left unpatched.",
+      "expected_validation": "grep pam_faillock /etc/pam.d/common-auth"
+    },
+    {
+      "priority_score": 26,
+      "control_id": "CIS-6.1.10",
+      "title": "Ensure no unowned files or directories exist",
+      "severity": "medium",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        "NETW-2705"
+      ],
+      "remediation_script": "remediate_cis-6_1_10.sh",
+      "operational_risk": "Potential exposure to Orphaned Artifacts if left unpatched.",
+      "expected_validation": "find / -xdev -nouser -o -nogroup"
+    }
+  ]
+}

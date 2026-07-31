@@ -1,0 +1,95 @@
+{
+  "controls_assessed": 15,
+  "gap_results": [
+    {
+      "control_id": "CIS-1.1.1",
+      "title": "Disable unused filesystem modules",
+      "status": "compliant",
+      "severity": "medium"
+    },
+    {
+      "control_id": "CIS-2.1.1",
+      "title": "Ensure time synchronization is configured",
+      "status": "not_assessed",
+      "severity": "medium"
+    },
+    {
+      "control_id": "CIS-2.2.1",
+      "title": "Remove X11 server packages",
+      "status": "not_assessed",
+      "severity": "medium"
+    },
+    {
+      "control_id": "CIS-3.1.1",
+      "title": "Disable IP forwarding",
+      "status": "partially_compliant",
+      "severity": "high"
+    },
+    {
+      "control_id": "CIS-3.2.1",
+      "title": "Ensure source routed packets are not accepted",
+      "status": "partially_compliant",
+      "severity": "high"
+    },
+    {
+      "control_id": "CIS-3.3.1",
+      "title": "Ensure ICMP redirects are not accepted",
+      "status": "non_compliant",
+      "severity": "high"
+    },
+    {
+      "control_id": "CIS-3.4.1",
+      "title": "Ensure TCP SYN Cookies are enabled",
+      "status": "non_compliant",
+      "severity": "high"
+    },
+    {
+      "control_id": "CIS-4.1.1",
+      "title": "Ensure auditd is installed and enabled",
+      "status": "non_compliant",
+      "severity": "critical"
+    },
+    {
+      "control_id": "CIS-4.1.3",
+      "title": "Record events that modify date and time information",
+      "status": "non_compliant",
+      "severity": "high"
+    },
+    {
+      "control_id": "CIS-5.2.1",
+      "title": "Ensure SSH access is restricted",
+      "status": "non_compliant",
+      "severity": "critical"
+    },
+    {
+      "control_id": "CIS-5.3.1",
+      "title": "Configure PAM password quality requirements",
+      "status": "non_compliant",
+      "severity": "high"
+    },
+    {
+      "control_id": "CIS-5.3.2",
+      "title": "Configure lockout for failed password attempts",
+      "status": "non_compliant",
+      "severity": "high"
+    },
+    {
+      "control_id": "CIS-6.1.10",
+      "title": "Ensure no unowned files or directories exist",
+      "status": "non_compliant",
+      "severity": "medium"
+    },
+    {
+      "control_id": "CIS-6.2.4",
+      "title": "Restrict access to the su command",
+      "status": "non_compliant",
+      "severity": "critical"
+    },
+    {
+      "control_id": "CIS-7.1.1",
+      "title": "Configure UFW default deny firewall posture",
+      "status": "non_compliant",
+      "severity": "critical"
+    }
+  ]
+}
