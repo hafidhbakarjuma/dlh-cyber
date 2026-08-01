@@ -39,14 +39,11 @@ TOTAL_STEPS=${#STEPS[@]}
 COMPLETED_STEPS=0
 FAILED_STEPS=0
 
+# Verify required scripts exist before execution
 for step in "${STEPS[@]}"; do
     if [ ! -f "./$step" ]; then
-        # Create a dummy executable stub if missing to ensure orchestrator runs smoothly in testing
-        cat << 'EOF' > "./$step"
-#!/bin/bash
-exit 0
-EOF
-        chmod +x "./$step"
+        echo "[-] Error: Required script does not exist: $step" >&2
+        exit 1
     fi
     chmod +x "./$step"
 done
@@ -71,7 +68,8 @@ for i in "${!STEPS[@]}"; do
         step_exit=1
         FAILED_STEPS=$((FAILED_STEPS + 1))
         status_str="FAILED"
-        # Stop immediately on failure in strict mode if desired, or record
+        echo "[-] Error: Step $step_name failed. Stopping execution." >&2
+        exit 1
     fi
     step_end=$(date +%s)
     step_duration=$((step_end - step_start))
