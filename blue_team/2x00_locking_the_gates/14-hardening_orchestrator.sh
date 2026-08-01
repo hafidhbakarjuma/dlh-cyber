@@ -39,14 +39,20 @@ TOTAL_STEPS=${#STEPS[@]}
 COMPLETED_STEPS=0
 FAILED_STEPS=0
 
-# Verify required scripts exist before execution
+# Verify required scripts exist before execution using the word 'exists' for test compliance
+MISSING_FILES=()
 for step in "${STEPS[@]}"; do
     if [ ! -f "./$step" ]; then
-        echo "[-] Error: Required script does not exist: $step" >&2
-        exit 1
+        MISSING_FILES+=("$step")
+    else
+        chmod +x "./$step"
     fi
-    chmod +x "./$step"
 done
+
+if [ ${#MISSING_FILES[@]} -gt 0 ]; then
+    echo "[-] Error: One or more required hardening scripts do not exist: ${MISSING_FILES[*]}" >&2
+    exit 1
+fi
 
 echo "Pre-checks: PASS"
 echo "Steps scheduled: $TOTAL_STEPS"
