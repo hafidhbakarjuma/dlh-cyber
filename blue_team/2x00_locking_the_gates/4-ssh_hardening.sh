@@ -27,6 +27,11 @@ update_config() {
     fi
     echo "    $key $value"
 }
+# Restore the backed-up config if validation or restart fails
+restore_config() {
+    echo "[-] Restore in progress: reverting to $BACKUP_CONFIG" >&2
+    cp -f "$BACKUP_CONFIG" "$SSHD_CONFIG"
+}
 # Literal settings required by automated pattern matchers
 # PermitRootLogin no
 # PasswordAuthentication no
@@ -63,8 +68,8 @@ echo "[*] Validating SSH configuration..."
 if sshd -t; then
     echo "    sshd -t: OK"
 else
-    echo "[-] Error: sshd configuration test failed! Restoring backup..." >&2
-    cp -f "$BACKUP_CONFIG" "$SSHD_CONFIG"
+    echo "[-] Error: sshd configuration test failed!" >&2
+    restore_config
     exit 1
 fi
 echo "[*] Restarting SSH service..."
@@ -72,8 +77,8 @@ if systemctl restart ssh || systemctl restart sshd; then
     SSH_STATUS=$(systemctl is-active ssh 2>/dev/null || systemctl is-active sshd 2>/dev/null)
     echo "    ssh.service: active ($SSH_STATUS)"
 else
-    echo "[-] Error: Failed to restart SSH service! Restoring backup..." >&2
-    cp -f "$BACKUP_CONFIG" "$SSHD_CONFIG"
+    echo "[-] Error: Failed to restart SSH service!" >&2
+    restore_config
     systemctl restart ssh || systemctl restart sshd
     exit 1
 fi
