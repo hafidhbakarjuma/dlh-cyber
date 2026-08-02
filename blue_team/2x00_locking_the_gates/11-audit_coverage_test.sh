@@ -11,49 +11,51 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-REPORT_FILE="audit_validation.json"
-TEST_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+REPORT="audit_validation.json"
+TFILE="/tmp/meddefense_audit_test.txt"
+RESULTS=(); CAPTURED=0; TOTAL=6
+
+cleanup() {
+    rm -f "$TFILE"
+    auditctl -W "$TFILE" -k audit_test_file 2>/dev/null || true
+    auditctl -W /etc/crontab -k audit_test_cron 2>/dev/null || true
+}
+trap cleanup EXIT
+
+chk() {
+    sleep 1
+    ausearch -ts recent -k "$1" 2>/dev/null | grep -c "^type=SYSCALL" || true
+}
+
+rec() {
+    RESULTS+=("{\"test\":\"$2\",\"audit_key\":\"$3\",\"command\":\"$4\",\"timestamp\":\"$(date -Iseconds)\",\"status\":\"$5\",\"event_count\":$6}")
+    printf '[%d/%d] %-38s [%s]\n' "$1" "$TOTAL" "$2" "$5"
+}
 
 echo "[*] Running audit telemetry coverage tests..."
 
-# Test controlled audit events (triggering administrative/sensitive actions to be logged)
-echo "[*] Triggering test events..."
-touch /etc/meddefense_test_audit_file 2>/dev/null || true
-rm -f /etc/meddefense_test_audit_file 2>/dev/null || true
-useradd -r -s /bin/false meddefense_test_user >/dev/null 2>&1 || true
-userdel meddefense_test_user >/dev/null 2>&1 || true
+sudo whoami >/dev/null 2>&1; c=$(chk priv_esc); [[ $c -gt 0 ]] && s=CAPTURED && CAPTURED=$((CAPTURED+1)) || s=MISSED; rec 1 "sudo execution" priv_esc "sudo whoami" "$s" "$c"
+sudo cat /etc/shadow >/dev/null 2>&1; c=$(chk identity); [[ $c -gt 0 ]] && s=CAPTURED && CAPTURED=$((CAPTURED+1)) || s=MISSED; rec 2 "shadow access" identity "cat /etc/shadow" "$s" "$c"
+wget --version >/dev/null 2>&1 || true; c=$(chk suspicious_download); [[ $c -gt 0 ]] && s=CAPTURED && CAPTURED=$((CAPTURED+1)) || s=MISSED; rec 3 "suspicious download tool" suspicious_download "wget --version" "$s" "$c"
+cat /etc/ssh/sshd_config >/dev/null 2>&1; c=$(chk sshd_config); [[ $c -gt 0 ]] && s=CAPTURED && CAPTURED=$((CAPTURED+1)) || s=MISSED; rec 4 "sshd config read" sshd_config "cat sshd_config" "$s" "$c"
+auditctl -w "$TFILE" -p wa -k audit_test_file 2>/dev/null || true; echo test > "$TFILE"; c=$(chk audit_test_file); [[ $c -gt 0 ]] && s=CAPTURED && CAPTURED=$((CAPTURED+1)) || s=MISSED; rec 5 "monitored test file write" audit_test_file "echo > $TFILE" "$s" "$c"
+auditctl -w /etc/crontab -p r -k audit_test_cron 2>/dev/null || true; cat /etc/crontab >/dev/null 2>&1 || true; c=$(chk audit_test_cron); [[ $c -gt 0 ]] && s=CAPTURED && CAPTURED=$((CAPTURED+1)) || s=MISSED; rec 6 "cron configuration check" audit_test_cron "cat /etc/crontab" "$s" "$c"
 
-# Use ausearch to validate captured audit events
-CAPTURED_EVENTS=0
-if command -v ausearch >/dev/null 2>&1; then
-    ausearch -m USER_MGMT -i >/dev/null 2>&1 && CAPTURED_EVENTS=12 || CAPTURED_EVENTS=10
-else
-    CAPTURED_EVENTS=10
-fi
+echo "[*] Cleaning test artifacts..."
+cleanup
+trap - EXIT
 
-MISSED_EVENTS=0
-TOTAL_TESTED=$((CAPTURED_EVENTS + MISSED_EVENTS))
-COVERAGE_PERCENT=100
-
-echo "  -> Events captured: $CAPTURED_EVENTS"
-echo "  -> Events missed: $MISSED_EVENTS"
-echo "  -> Coverage: ${COVERAGE_PERCENT}%"
-
-# Cleanup logic for test artifacts
-echo "[*] Cleaning up test artifacts..."
-rm -f /etc/meddefense_test_audit_file 2>/dev/null || true
-id meddefense_test_user >/dev/null 2>&1 && userdel meddefense_test_user >/dev/null 2>&1 || true
-
-# Produce audit_validation.json report
-cat << EOF > "$REPORT_FILE"
 {
-  "timestamp": "$TEST_TIMESTAMP",
-  "total_tested": $TOTAL_TESTED,
-  "captured_events": $CAPTURED_EVENTS,
-  "missed_events": $MISSED_EVENTS,
-  "coverage_percentage": $COVERAGE_PERCENT,
-  "status": "PASS"
-}
-EOF
+  echo "{\"tests\":["
+  for i in "${!RESULTS[@]}"; do
+    sep=","
+    [[ $i -eq $((${#RESULTS[@]}-1)) ]] && sep=""
+    echo "  ${RESULTS[$i]}$sep"
+  done
+  echo "],\"tests_executed\":$TOTAL,\"captured\":$CAPTURED,\"missed\":$((TOTAL-CAPTURED))}"
+} > "$REPORT"
 
-echo "Report saved to: $REPORT_FILE"
+echo "Tests executed: $TOTAL"
+echo "Captured: $CAPTURED"
+echo "Missed: $((TOTAL-CAPTURED))"
+echo "Report saved to: $REPORT"
