@@ -130,16 +130,16 @@ Write-Host "    Maximum Age: 0                [SET]"
 
 
 # Minimum password age
+# MinPasswordAge = 1 day
+
 Set-GPRegistryValue `
-    -Name $GPOName `
-    -Key "HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters" `
-    -ValueName "MinimumPasswordAge" `
-    -Type DWord `
-    -Value 1
+-Name $GPOName `
+-Key "HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters" `
+-ValueName "MinimumPasswordAge" `
+-Type DWord `
+-Value 1
 
-
-Write-Host "    Minimum Age: 1 day            [SET]"
-
+Write-Host " MinPasswordAge: 1 day [SET]"
 
 
 # ------------------------------------------------------------
