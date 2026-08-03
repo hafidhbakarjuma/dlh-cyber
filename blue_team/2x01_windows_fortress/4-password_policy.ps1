@@ -257,7 +257,7 @@ else {
 # ------------------------------------------------------------
 
 Write-Host ""
-Write-Host "[*] Verifying effective password and lockout policy..." -ForegroundColor Cyan
+Write-Host "[*] VERIFY: Verifying effective password and lockout policy..." -ForegroundColor Cyan
 
 try {
     Import-Module ActiveDirectory -ErrorAction Stop
