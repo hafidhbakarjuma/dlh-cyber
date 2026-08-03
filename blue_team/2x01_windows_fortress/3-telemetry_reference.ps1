@@ -8,7 +8,7 @@
     use cases.
 
 .PURPOSE
-    Build an operational telemetry reference connecting event visibility,
+   Purpose: Build an operational telemetry reference connecting event visibility,
     audit dependencies, Sysmon deployment, PowerShell logging, and detection.
 
 .AUTHOR
