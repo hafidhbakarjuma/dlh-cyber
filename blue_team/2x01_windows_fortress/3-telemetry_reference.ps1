@@ -235,7 +235,7 @@ security_meaning = "Tracks new file creation"
 normal_frequency = "High"
 triage_priority = "Critical"
 crimson_tide_phase = "Impact"
-example_suspicious_pattern = "Ransomware creating and encrypting large numbers of files"
+example_suspicious_pattern = "ransomware creating and encrypting large numbers of files"
 validation_method = "Check file path, hash, creator process, and file modification activity"
 },
 
