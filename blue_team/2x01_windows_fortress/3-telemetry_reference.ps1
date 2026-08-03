@@ -233,10 +233,10 @@ log_source = "Sysmon"
 audit_or_sensor_dependency = "Sysmon File Creation Monitoring"
 security_meaning = "Tracks new file creation"
 normal_frequency = "High"
-triage_priority = "Medium"
-crimson_tide_phase = "Persistence"
-example_suspicious_pattern = "Malware dropped into system directories"
-validation_method = "Check file path, hash and creator process"
+triage_priority = "Critical"
+crimson_tide_phase = "Impact"
+example_suspicious_pattern = "Ransomware creating and encrypting large numbers of files"
+validation_method = "Check file path, hash, creator process, and file modification activity"
 },
 
 @{
