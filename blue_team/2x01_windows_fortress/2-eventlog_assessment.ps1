@@ -8,7 +8,7 @@
     been generated in the past 24 hours.
 
 .PURPOSE
-    Quantify the gap between current domain visibility and the required event logging baseline.
+    Purpose: Quantify the gap between current domain visibility and the required event logging baseline.
 #>
 
 [CmdletBinding()]
@@ -40,8 +40,9 @@ $cutoffTime = (Get-Date).AddHours(-24)
 $recentEvents = @()
 try {
     $recentEvents = Get-WinEvent -FilterHashtable @{ LogName = 'Security'; StartTime = $cutoffTime } -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id
-} catch {
-    # Fallback or empty if access denied / log empty
+} 
+catch {
+    Write-Verbose "Unable to query Security event log: $($_.Exception.Message)"
 }
 
 # 3. Evaluate Status for each critical Event ID
