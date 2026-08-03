@@ -56,7 +56,7 @@ security_meaning = "Records failed authentication attempts"
 normal_frequency = "Medium"
 triage_priority = "High"
 crimson_tide_phase = "Credential Access"
-example_suspicious_pattern = "Password spraying or brute force attempts"
+example_suspicious_pattern = "Multiple failed logon attempts indicating password spraying or brute force attacks"
 validation_method = "Check failure reason, source IP and account target"
 },
 
