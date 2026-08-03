@@ -178,8 +178,8 @@ security_meaning = "Captures executed PowerShell script blocks"
 normal_frequency = "Medium"
 triage_priority = "Critical"
 crimson_tide_phase = "Execution"
-example_suspicious_pattern = "Malicious PowerShell payload execution"
-validation_method = "Analyze script block content and indicators"
+example_suspicious_pattern = "Encoded PowerShell commands, malicious script blocks, and hidden payload execution"
+validation_method = "Analyze script block content, encoded commands, and indicators"
 },
 
 
