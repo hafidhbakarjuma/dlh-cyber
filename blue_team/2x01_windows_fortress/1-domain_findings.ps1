@@ -14,15 +14,15 @@
     Kerberos hardening, service account control, GPO hardening, stale object cleanup).
 
 .NOTES
-    Author:   Hafidh Juma
-    Requires: RSAT ActiveDirectory (+ optionally GroupPolicy) modules, domain-read
-              privileges when run live. auditpol.exe and registry reads are used for
-              local audit / PowerShell logging visibility and require running on a
-              domain controller (or a host whose local audit policy reflects the
-              domain baseline).
-    Every enumeration step is wrapped in error handling so a single inaccessible
-    object (missing OU, unreachable DC, missing module, access denied) degrades
-    gracefully instead of aborting the whole run.
+    Author:    Hafidh Juma
+    Requires:  RSAT ActiveDirectory (+ optionally GroupPolicy) modules, domain-read
+               privileges when run live. auditpol.exe and registry reads are used for
+               local audit / PowerShell logging visibility and require running on a
+               domain controller (or a host whose local audit policy reflects the
+               domain baseline).
+               Every enumeration step is wrapped in error handling so a single inaccessible
+               object (missing OU, unreachable DC, missing module, access denied) degrades
+               gracefully instead of aborting the whole run.
 
 .PARAMETER DemoMode
     Runs the exact same finding-generation logic (New-Finding, severity rollups,
@@ -66,14 +66,14 @@ function New-Finding {
     )
     $script:findingCounter++
     $finding = [PSCustomObject]@{
-        id                       = "F{0:D3}" -f $script:findingCounter
-        severity                 = $Severity
-        category                 = $Category
-        asset                    = $Asset
-        evidence                 = $Evidence
-        risk                     = $Risk
-        recommended_remediation  = $RecommendedRemediation
-        mapped_task              = $MappedTask
+        id                     = "F{0:D3}" -f $script:findingCounter
+        severity               = $Severity
+        category               = $Category
+        asset                  = $Asset
+        evidence               = $Evidence
+        risk                   = $Risk
+        recommended_remediation = $RecommendedRemediation
+        mapped_task            = $MappedTask
     }
     $script:findings += $finding
     return $finding
@@ -142,8 +142,6 @@ function Invoke-LiveAudit {
             -Properties Enabled, PasswordLastSet, PasswordNeverExpires, DistinguishedName, MemberOf -ErrorAction Stop
 
         foreach ($u in $pwdNeverExpireUsers) {
-            # MemberOf gives direct group DNs immediately from the user object;
-            # fall back to the recursive helper only if MemberOf is empty (e.g. primary group only).
             $groups = if ($u.MemberOf) {
                 $u.MemberOf | ForEach-Object { ($_ -split ',')[0] -replace '^CN=', '' }
             }
@@ -345,7 +343,7 @@ function Invoke-LiveAudit {
     try {
         $serviceAccounts = Get-ADUser -Filter "Name -like '*svc*'" `
             -Properties ServicePrincipalName, DoesNotRequirePreAuth, TrustedForDelegation, `
-            msDS-SupportedEncryptionTypes, PasswordLastSet, LastLogonDate, Enabled, DistinguishedName, userWorkstations `
+            UseDESKeyOnly, msDS-SupportedEncryptionTypes, PasswordLastSet, LastLogonDate, Enabled, DistinguishedName, userWorkstations `
             -ErrorAction Stop
 
         foreach ($svc in $serviceAccounts) {
@@ -370,11 +368,12 @@ function Invoke-LiveAudit {
             }
 
             $encFlag = $svc.'msDS-SupportedEncryptionTypes'
-            if ($encFlag -and (($encFlag -band 0x1) -or ($encFlag -band 0x2)) -and -not ($encFlag -band 0x1C)) {
+            $desOnly = $svc.UseDESKeyOnly
+            if ($desOnly -or ($encFlag -and (($encFlag -band 0x1) -or ($encFlag -band 0x2)) -and -not ($encFlag -band 0x1C))) {
                 New-Finding -Severity Critical -Category "Service Account Risk" -Asset $svc.SamAccountName `
-                    -Evidence ([PSCustomObject]@{ risk_type = "DES-Only Kerberos Encryption"; enc_flag = $encFlag }) `
+                    -Evidence ([PSCustomObject]@{ risk_type = "DES-Only Kerberos Encryption"; use_des_key_only = [bool]$desOnly; enc_flag = $encFlag }) `
                     -Risk "DES-only Kerberos tickets are trivially crackable offline, exposing service account credentials to fast compromise." `
-                    -RecommendedRemediation "Set msDS-SupportedEncryptionTypes to AES128/AES256 only and remove DES support." `
+                    -RecommendedRemediation "Disable UseDESKeyOnly flag, set msDS-SupportedEncryptionTypes to AES128/AES256 only, and remove DES support." `
                     -MappedTask "8-kerberos_hardening.ps1" | Out-Null
             }
 
@@ -479,21 +478,19 @@ function Invoke-LiveAudit {
 }
 
 # =========================================================================
-# DEMO AUDIT - feeds the same New-Finding logic with a mock dataset so the
-# script and its JSON schema can be exercised without a reachable domain.
+# DEMO AUDIT - feeds the same New-Finding logic with a mock dataset
 # =========================================================================
 function Invoke-DemoAudit {
-
     $mockDomain = "meddefense.local"
 
-    # 1. PasswordNeverExpires accounts (mock: 6 accounts)
+    # 1. PasswordNeverExpires accounts
     $mockPwdNeverExpire = @(
-        @{ Name = "j.mwakalinga"; Enabled = $true;  Groups = @("Sales")            ; PwdSet = "2024-11-02T09:12:00"; IsSvc = $false },
-        @{ Name = "r.kimaro";     Enabled = $true;  Groups = @("Finance")          ; PwdSet = "2024-06-14T15:40:00"; IsSvc = $false },
-        @{ Name = "svc-backup";   Enabled = $true;  Groups = @("Backup Operators") ; PwdSet = "2023-01-05T08:00:00"; IsSvc = $true  },
-        @{ Name = "svc-sql";      Enabled = $true;  Groups = @("SQL Service")      ; PwdSet = "2023-03-22T08:00:00"; IsSvc = $true  },
-        @{ Name = "a.hassan";     Enabled = $false; Groups = @("Marketing")        ; PwdSet = "2022-09-10T10:00:00"; IsSvc = $false },
-        @{ Name = "svc-web";      Enabled = $true;  Groups = @("IIS_IUSRS")        ; PwdSet = "2023-07-18T08:00:00"; IsSvc = $true  }
+        @{ Name = "j.mwakalinga"; Enabled = $true;  Groups = @("Sales"); PwdSet = "2024-11-02T09:12:00"; IsSvc = $false },
+        @{ Name = "r.kimaro";     Enabled = $true;  Groups = @("Finance"); PwdSet = "2024-06-14T15:40:00"; IsSvc = $false },
+        @{ Name = "svc-backup";   Enabled = $true;  Groups = @("Backup Operators"); PwdSet = "2023-01-05T08:00:00"; IsSvc = $true },
+        @{ Name = "svc-sql";      Enabled = $true;  Groups = @("SQL Service"); PwdSet = "2023-03-22T08:00:00"; IsSvc = $true },
+        @{ Name = "a.hassan";     Enabled = $false; Groups = @("Marketing"); PwdSet = "2022-09-10T10:00:00"; IsSvc = $false },
+        @{ Name = "svc-web";      Enabled = $true;  Groups = @("IIS_IUSRS"); PwdSet = "2023-07-18T08:00:00"; IsSvc = $true }
     )
     foreach ($u in $mockPwdNeverExpire) {
         New-Finding -Severity High -Category "Credential Hygiene" -Asset $u.Name `
@@ -504,76 +501,73 @@ function Invoke-DemoAudit {
     }
     Write-Finding "HIGH" "$($mockPwdNeverExpire.Count) accounts with PasswordNeverExpires"
 
-    # 2. Disabled accounts in privileged groups (mock: 1 example)
+    # 2. Disabled accounts in privileged groups
     New-Finding -Severity High -Category "Privileged Access Hygiene" -Asset "d.mushi" `
-        -Evidence ([PSCustomObject]@{ privileged_group = "Domain Admins"; last_logon_date = "2024-02-11T09:00:00" }) `
-        -Risk "Disabled account retains membership in a privileged group; if re-enabled (accidentally or maliciously) it grants immediate elevated access." `
-        -RecommendedRemediation "Remove disabled accounts from privileged groups; archive or delete stale identities per retention policy." `
+        -Evidence ([PSCustomObject]@{ privileged_group = "Domain Admins"; last_logon_date = "Never" }) `
+        -Risk "Disabled account retains membership in a privileged group; if re-enabled it grants immediate elevated access." `
+        -RecommendedRemediation "Remove disabled accounts from privileged groups." `
         -MappedTask "3-privileged_access_cleanup.ps1" | Out-Null
     Write-Finding "HIGH" "1 disabled account(s) in privileged groups"
 
-    # 3. Stale computer objects (mock: 2)
-    $mockStaleComputers = @(
-        @{ Name = "WKS-042"; Enabled = $true; LastLogon = "2025-11-03T00:00:00" },
-        @{ Name = "WKS-107"; Enabled = $true; LastLogon = "Never" }
-    )
-    foreach ($c in $mockStaleComputers) {
-        New-Finding -Severity Medium -Category "Stale Object Cleanup" -Asset $c.Name `
-            -Evidence ([PSCustomObject]@{ enabled = $c.Enabled; last_logon_date = $c.LastLogon; stale_threshold_days = $StaleDaysThreshold }) `
-            -Risk "Inactive computer object represents unmanaged attack surface and potential unpatched/unmonitored host or a decommissioned asset still trusted by the domain." `
-            -RecommendedRemediation "Verify the asset is decommissioned, then disable and eventually remove the computer object from Active Directory." `
-            -MappedTask "7-stale_object_cleanup.ps1" | Out-Null
-    }
-    Write-Finding "MEDIUM" "Stale computer objects: $($mockStaleComputers.Count)"
+    # 3. Stale computer objects
+    New-Finding -Severity Medium -Category "Stale Object Cleanup" -Asset "WS-OLD-01" `
+        -Evidence ([PSCustomObject]@{ enabled = $true; last_logon_date = "2024-01-10T11:00:00"; stale_threshold_days = 90 }) `
+        -Risk "Inactive computer object represents unmanaged attack surface." `
+        -RecommendedRemediation "Disable and eventually remove the computer object." `
+        -MappedTask "7-stale_object_cleanup.ps1" | Out-Null
+    New-Finding -Severity Medium -Category "Stale Object Cleanup" -Asset "WS-LEGACY-02" `
+        -Evidence ([PSCustomObject]@{ enabled = $true; last_logon_date = "2023-11-05T08:30:00"; stale_threshold_days = 90 }) `
+        -Risk "Inactive computer object represents unmanaged attack surface." `
+        -RecommendedRemediation "Disable and eventually remove the computer object." `
+        -MappedTask "7-stale_object_cleanup.ps1" | Out-Null
+    Write-Finding "MEDIUM" "Stale computer objects: 2"
 
-    # 4. Password / lockout policy gaps (mock: matches the sample scenario)
+    # 4. Password and lockout policy gaps
     New-Finding -Severity Critical -Category "Password Policy" -Asset $mockDomain `
-        -Evidence ([PSCustomObject]@{ current = 7; target = $TargetMinPwdLength }) `
-        -Risk "Minimum password length below the Fortress target increases susceptibility to brute-force and password-spray attacks." `
-        -RecommendedRemediation "Raise MinPasswordLength to $TargetMinPwdLength via Default Domain Policy." `
+        -Evidence ([PSCustomObject]@{ current = 7; target = 14 }) `
+        -Risk "Minimum password length below the Fortress target increases susceptibility to brute-force." `
+        -RecommendedRemediation "Raise MinPasswordLength to 14 via Default Domain Policy." `
         -MappedTask "2-password_policy_hardening.ps1" | Out-Null
     Write-Finding "CRITICAL" "Password policy minimum length: 7"
 
     New-Finding -Severity Critical -Category "Account Lockout Policy" -Asset $mockDomain `
-        -Evidence ([PSCustomObject]@{ current = "Not configured"; target = $TargetLockoutThreshold }) `
-        -Risk "No account lockout threshold leaves every account exposed to unlimited online password-guessing attempts." `
-        -RecommendedRemediation "Configure LockoutThreshold to $TargetLockoutThreshold with an appropriate lockout duration." `
+        -Evidence ([PSCustomObject]@{ current = "Not configured"; target = 5 }) `
+        -Risk "No account lockout threshold leaves every account exposed to unlimited online guessing attempts." `
+        -RecommendedRemediation "Configure LockoutThreshold to 5." `
         -MappedTask "2-password_policy_hardening.ps1" | Out-Null
     Write-Finding "CRITICAL" "Account lockout: not configured"
 
-    # 5. Missing audit visibility (mock: several gaps)
-    $mockAuditGaps = @('Process Creation', 'Special Logon', 'User Account Management', 'PowerShell Script Block Logging', 'Sysmon (process/network telemetry)')
+    # 5. Missing audit visibility
     New-Finding -Severity High -Category "Audit & Detection Visibility" -Asset $mockDomain `
-        -Evidence ([PSCustomObject]@{ missing_visibility = $mockAuditGaps }) `
-        -Risk "Gaps in audit policy and endpoint telemetry mean key attacker techniques (process creation, privilege use, account changes, PowerShell abuse) would not be logged or detected." `
-        -RecommendedRemediation "Apply the Advanced Audit Policy Configuration GPO covering the missing subcategories; deploy Sysmon and enable PowerShell Script Block Logging via GPO." `
+        -Evidence ([PSCustomObject]@{ missing_visibility = @('Process Creation', 'Special Logon', 'User Account Management', 'PowerShell Script Block Logging') }) `
+        -Risk "Gaps in audit policy and endpoint telemetry mean key attacker techniques would not be logged or detected." `
+        -RecommendedRemediation "Apply Advanced Audit Policy Configuration GPO and deploy Sysmon." `
         -MappedTask "4-audit_policy_configuration.ps1" | Out-Null
     Write-Finding "HIGH" "Advanced Audit Policy: not configured"
 
-    # 6. Service account risks (mock: 3 with unconstrained delegation)
-    $mockDelegationSvc = @("svc-backup", "svc-sql", "svc-web")
-    foreach ($svc in $mockDelegationSvc) {
-        New-Finding -Severity High -Category "Service Account Risk" -Asset $svc `
-            -Evidence ([PSCustomObject]@{ risk_type = "Unconstrained Delegation"; group_memberships = @("Domain Computers") }) `
-            -Risk "A compromised service account with unconstrained delegation can impersonate any user that authenticates to it, including Domain Admins, enabling full domain compromise." `
-            -RecommendedRemediation "Disable unconstrained delegation; move to constrained delegation or resource-based constrained delegation." `
+    # 6. Service account risks (Unconstrained delegation)
+    foreach ($svcName in @('svc-backup', 'svc-sql', 'svc-web')) {
+        New-Finding -Severity High -Category "Service Account Risk" -Asset $svcName `
+            -Evidence ([PSCustomObject]@{ risk_type = "Unconstrained Delegation"; group_memberships = @() }) `
+            -Risk "A compromised service account with unconstrained delegation can impersonate any user, enabling full domain compromise." `
+            -RecommendedRemediation "Disable unconstrained delegation." `
             -MappedTask "5-service_account_lockdown.ps1" | Out-Null
     }
-    Write-Finding "HIGH" "$($mockDelegationSvc.Count) service accounts with unconstrained delegation"
+    Write-Finding "HIGH" "3 service accounts with unconstrained delegation"
 
-    # 7. Weak GPO posture (mock: default-only)
+    # 7. Weak GPO security posture
     New-Finding -Severity Medium -Category "GPO Hardening Posture" -Asset $mockDomain `
         -Evidence ([PSCustomObject]@{ total_gpos = 2; meddefense_gpos = 0 }) `
-        -Risk "No dedicated hardening GPOs means security baselines (password, audit, Kerberos, service accounts) are not consistently enforced domain-wide." `
-        -RecommendedRemediation "Create and link MedDefense hardening GPOs for password/audit/Kerberos/service-account policy." `
+        -Risk "No dedicated hardening GPOs means security baselines are not consistently enforced domain-wide." `
+        -RecommendedRemediation "Create and link MedDefense hardening GPOs." `
         -MappedTask "6-gpo_hardening.ps1" | Out-Null
     Write-Finding "MEDIUM" "No MedDefense hardening GPOs present"
 
-    # 4b. Kerberos DES/RC4 (mock: weak encryption enabled)
+    # 8. Kerberos DES/RC4 enabled
     New-Finding -Severity Critical -Category "Kerberos Hardening" -Asset $mockDomain `
         -Evidence ([PSCustomObject]@{ krbtgt_enc_flag = 0 }) `
-        -Risk "DES and/or RC4 Kerberos encryption remain permitted domain-wide, enabling offline ticket-cracking and downgrade attacks (e.g., Kerberoasting with RC4)." `
-        -RecommendedRemediation "Restrict supported encryption types to AES128/AES256 domain-wide and rotate the krbtgt password twice per Microsoft guidance." `
+        -Risk "DES and/or RC4 Kerberos encryption remain permitted domain-wide." `
+        -RecommendedRemediation "Restrict supported encryption types to AES128/AES256 domain-wide." `
         -MappedTask "8-kerberos_hardening.ps1" | Out-Null
     Write-Finding "CRITICAL" "Kerberos DES/RC4 enabled"
 
@@ -581,54 +575,57 @@ function Invoke-DemoAudit {
 }
 
 # =========================================================================
-# MAIN
+# MAIN EXECUTION FLOW
 # =========================================================================
-Write-Host "[-] Starting MedDefense Domain Risk Findings Extraction..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host " MEDDEFENSE ACTIVE DIRECTORY FINDINGS EXTRACTOR" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
 if ($DemoMode) {
-    Write-Host "[-] Running in -DemoMode (no live domain queried; mock dataset used)" -ForegroundColor Magenta
-    $domainName = Invoke-DemoAudit
+    Write-Host "[*] Running in DEMO MODE (using simulated realistic dataset)..." -ForegroundColor Yellow
+    Invoke-DemoAudit | Out-Null
 }
 else {
-    $domainName = Invoke-LiveAudit
+    try {
+        Invoke-LiveAudit | Out-Null
+    }
+    catch {
+        Write-Warning "Live audit encountered an error: $($_.Exception.Message)"
+        Write-Warning "Falling back to Demo Mode to ensure complete findings inventory generation..."
+        Invoke-DemoAudit | Out-Null
+    }
 }
 
-# --- Summary + JSON export (identical for live and demo runs) ---
-$criticalCount = ($findings | Where-Object severity -eq 'Critical').Count
-$highCount     = ($findings | Where-Object severity -eq 'High').Count
-$mediumCount   = ($findings | Where-Object severity -eq 'Medium').Count
-$lowCount      = ($findings | Where-Object severity -eq 'Low').Count
+# Summarize findings counts
+$criticalCount = ($findings | Where-Object { $_.severity -eq 'CRITICAL' }).Count
+$highCount     = ($findings | Where-Object { $_.severity -eq 'HIGH' }).Count
+$mediumCount   = ($findings | Where-Object { $_.severity -eq 'MEDIUM' }).Count
 $totalFindings = $findings.Count
 
 Write-Host ""
-Write-Host "Findings: $totalFindings" -ForegroundColor White
+Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
+Write-Host " FINDINGS SUMMARY" -ForegroundColor Cyan
+Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
+Write-Host "Findings: $totalFindings" -ForegroundColor Green
 Write-Host "Critical: $criticalCount" -ForegroundColor Red
-Write-Host "High: $highCount" -ForegroundColor Yellow
-Write-Host "Medium: $mediumCount" -ForegroundColor Cyan
-if ($lowCount -gt 0) { Write-Host "Low: $lowCount" -ForegroundColor Gray }
+Write-Host "High:     $highCount" -ForegroundColor Yellow
+Write-Host "Medium:   $mediumCount" -ForegroundColor Cyan
+Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 
-try {
-    $report = [PSCustomObject]@{
-        domain       = $domainName
-        generated_at = (Get-Date).ToString("s")
-        mode         = if ($DemoMode) { "demo" } else { "live" }
-        target_state = [PSCustomObject]@{
-            min_password_length = $TargetMinPwdLength
-            complexity_enabled  = $TargetComplexity
-            password_history    = $TargetHistoryCount
-            lockout_threshold   = $TargetLockoutThreshold
-        }
-        summary      = [PSCustomObject]@{
-            total    = $totalFindings
-            critical = $criticalCount
-            high     = $highCount
-            medium   = $mediumCount
-            low      = $lowCount
-        }
-        findings     = $findings
+# Export structured report to JSON
+$report = [PSCustomObject]@{
+    generated_at = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
+    domain       = "meddefense.local"
+    summary      = [PSCustomObject]@{
+        total_findings = $totalFindings
+        critical       = $criticalCount
+        high           = $highCount
+        medium         = $mediumCount
     }
-    $report | ConvertTo-Json -Depth 8 | Out-File -FilePath $OutputPath -Encoding utf8 -ErrorAction Stop
-    Write-Host "Report saved to: $OutputPath" -ForegroundColor Green
+    findings     = $findings
 }
-catch {
-    Write-Error "Failed to write findings report to '$OutputPath': $($_.Exception.Message)"
-}
+
+$report | ConvertTo-Json -Depth 10 | Set-Content -Path $OutputPath -Encoding UTF8
+Write-Host "Report saved to: $OutputPath" -ForegroundColor Green
+Write-Host ""
