@@ -22,6 +22,8 @@
 [CmdletBinding()]
 param()
 
+Set-StrictMode -Version Latest
+
 $findings = @()
 
 function Add-Finding {
