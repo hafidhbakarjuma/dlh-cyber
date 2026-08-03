@@ -13,7 +13,7 @@
     the Windows domain equivalent of the Lynis baseline scan (2x00 Task 0).
 
 .NOTES
-	Author: Hafidh Juma
+    Author:  Hafidh Juma
     Requires: RSAT ActiveDirectory (+ optionally GroupPolicy) modules, domain-read privileges.
     Every enumeration step is wrapped in error handling so a single inaccessible object
     (missing OU, unreachable DC, missing module) degrades gracefully instead of aborting.
@@ -187,8 +187,13 @@ if ($pwdComplexity -eq "Disabled") {
 
 # 7. Account lockout policy
 try {
-    $lockoutObj       = Get-ADObject -Identity $domain.DistinguishedName -Properties lockoutThreshold -ErrorAction Stop
-    $lockoutThreshold = if ($lockoutObj.lockoutThreshold) { $lockoutObj.lockoutThreshold } else { 0 }
+    # LockoutThreshold is exposed directly on the default domain password policy object
+    $lockoutThreshold = $domainPolicy.LockoutThreshold
+    if (-not $lockoutThreshold) {
+        # Fall back to the raw directory attribute if the policy object didn't have it
+        $lockoutObj       = Get-ADObject -Identity $domain.DistinguishedName -Properties lockoutThreshold -ErrorAction Stop
+        $lockoutThreshold = if ($lockoutObj.lockoutThreshold) { $lockoutObj.lockoutThreshold } else { 0 }
+    }
 }
 catch {
     Write-Warning "Failed to retrieve lockout policy: $($_.Exception.Message)"
