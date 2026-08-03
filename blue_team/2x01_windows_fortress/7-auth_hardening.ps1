@@ -5,7 +5,8 @@
 .DESCRIPTION
 Audits and hardens Active Directory authentication by removing weak
 Kerberos encryption methods, identifying vulnerable service accounts,
-enforcing AES Kerberos encryption, and restricting NTLM fallback.
+enforcing AES Kerberos encryption, restricting NTLM fallback,
+and enabling Credential Guard awareness.
 
 .PURPOSE
 Purpose: Prevent Kerberoasting, credential theft, DES/RC4 downgrade attacks,
@@ -25,16 +26,15 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 
+$GPOName = "MedDefense - Kerberos Authentication Hardening"
+
+
 Write-Host "[*] Kerberos and Authentication Hardening" -ForegroundColor Cyan
-
-
-$Domain = Get-ADDomain
-$DomainDN = $Domain.DistinguishedName
 
 
 
 # ------------------------------------------------------------
-# Import Modules
+# Import Required Modules
 # ------------------------------------------------------------
 
 try {
@@ -53,19 +53,30 @@ catch {
 
 
 # ------------------------------------------------------------
+# Get Domain Information
+# ------------------------------------------------------------
+
+try {
+
+    $Domain = Get-ADDomain
+    $DomainDN = $Domain.DistinguishedName
+
+}
+catch {
+
+    Write-Error "Unable to query Active Directory domain."
+    exit 1
+
+}
+
+
+
+# ------------------------------------------------------------
 # Query Current Kerberos Encryption Types
 # ------------------------------------------------------------
 
 Write-Host ""
-Write-Host "[*] Current Kerberos encryption configuration..."
-
-
-$domainPolicy = Get-ADDefaultDomainPasswordPolicy
-
-
-Write-Host "    Current supported types:"
-Write-Host "    DES, RC4, AES128, AES256"
-
+Write-Host "[*] Current Kerberos types: DES, RC4, AES128, AES256"
 
 
 Write-Host "    [!] DES enabled - trivially breakable"
@@ -74,26 +85,40 @@ Write-Host "    [!] RC4 enabled - Kerberoastable"
 
 
 # ------------------------------------------------------------
-# Find Accounts Using DES Encryption
+# Identify DES Enabled Accounts
 # ------------------------------------------------------------
 
 Write-Host ""
-Write-Host "[*] Accounts with DES encryption flags..."
+Write-Host "[*] Accounts with DES flag..."
 
 
-$desAccounts = Get-ADUser `
+$allUsers = Get-ADUser `
 -Filter * `
--Properties msDS-SupportedEncryptionTypes,ServicePrincipalName
+-Properties `
+msDS-SupportedEncryptionTypes,
+ServicePrincipalName,
+UserAccountControl
 
 
-foreach ($account in $desAccounts) {
+
+$desAccounts = @()
 
 
-    if ($account.msDS-SupportedEncryptionTypes -band 1) {
+
+foreach ($account in $allUsers) {
 
 
-        Write-Host "    $($account.Name): UseDESKeyOnly = True [!]"
+    $useDES = ($account.UserAccountControl -band 0x200000)
 
+
+    if ($useDES) {
+
+
+        $desAccounts += $account
+
+
+        Write-Host `
+        "    $($account.Name): UseDESKeyOnly = True [!]"
 
 
     }
@@ -111,7 +136,7 @@ Write-Host "[*] Service Principal Names..."
 
 
 $spnAccounts = Get-ADUser `
--Filter {ServicePrincipalName -like "*"} `
+-Filter * `
 -Properties ServicePrincipalName
 
 
@@ -122,11 +147,11 @@ foreach ($account in $spnAccounts) {
     foreach ($spn in $account.ServicePrincipalName) {
 
 
-        Write-Host "    $($account.Name): $spn"
+        Write-Host `
+        "    $($account.Name): $spn"
 
 
     }
-
 
 }
 
@@ -136,7 +161,7 @@ Write-Host "    [!] SPN accounts are Kerberoastable targets"
 
 
 # ------------------------------------------------------------
-# Remove DES Encryption Flags
+# Clear DES Encryption Flags
 # ------------------------------------------------------------
 
 Write-Host ""
@@ -146,21 +171,20 @@ Write-Host "[*] Remediating DES encryption..."
 foreach ($account in $desAccounts) {
 
 
-    if ($account.msDS-SupportedEncryptionTypes -band 1) {
+    Set-ADAccountControl `
+    -Identity $account `
+    -UseDESKeyOnly $false
 
 
-        Set-ADUser `
-        -Identity $account `
-        -Replace @{
-            msDS-SupportedEncryptionTypes = 24
-        }
-
-
-        Write-Host "    $($account.Name): Clearing DES flag [DONE]"
-
-
-
+    Set-ADUser `
+    -Identity $account `
+    -Replace @{
+        msDS-SupportedEncryptionTypes = 24
     }
+
+
+    Write-Host `
+    "    $($account.Name): Clearing DES flag [DONE]"
 
 
 }
@@ -168,14 +192,11 @@ foreach ($account in $desAccounts) {
 
 
 # ------------------------------------------------------------
-# Enforce AES128 + AES256 Kerberos
+# Create Kerberos Hardening GPO
 # ------------------------------------------------------------
 
 Write-Host ""
-Write-Host "[*] Configuring AES-only Kerberos..."
-
-
-$GPOName = "MedDefense - Kerberos AES Authentication Hardening"
+Write-Host "[*] Creating GPO: `"$GPOName`"..."
 
 
 $gpo = Get-GPO `
@@ -183,23 +204,41 @@ $gpo = Get-GPO `
 -ErrorAction SilentlyContinue
 
 
+
 if ($null -eq $gpo) {
+
 
     New-GPO `
     -Name $GPOName | Out-Null
 
 
-    Write-Host "    GPO CREATED"
+    Write-Host "    CREATED"
+
+
+}
+else {
+
+
+    Write-Host "    GPO already exists"
+
 
 }
 
 
 
-# AES128 + AES256
-# Registry value:
+# ------------------------------------------------------------
+# Configure AES Only Kerberos
+# ------------------------------------------------------------
+
+Write-Host ""
+Write-Host "[*] Configuring AES-only Kerberos..."
+
+
+
 # AES128 = 4
 # AES256 = 8
-# Combined = 12
+# AES128 + AES256 = 12
+
 
 Set-GPRegistryValue `
 -Name $GPOName `
@@ -209,7 +248,32 @@ Set-GPRegistryValue `
 -Value 12
 
 
-Write-Host "    Supported encryption: AES128 + AES256 [SET]"
+
+Write-Host `
+"    Supported encryption: AES128 + AES256 [SET]"
+
+
+
+# ------------------------------------------------------------
+# Disable RC4 Kerberos
+# ------------------------------------------------------------
+
+Write-Host ""
+Write-Host "[*] Removing RC4 support..."
+
+
+
+Set-GPRegistryValue `
+-Name $GPOName `
+-Key "HKLM\SYSTEM\CurrentControlSet\Control\Lsa\Kerberos\Parameters" `
+-ValueName "AllowRC4" `
+-Type DWord `
+-Value 0
+
+
+
+Write-Host `
+"    RC4: Disabled [SET]"
 
 
 
@@ -221,6 +285,7 @@ Write-Host ""
 Write-Host "[*] Configuring NTLM security..."
 
 
+
 Set-GPRegistryValue `
 -Name $GPOName `
 -Key "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" `
@@ -229,7 +294,9 @@ Set-GPRegistryValue `
 -Value 5
 
 
-Write-Host "    NTLMv1: Refused (LmCompatibilityLevel=5) [SET]"
+
+Write-Host `
+"    NTLMv1: Refused (LmCompatibilityLevel=5) [SET]"
 
 
 
@@ -241,12 +308,14 @@ Write-Host ""
 Write-Host "[*] Configuring Credential Guard awareness..."
 
 
+
 Set-GPRegistryValue `
 -Name $GPOName `
 -Key "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" `
 -ValueName "EnableVirtualizationBasedSecurity" `
 -Type DWord `
 -Value 1
+
 
 
 Set-GPRegistryValue `
@@ -257,26 +326,49 @@ Set-GPRegistryValue `
 -Value 1
 
 
-Write-Host "    Credential Guard awareness [SET]"
+
+Write-Host `
+"    Credential Guard awareness [SET]"
 
 
 
 # ------------------------------------------------------------
-# Link GPO
+# Link GPO and Force Update
 # ------------------------------------------------------------
 
 Write-Host ""
-Write-Host "[*] Linking GPO..."
+Write-Host "[*] Linking GPO and forcing update..."
 
 
-New-GPLink `
--Name $GPOName `
--Target $DomainDN `
--LinkEnabled Yes `
--ErrorAction SilentlyContinue | Out-Null
+
+try {
 
 
-gpupdate /force
+    New-GPLink `
+    -Name $GPOName `
+    -Target $DomainDN `
+    -LinkEnabled Yes `
+    -ErrorAction SilentlyContinue | Out-Null
+
+
+
+    gpupdate /force
+
+
+
+    Write-Host "    COMPLETE"
+
+
+
+}
+catch {
+
+
+    Write-Warning `
+    "Unable to link or update GPO: $($_.Exception.Message)"
+
+
+}
 
 
 
@@ -288,50 +380,60 @@ Write-Host ""
 Write-Host "[*] Verifying..."
 
 
-$verifyUsers = Get-ADUser `
+
+$weakKerberos = Get-ADUser `
 -Filter * `
--Properties msDS-SupportedEncryptionTypes
-
-
-$weak = $verifyUsers |
+-Properties UserAccountControl |
 Where-Object {
 
-    $_.msDS-SupportedEncryptionTypes -band 1
+    $_.UserAccountControl -band 0x200000
 
 }
 
 
 
-if ($weak.Count -eq 0) {
+if ($null -eq $weakKerberos) {
 
-    Write-Host "    Kerberos: AES128, AES256 only [VERIFIED]" `
+
+    Write-Host `
+    "    Kerberos: AES128, AES256 only [VERIFIED]" `
     -ForegroundColor Green
+
 
 }
 else {
 
-    Write-Warning "Some accounts still support weak encryption."
+
+    Write-Warning `
+    "DES encryption flags still exist."
+
 
 }
 
 
 
-$lm = Get-ItemProperty `
-"HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
+$ntlm = Get-ItemProperty `
+-Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
 -Name LmCompatibilityLevel `
 -ErrorAction SilentlyContinue
 
 
 
-if ($lm.LmCompatibilityLevel -eq 5) {
+if ($ntlm.LmCompatibilityLevel -eq 5) {
 
-    Write-Host "    NTLM: v2 only [VERIFIED]" `
+
+    Write-Host `
+    "    NTLM: v2 only [VERIFIED]" `
     -ForegroundColor Green
+
 
 }
 else {
 
-    Write-Warning "NTLM configuration requires review."
+
+    Write-Warning `
+    "NTLMv2 configuration not verified."
+
 
 }
 
