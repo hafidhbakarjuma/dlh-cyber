@@ -5,6 +5,8 @@
     Maps the entire MedDefense Active Directory environment from a security perspective,
     capturing domain info, users, groups, service accounts, GPOs, password/lockout policies,
     Kerberos settings, privileged accounts, and outputs a structured security baseline report.
+.PURPOSE
+    Establish a security baseline and map the Active Directory environment.
 #>
 
 # Ensure Active Directory module is available
