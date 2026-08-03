@@ -90,17 +90,17 @@ $PasswordPolicyPath =
 
 
 # Maximum password age
-# MaxPasswordAge = 0 (password never expires)
+# MaxPasswordAge =14 (password never expires)
 
 Set-GPRegistryValue `
 -Name $GPOName `
 -Key "HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters" `
 -ValueName "MaximumPasswordAge" `
 -Type DWord `
--Value 0
+-Value 14
 
 # MaxPasswordAge required by validation
-Write-Host "    MaxPasswordAge: 0             [SET]"
+Write-Host "    MaxPasswordAge: 14             [SET]"
 
 Write-Host "    Complexity: Enabled           [SET]"
 
