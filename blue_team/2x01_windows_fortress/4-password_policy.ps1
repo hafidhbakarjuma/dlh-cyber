@@ -174,15 +174,17 @@ Write-Host "    Duration: 15 minutes          [SET]"
 
 
 
+# Lockout reset counter
+# LockoutObservationWindow = 15 minutes
+
 Set-GPRegistryValue `
-    -Name $GPOName `
-    -Key "HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters" `
-    -ValueName "ResetLockoutCounter" `
-    -Type DWord `
-    -Value 15
+-Name $GPOName `
+-Key "HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters" `
+-ValueName "LockoutObservationWindow" `
+-Type DWord `
+-Value 15
 
-
-Write-Host "    Reset Counter: 15 minutes     [SET]"
+Write-Host " Reset Counter: 15 minutes [SET]"
 
 
 
