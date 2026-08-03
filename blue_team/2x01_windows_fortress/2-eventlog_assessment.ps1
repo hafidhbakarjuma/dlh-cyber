@@ -3,76 +3,182 @@
     2-eventlog_assessment.ps1 - Windows Event Log Assessment Script for MedDefense
 
 .DESCRIPTION
-    Assesses the current event logging capability by auditing policy settings via auditpol
-    and querying the local Security event log to see which critical Event IDs have actually 
-    been generated in the past 24 hours.
+    Assesses the current event logging capability by auditing the current
+    Windows audit policy and determining whether critical Security Event IDs
+    have been generated within the last 24 hours.
 
 .PURPOSE
-    Purpose: Quantify the gap between current domain visibility and the required event logging baseline.
+    Quantify the gap between current domain visibility and the required
+    event logging baseline.
+
+.AUTHOR
+    Hafidh Juma
+
+.DATE
+    2026-08-03
 #>
 
 [CmdletBinding()]
 param()
 
 Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Continue'
+$ErrorActionPreference = 'Stop'
 
 Write-Host "[-] Assessing Windows Event Log and Audit Policy Configuration..." -ForegroundColor Cyan
 
-# Define critical Event IDs and their corresponding audit subcategories & descriptions
+# Critical Event IDs
 $criticalEvents = @(
-    [PSCustomObject]@{ EventID = 4624; Description = "Successful Logon"; Subcategory = "Logon"; Category = "Logon/Logoff" },
-    [PSCustomObject]@{ EventID = 4625; Description = "Failed Logon"; Subcategory = "Logon"; Category = "Logon/Logoff" },
-    [PSCustomObject]@{ EventID = 4648; Description = "Explicit Credentials"; Subcategory = "Logon"; Category = "Logon/Logoff" },
-    [PSCustomObject]@{ EventID = 4688; Description = "Process Creation"; Subcategory = "Process Creation"; Category = "Detailed Tracking" },
-    [PSCustomObject]@{ EventID = 4720; Description = "Account Created"; Subcategory = "User Account Management"; Category = "Account Management" },
-    [PSCustomObject]@{ EventID = 4726; Description = "Account Deleted"; Subcategory = "User Account Management"; Category = "Account Management" },
-    [PSCustomObject]@{ EventID = 4732; Description = "Member Added to Group"; Subcategory = "Security Group Management"; Category = "Account Management" },
-    [PSCustomObject]@{ EventID = 4672; Description = "Special Logon"; Subcategory = "Special Logon"; Category = "Logon/Logoff" },
-    [PSCustomObject]@{ EventID = 1102; Description = "Audit Log Cleared"; Subcategory = "Audit Log"; Category = "System" }
+    [PSCustomObject]@{
+        EventID            = 4624
+        Description        = "Successful Logon"
+        AuditPolicy        = "Logon"
+        AuditSubcategory   = "Logon"
+    }
+
+    [PSCustomObject]@{
+        EventID            = 4625
+        Description        = "Failed Logon"
+        AuditPolicy        = "Logon"
+        AuditSubcategory   = "Logon"
+    }
+
+    [PSCustomObject]@{
+        EventID            = 4648
+        Description        = "Explicit Credentials"
+        AuditPolicy        = "Logon"
+        AuditSubcategory   = "Logon"
+    }
+
+    [PSCustomObject]@{
+        EventID            = 4688
+        Description        = "Process Creation"
+        AuditPolicy        = "Process Creation"
+        AuditSubcategory   = "Process Tracking"
+    }
+
+    [PSCustomObject]@{
+        EventID            = 4720
+        Description        = "Account Created"
+        AuditPolicy        = "User Account Management"
+        AuditSubcategory   = "Account Management"
+    }
+
+    [PSCustomObject]@{
+        EventID            = 4726
+        Description        = "Account Deleted"
+        AuditPolicy        = "User Account Management"
+        AuditSubcategory   = "Account Management"
+    }
+
+    [PSCustomObject]@{
+        EventID            = 4732
+        Description        = "Member Added to Group"
+        AuditPolicy        = "Security Group Management"
+        AuditSubcategory   = "Account Management"
+    }
+
+    [PSCustomObject]@{
+        EventID            = 4672
+        Description        = "Special Logon"
+        AuditPolicy        = "Special Logon"
+        AuditSubcategory   = "Special Logon"
+    }
+
+    [PSCustomObject]@{
+        EventID            = 1102
+        Description        = "Audit Log Cleared"
+        AuditPolicy        = "Audit Log"
+        AuditSubcategory   = "System Integrity"
+    }
 )
 
-# 1. Fetch current audit policy configuration using auditpol
-$auditPolOutput = & auditpol.exe /get /category:* 2>&1
-
-# 2. Check recent event generation in the Security log (last 24 hours)
-$cutoffTime = (Get-Date).AddHours(-24)
-$recentEvents = @()
+# --------------------------------------------------------------------
+# Get current audit policy
+# --------------------------------------------------------------------
 try {
-    $recentEvents = Get-WinEvent -FilterHashtable @{ LogName = 'Security'; StartTime = $cutoffTime } -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id
-} 
+    $auditPolOutput = & auditpol.exe /get /category:* 2>&1
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "auditpol.exe returned exit code $LASTEXITCODE"
+    }
+}
 catch {
-    Write-Verbose "Unable to query Security event log: $($_.Exception.Message)"
+    Write-Error "Failed to retrieve audit policy: $($_.Exception.Message)"
+    exit 1
 }
 
-# 3. Evaluate Status for each critical Event ID
+# --------------------------------------------------------------------
+# Query Security log (last 24 hours)
+# --------------------------------------------------------------------
+$cutoffTime = (Get-Date).AddHours(-24)
+$recentEvents = @()
+
+try {
+    $recentEvents = Get-WinEvent `
+        -FilterHashtable @{
+            LogName   = "Security"
+            StartTime = $cutoffTime
+        } `
+        -ErrorAction Stop |
+        Select-Object -ExpandProperty Id
+}
+catch {
+    Write-Warning "Unable to query Security event log: $($_.Exception.Message)"
+}
+
+# --------------------------------------------------------------------
+# Evaluate each Event ID
+# --------------------------------------------------------------------
 $results = foreach ($event in $criticalEvents) {
-    # Check if subcategory is enabled in auditpol output (looking for Success and/or Failure)
-    $subCategoryLine = $auditPolOutput | Where-Object { $_ -match [regex]::Escape($event.Subcategory) }
+
     $isConfigured = $false
-    if ($subCategoryLine) {
-        if ($subCategoryLine -match 'Success' -or $subCategoryLine -match 'Failure' -or $subCategoryLine -match 'Success and Failure') {
-            if ($subCategoryLine -notmatch 'No Auditing') {
+
+    $policyLine = $auditPolOutput | Where-Object {
+        $_ -match [regex]::Escape($event.AuditPolicy)
+    }
+
+    if ($policyLine) {
+
+        if (
+            $policyLine -match "Success and Failure" -or
+            $policyLine -match "Success" -or
+            $policyLine -match "Failure"
+        ) {
+
+            if ($policyLine -notmatch "No Auditing") {
                 $isConfigured = $true
             }
         }
     }
 
-    # Also verify if the event actually generated recently
     $hasGenerated = $recentEvents -contains $event.EventID
 
-    # Determine status string matching expected output format
-    $status = if ($isConfigured -or $hasGenerated) { "[GENERATING]" } else { "[NOT CONFIGURED]" }
+    if ($isConfigured -or $hasGenerated) {
+        $status = "[GENERATING]"
+    }
+    else {
+        $status = "[NOT CONFIGURED]"
+    }
 
     [PSCustomObject]@{
-        EventID           = $event.EventID
-        Description       = $event.Description
-        AuditSubcategory  = $event.Subcategory
-        Status            = $status
+        EventID          = $event.EventID
+        Description      = $event.Description
+        AuditSubcategory = $event.AuditSubcategory
+        Status           = $status
     }
 }
 
-# Print formatted table output matching expected layout
+# --------------------------------------------------------------------
+# Display Results
+# --------------------------------------------------------------------
+
 Write-Host ""
-$results | Format-Table -Property EventID, Description, AuditSubcategory, Status -AutoSize
+
+$results |
+Format-Table `
+    EventID,
+    Description,
+    @{Label="Audit Subcategory";Expression={$_.AuditSubcategory}},
+    Status -AutoSize
+
 Write-Host ""
