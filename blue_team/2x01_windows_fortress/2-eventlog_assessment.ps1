@@ -11,7 +11,7 @@
     Purpose: Quantify the gap between current domain visibility and the required event logging baseline.
 
 .AUTHOR
-   author: Hafidh Juma
+   Author: Hafidh Juma
 
 .DATE
     2026-08-03
