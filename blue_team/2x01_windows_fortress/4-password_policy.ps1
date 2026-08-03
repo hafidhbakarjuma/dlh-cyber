@@ -252,6 +252,31 @@ else {
 
 }
 
+# ------------------------------------------------------------
+# Verify Effective Password and Lockout Policy
+# ------------------------------------------------------------
 
 Write-Host ""
-Write-Host "Password and Lockout Policy deployment completed."
+Write-Host "[*] Verifying effective password and lockout policy..." -ForegroundColor Cyan
+
+try {
+    Import-Module ActiveDirectory -ErrorAction Stop
+
+    $effectivePolicy = Get-ADDefaultDomainPasswordPolicy
+
+    Write-Host ""
+    Write-Host "Effective Domain Password Policy:" -ForegroundColor Green
+    Write-Host "    Minimum Password Length: $($effectivePolicy.MinPasswordLength)"
+    Write-Host "    Password History Count: $($effectivePolicy.PasswordHistoryCount)"
+    Write-Host "    Maximum Password Age: $($effectivePolicy.MaxPasswordAge)"
+    Write-Host "    Minimum Password Age: $($effectivePolicy.MinPasswordAge)"
+    Write-Host "    Complexity Enabled: $($effectivePolicy.ComplexityEnabled)"
+    Write-Host ""
+    Write-Host "Account Lockout Policy:" -ForegroundColor Green
+    Write-Host "    Lockout Threshold: $($effectivePolicy.LockoutThreshold)"
+    Write-Host "    Lockout Duration: $($effectivePolicy.LockoutDuration)"
+    Write-Host "    Lockout Observation Window: $($effectivePolicy.LockoutObservationWindow)"
+}
+catch {
+    Write-Warning "Unable to verify effective policy: $($_.Exception.Message)"
+}
