@@ -1,10 +1,12 @@
 <#
 .SYNOPSIS
     2-eventlog_assessment.ps1 - Windows Event Log Assessment Script for MedDefense
+
 .DESCRIPTION
     Assesses the current event logging capability by auditing policy settings via auditpol
     and querying the local Security event log to see which critical Event IDs have actually 
     been generated in the past 24 hours.
+
 .PURPOSE
     Quantify the gap between current domain visibility and the required event logging baseline.
 #>
