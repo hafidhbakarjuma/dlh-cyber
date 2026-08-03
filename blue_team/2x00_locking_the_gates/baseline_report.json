@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-08-02T09:59:05Z",
+  "system_identification": {
+    "hostname": "kali",
+    "os_version": "Kali GNU/Linux Rolling",
+    "kernel_version": "6.18.12+kali-amd64",
+    "uptime": "up 1 hour, 54 minutes"
+  },
+  "metrics": {
+    "running_services": 20,
+    "open_ports": 2,
+    "suid_binaries": 12,
+    "sgid_binaries": 4,
+    "world_writable_files": 0
+  },
+  "security_checks": {
+    "sysctl_parameters": "kernel.randomize_va_space = 2;net.ipv4.ip_forward = 0;net.ipv4.ip_forward_update_priority = 1;net.ipv4.ip_forward_use_pmtu = 0;net.ipv4.tcp_syncookies = 1;",
+    "ssh_configuration": "permitrootlogin no;passwordauthentication no;",
+    "sudo_group_members": "sudo:x:27:hafi"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "system_identity": {
+    "hostname": "kali",
+    "os": "Kali GNU/Linux Rolling",
+    "generation_timestamp": "2026-07-31T20:57:28Z"
+  },
+  "metrics": {
+    "controls_selected": 15,
+    "controls_remediated": 13,
+    "controls_verified": 13,
+    "controls_unresolved": 2,
+    "deviations_documented": 2,
+    "compliance_percentage": "86.7%",
+    "residual_findings_count": 22
+  },
+  "deviations": [
+    {
+      "control_id": "CIS-2.1.1",
+      "reason": "Legacy billing integration requires specific local socket availability incompatible with total daemon purge.",
+      "risk_accepted": "Low exposure on isolated internal VLAN.",
+      "compensating_control": "UFW inbound source subnet restriction and AppArmor isolation.",
+      "owner": "James Chen"
+    },
+    {
+      "control_id": "CIS-5.2.3",
+      "reason": "Emergency maintenance account requires password authentication fallback for physical console access.",
+      "risk_accepted": "Medium risk mitigated by strict account lockout limits.",
+      "compensating_control": "pam_faillock locking active after 5 failed tries with 15-minute timeout.",
+      "owner": "Sarah Park"
+    }
+  ],
+  "evidence_files_used": [
+    "cis_profile.json",
+    "gap_analysis.json",
+    "remediation_queue.json",
+    "audit_validation.json",
+    "validation_results.json",
+    "hardening_improvement.json"
+  ],
+  "report_status": "AUDITOR_READY"
+}

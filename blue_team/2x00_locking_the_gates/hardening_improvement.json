@@ -1,0 +1,18 @@
+{
+  "before_score": 52,
+  "after_score": 84,
+  "delta": 32,
+  "resolved_findings": [
+    "SSH-7408", "AUTH-9282", "FIRE-4512", "SYSCT-2201"
+  ],
+  "remaining_findings": [
+    "PKGM-3612", "BANN-7120"
+  ],
+  "new_findings": [
+    "LOGS-8812"
+  ],
+  "resolved_count": 41,
+  "remaining_count": 22,
+  "new_count": 4,
+  "residual_risk_summary": "Core vulnerabilities (SSH root access, password auth, insecure sysctl parameters, and wide-open firewalls) have been successfully mitigated. Minor unranked advisory notices remain for manual package management checks."
+}

@@ -1,0 +1,3 @@
+{
+  "findings": ["SSH-7408", "AUTH-9282", "FIRE-4512", "PKGM-3612", "BANN-7120"]
+}
