@@ -8,8 +8,7 @@
     have been generated within the last 24 hours.
 
 .PURPOSE
-    Quantify the gap between current domain visibility and the required
-    event logging baseline.
+    Purpose: Quantify the gap between current domain visibility and the required event logging baseline.
 
 .AUTHOR
     Hafidh Juma
