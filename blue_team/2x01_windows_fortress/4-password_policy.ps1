@@ -104,13 +104,13 @@ Write-Host "    Complexity: Enabled           [SET]"
 
 
 # Password history
-Set-GPRegistryValue `
-    -Name $GPOName `
-    -Key "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" `
-    -ValueName "PasswordHistorySize" `
-    -Type DWord `
-    -Value 24
 
+Set-GPRegistryValue `
+-Name $GPOName `
+-Key "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" `
+-ValueName "PasswordHistoryCount" `
+-Type DWord `
+-Value 24
 
 Write-Host "    History: 24                   [SET]"
 
