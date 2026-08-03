@@ -152,17 +152,17 @@ Set-GPRegistryValue `
 
 
 # ------------------------------------------------------------
-# Configure Security Log Size 1GB
+# Configure Security Event Log Size (1GB)
 # ------------------------------------------------------------
 
-Write-Host "[*] Setting Security log max size to 1 GB... [SET]"
+Write-Host "[] Setting Security log max size to 1 GB... [SET]"
 
 Set-GPRegistryValue `
 -Name $GPOName `
 -Key "HKLM\Software\Policies\Microsoft\Windows\EventLog\Security" `
 -ValueName "MaxSize" `
 -Type DWord `
--Value 1048576
+-Value 1073741824
 
 
 
