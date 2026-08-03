@@ -122,8 +122,10 @@ Write-Host "    Process Creation: Success [SET]"
 # Enable Command Line Logging for Event ID 4688
 # ------------------------------------------------------------
 
+# CommandLine logging enables full command line visibility in Event ID 4688
+
 Write-Host ""
-Write-Host "[*] Enabling command-line in process creation events... [SET]"
+Write-Host "[*] Enabling CommandLine logging in process creation events... [SET]"
 
 Set-GPRegistryValue `
 -Name $GPOName `
