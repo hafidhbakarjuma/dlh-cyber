@@ -272,7 +272,7 @@ try {
     Write-Host "    Minimum Password Age: $($effectivePolicy.MinPasswordAge)"
     Write-Host "    Complexity Enabled: $($effectivePolicy.ComplexityEnabled)"
     Write-Host ""
-    Write-Host "Account Lockout Policy:" -ForegroundColor Green
+    Write-Host "Account Lockout Policy VERIFIED:" -ForegroundColor Green
     Write-Host "    Lockout Threshold: $($effectivePolicy.LockoutThreshold)"
     Write-Host "    Lockout Duration: $($effectivePolicy.LockoutDuration)"
     Write-Host "    Lockout Observation Window: $($effectivePolicy.LockoutObservationWindow)"
