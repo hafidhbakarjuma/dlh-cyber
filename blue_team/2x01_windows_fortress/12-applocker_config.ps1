@@ -122,136 +122,117 @@ else {
 # Create AppLocker XML Policy
 ############################################################
 
-
 Write-Host ""
 Write-Host "[*] Building AppLocker Policy..."
-
-
 
 $Policy = @"
 <AppLockerPolicy Version="1">
 
 <RuleCollection Type="Exe" EnforcementMode="AuditOnly">
 
-<FilePathRule Id="$(New-Guid)"
+<FilePathRule Id="{11111111-1111-1111-1111-111111111111}"
 Name="Allow Windows System"
-Description=""
+Description="Allow Windows executables"
 UserOrGroupSid="S-1-1-0"
 Action="Allow">
-
 <Conditions>
-
-<FilePathCondition Path="C:\Windows\*"/>
-
+<FilePathCondition Path="C:\Windows\*" />
 </Conditions>
-
 </FilePathRule>
 
 
-<FilePathRule Id="$(New-Guid)"
+<FilePathRule Id="{22222222-2222-2222-2222-222222222222}"
 Name="Allow Program Files"
-Description=""
+Description="Allow trusted applications"
 UserOrGroupSid="S-1-1-0"
 Action="Allow">
-
 <Conditions>
-
-<FilePathCondition Path="C:\Program Files\*"/>
-
+<FilePathCondition Path="C:\Program Files\*" />
 </Conditions>
-
 </FilePathRule>
 
 
-<FilePathRule Id="$(New-Guid)"
+<FilePathRule Id="{33333333-3333-3333-3333-333333333333}"
 Name="Allow Program Files x86"
-Description=""
+Description="Allow trusted x86 applications"
 UserOrGroupSid="S-1-1-0"
 Action="Allow">
-
 <Conditions>
-
-<FilePathCondition Path="C:\Program Files (x86)\*"/>
-
+<FilePathCondition Path="C:\Program Files (x86)\*" />
 </Conditions>
-
 </FilePathRule>
 
 
-
-<FilePathRule Id="$(New-Guid)"
+<FilePathRule Id="{44444444-4444-4444-4444-444444444444}"
 Name="Allow DicomViewer Medical Application"
 Description="Approved MedDefense imaging software"
 UserOrGroupSid="S-1-1-0"
 Action="Allow">
-
 <Conditions>
-
-<FilePathCondition Path="C:\Program Files\DicomViewer\DicomViewer.exe"/>
-
+<FilePathCondition Path="C:\Program Files\DicomViewer\DicomViewer.exe" />
 </Conditions>
-
 </FilePathRule>
 
 
 </RuleCollection>
-
-
 
 
 <RuleCollection Type="Script" EnforcementMode="AuditOnly">
 
-
-<FilePathRule Id="$(New-Guid)"
+<FilePathRule Id="{55555555-5555-5555-5555-555555555555}"
 Name="Allow Windows Scripts"
-Description=""
+Description="Allow system scripts"
 UserOrGroupSid="S-1-1-0"
 Action="Allow">
-
 <Conditions>
-
-<FilePathCondition Path="C:\Windows\*"/>
-
+<FilePathCondition Path="C:\Windows\*" />
 </Conditions>
-
 </FilePathRule>
 
 
-
-<FilePathRule Id="$(New-Guid)"
-Name="Allow Admin Scripts"
-Description=""
+<FilePathRule Id="{66666666-6666-6666-6666-666666666666}"
+Name="Allow MedDefense Admin Scripts"
+Description="Approved administration scripts"
 UserOrGroupSid="S-1-1-0"
 Action="Allow">
-
 <Conditions>
-
-<FilePathCondition Path="C:\MedDefense_Lab\Scripts\*"/>
-
+<FilePathCondition Path="C:\MedDefense_Lab\Scripts\*" />
 </Conditions>
+</FilePathRule>
 
+
+<!-- Script extensions controlled -->
+<!-- .ps1 .bat .cmd .vbs -->
+
+
+<FilePathRule Id="{77777777-7777-7777-7777-777777777777}"
+Name="Deny Unauthorized Scripts"
+Description="Block scripts from unknown locations"
+UserOrGroupSid="S-1-1-0"
+Action="Deny">
+<Conditions>
+<FilePathCondition Path="*\.ps1" />
+<FilePathCondition Path="*\.bat" />
+<FilePathCondition Path="*\.cmd" />
+<FilePathCondition Path="*\.vbs" />
+</Conditions>
 </FilePathRule>
 
 
 </RuleCollection>
-
 
 </AppLockerPolicy>
 "@
 
 
-
-$Policy |
-Out-File `
+$Policy | Out-File `
 -FilePath $ExportPath `
 -Encoding UTF8
 
 
-
-Write-Host "    Executable Rules [SET]"
-Write-Host "    Script Rules [SET]"
-Write-Host "    Mode: AUDIT ONLY [SET]"
-
+Write-Host " Executable Rules [SET]"
+Write-Host " Script Rules (.ps1 .bat .cmd .vbs) [SET]"
+Write-Host " Mode: AUDIT ONLY [SET]"
 
 
 ############################################################
@@ -314,16 +295,22 @@ Write-Host `
 
 
 ############################################################
-# Export
+# Verify Export
 ############################################################
 
-
 Write-Host ""
+Write-Host "[*] Verifying exported AppLocker policy..."
 
-Write-Host `
-"Policy exported to: $ExportPath"
+if ((Test-Path $ExportPath) -and ((Get-Item $ExportPath).Length -gt 0)) {
 
+    Write-Host " Policy exported: applocker_policy.xml [VERIFIED]" `
+    -ForegroundColor Green
 
+}
+else {
 
-Write-Host ""
-Write-Host "[+] AppLocker configuration completed."
+    Write-Host " Policy export failed [FAILED]" `
+    -ForegroundColor Red
+
+    exit 1
+}
