@@ -7,7 +7,7 @@ Exports the final hardened Windows domain security state into a
 machine-readable JSON evidence package.
 
 .PURPOSE
-Provides validation evidence for GPOs, logging, Sysmon, firewall,
+Purpose: Provides validation evidence for GPOs, logging, Sysmon, firewall,
 AppLocker, RDP, authentication protocols and service accounts.
 
 .AUTHOR
