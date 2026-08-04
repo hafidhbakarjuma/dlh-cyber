@@ -510,6 +510,115 @@ Write-Host "Custom rules: 5 added | Tests: 5/5 PASS" `
 
 
 ############################################################
+# Trigger and Verify Detection Rules
+############################################################
+
+Write-Host ""
+Write-Host "[*] Trigger-and-Verify..." -ForegroundColor Cyan
+
+$SysmonLog = "Microsoft-Windows-Sysmon/Operational"
+
+function Test-SysmonEvent {
+    param(
+        [string]$RuleName,
+        [string]$Filter
+    )
+
+    Write-Host " Testing $RuleName..."
+
+    Start-Sleep -Seconds 5
+
+    $event = Get-WinEvent `
+        -LogName $SysmonLog `
+        -MaxEvents 100 `
+        -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Message -match $Filter
+        }
+
+    if ($event) {
+        Write-Host "    $RuleName [PASS]" -ForegroundColor Green
+    }
+    else {
+        Write-Host "    $RuleName [FAIL]" -ForegroundColor Red
+    }
+}
+
+############################################################
+# Safe Triggers
+############################################################
+
+# Rule 1 - Rclone
+Write-Host "[*] Trigger Rule 1: Rclone detection"
+Start-Process "cmd.exe" "/c echo rclone.exe test"
+Test-SysmonEvent `
+    -RuleName "Rclone detection" `
+    -Filter "rclone.exe"
+
+
+# Rule 2 - PsExec
+Write-Host "[*] Trigger Rule 2: PsExec service registry detection"
+New-ItemProperty `
+    -Path "HKLM:\SYSTEM\CurrentControlSet\Services" `
+    -Name "MedDefenseTest" `
+    -Value "PsExec Simulation" `
+    -PropertyType String `
+    -Force `
+    -ErrorAction SilentlyContinue
+
+Test-SysmonEvent `
+    -RuleName "PsExec registry key" `
+    -Filter "Services"
+
+
+# Rule 3 - Encoded PowerShell
+Write-Host "[*] Trigger Rule 3: Encoded PowerShell"
+
+$encoded = [Convert]::ToBase64String(
+[Text.Encoding]::Unicode.GetBytes(
+"Write-Host 'Test'"
+))
+
+powershell.exe -EncodedCommand $encoded
+
+Test-SysmonEvent `
+    -RuleName "Encoded PowerShell" `
+    -Filter "-enc"
+
+
+# Rule 4 - VSSAdmin
+Write-Host "[*] Trigger Rule 4: vssadmin detection"
+
+Start-Process `
+-FilePath "cmd.exe" `
+-ArgumentList "/c echo vssadmin.exe delete shadows test"
+
+Test-SysmonEvent `
+    -RuleName "Shadow deletion" `
+    -Filter "vssadmin.exe"
+
+
+# Rule 5 - Scheduled Task
+Write-Host "[*] Trigger Rule 5: Scheduled task detection"
+
+schtasks.exe `
+/create `
+/tn "MedDefense-Test" `
+/tr "cmd.exe /c echo test" `
+/sc once `
+/st 23:59 `
+/f
+
+Test-SysmonEvent `
+    -RuleName "Scheduled task persistence" `
+    -Filter "schtasks"
+
+
+Write-Host ""
+Write-Host "Custom rules verification complete"
+
+
+############################################################
 # Trigger Tests
 ############################################################
 
