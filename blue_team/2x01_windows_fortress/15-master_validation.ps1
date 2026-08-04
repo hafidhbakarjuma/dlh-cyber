@@ -20,10 +20,8 @@ Date: 2026-08-04
 param()
 
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "SilentlyContinue"
-
+$ErrorActionPreference = "Stop"
 $CriticalFailures = 0
-
 
 function Test-Result {
 
@@ -97,7 +95,45 @@ Test-Result "Password Policy Query" $false
 
 }
 
+try
+{
+    $Sysmon =
+    Get-Service `
+    -Name Sysmon64
 
+    Test-Result `
+    "Service: Running" `
+    ($Sysmon.Status -eq "Running")
+}
+catch
+{
+    Test-Result `
+    "Sysmon Service Check" `
+    $false
+}
+
+try
+{
+    $Rules =
+    Get-Content `
+    "C:\Sysmon\sysmonconfig.xml"
+
+    Test-Result `
+    "Custom rules: 5 present" `
+    (
+        $Rules -match "rclone" -and
+        $Rules -match "psexec" -and
+        $Rules -match "-enc" -and
+        $Rules -match "vssadmin" -and
+        $Rules -match "schtasks"
+    )
+}
+catch
+{
+    Test-Result `
+    "Sysmon configuration validation" `
+    $false
+}
 
 ############################################################
 # Audit Policy
