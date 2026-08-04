@@ -202,22 +202,36 @@ $EventFiltering.AppendChild($encoded)
 # Rule 4 - VSSAdmin Shadow Delete
 ############################################################
 
-
 Write-Host "    Rule 4: Shadow deletion (vssadmin)      [ADDED]"
-
-
 
 $vss =
 $xml.CreateElement("RuleGroup")
 
 $vss.SetAttribute(
 "name",
-"MedDefense - Ransomware Shadow Delete"
+"MedDefense - VSSAdmin Shadow Delete Detection"
 )
 
 
 $vssprocess =
 $xml.CreateElement("ProcessCreate")
+
+
+$image =
+$xml.CreateElement("Image")
+
+
+$imageCondition =
+$xml.CreateElement("contains")
+
+
+$imageCondition.InnerText =
+"vssadmin.exe"
+
+
+$image.AppendChild($imageCondition)
+
+$vssprocess.AppendChild($image)
 
 
 $cmd =
@@ -227,17 +241,20 @@ $xml.CreateElement("CommandLine")
 $delete =
 $xml.CreateElement("contains")
 
+
 $delete.InnerText =
-"vssadmin delete shadows"
+"delete shadows"
 
 
 $cmd.AppendChild($delete)
 
 $vssprocess.AppendChild($cmd)
 
+
 $vss.AppendChild($vssprocess)
 
-$EventFiltering.AppendChild($vss)
+
+$EventFiltering.AppendChild($vss))
 
 
 
