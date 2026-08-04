@@ -81,15 +81,12 @@ else {
 }
 
 
-
 ############################################################
-# Start Application Identity Service
+# Start and Verify Application Identity Service
 ############################################################
-
 
 Write-Host ""
 Write-Host "[*] Starting AppIDSvc..."
-
 
 Set-Service `
 -Name AppIDSvc `
@@ -100,8 +97,25 @@ Start-Service `
 -Name AppIDSvc
 
 
-Write-Host "    Running [OK]"
+############################################################
+# Verify AppIDSvc Status
+############################################################
 
+$appID = Get-Service `
+-Name AppIDSvc
+
+
+if ($appID.Status -eq "Running") {
+
+    Write-Host "    AppIDSvc: Running [OK]" -ForegroundColor Green
+
+}
+else {
+
+    Write-Host "    AppIDSvc: NOT Running [FAILED]" -ForegroundColor Red
+    exit 1
+
+}
 
 
 ############################################################
