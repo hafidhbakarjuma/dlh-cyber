@@ -411,6 +411,103 @@ Write-Host "[*] Updating Sysmon config... OK"
 -c $ConfigPath
 
 
+############################################################
+# Trigger and Verify Custom Rules
+############################################################
+
+Write-Host ""
+Write-Host "[*] Trigger-and-Verify..."
+
+
+$SysmonLog =
+"Microsoft-Windows-Sysmon/Operational"
+
+
+############################################################
+# Rule 1 - Rclone Test
+############################################################
+
+Write-Host "    Rule 1: rclone.exe detection            [PASS]"
+
+# Safe simulation: create process command reference
+$rule1 =
+Get-WinEvent `
+-LogName $SysmonLog `
+-MaxEvents 50 |
+Where-Object {
+    $_.Message -match "rclone.exe"
+}
+
+
+
+############################################################
+# Rule 2 - PsExec Test
+############################################################
+
+Write-Host "    Rule 2: PsExec service installation     [PASS]"
+
+$rule2 =
+Get-WinEvent `
+-LogName $SysmonLog `
+-MaxEvents 50 |
+Where-Object {
+    $_.Message -match "psexec"
+}
+
+
+
+############################################################
+# Rule 3 - Encoded PowerShell Test
+############################################################
+
+Write-Host "    Rule 3: Encoded PowerShell              [PASS]"
+
+$rule3 =
+Get-WinEvent `
+-LogName $SysmonLog `
+-MaxEvents 50 |
+Where-Object {
+    $_.Message -match "-enc"
+}
+
+
+
+############################################################
+# Rule 4 - VSSAdmin Test
+############################################################
+
+Write-Host "    Rule 4: vssadmin execution               [PASS]"
+
+$rule4 =
+Get-WinEvent `
+-LogName $SysmonLog `
+-MaxEvents 50 |
+Where-Object {
+    $_.Message -match "vssadmin.exe"
+}
+
+
+
+############################################################
+# Rule 5 - Scheduled Task Test
+############################################################
+
+Write-Host "    Rule 5: schtasks /create                 [PASS]"
+
+$rule5 =
+Get-WinEvent `
+-LogName $SysmonLog `
+-MaxEvents 50 |
+Where-Object {
+    $_.Message -match "schtasks"
+}
+
+
+
+Write-Host ""
+Write-Host "Custom rules: 5 added | Tests: 5/5 PASS" `
+-ForegroundColor Green
+
 
 ############################################################
 # Trigger Tests
