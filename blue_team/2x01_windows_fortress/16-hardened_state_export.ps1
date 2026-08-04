@@ -108,80 +108,34 @@ Write-Host "WARN"
 
 
 ############################################################
-# Audit Policy and Windows Telemetry
+# Audit Policy
 ############################################################
 
-Write-Host "[] Exporting audit policy... " -NoNewline
+Write-Host "[*] Exporting audit policy... " -NoNewline
 
 try {
 
 $audit = auditpol /get /category:*
 
-
 $State.audit_policy=@{
 
 raw_output=$audit
-
 
 required_subcategories=@(
 "Process Creation",
 "Logon",
 "Account Lockout",
-"PowerShell",
-"Privilege Use",
-"Object Access"
+"PowerShell"
 )
-
-
-# Windows Security Event IDs required for detection
-
-required_event_ids=@{
-
-Authentication=@(
-4624,
-4625,
-4648
-)
-
-Privilege=@(
-4672
-)
-
-Process=@(
-4688
-)
-
-Account_Management=@(
-4720,
-4726,
-4732
-)
-
-Audit_Control=@(
-1102
-)
-
-PowerShell=@(
-4103,
-4104
-)
-
-}
-
 
 }
 
 Write-Host "OK"
 
 }
-
 catch {
 
-$State.audit_policy=@{
-
-status="not_found"
-
-}
+$State.audit_policy="not_found"
 
 Write-Host "WARN"
 
@@ -193,67 +147,32 @@ Write-Host "WARN"
 # PowerShell Logging
 ############################################################
 
-Write-Host "[] Exporting PowerShell logging... " -NoNewline
+Write-Host "[*] Exporting PowerShell logging... "
 
-try {
+$State.powershell_logging=@{
 
-$ScriptBlock =
+script_block_logging =
 (Get-ItemProperty `
 "HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" `
 -ErrorAction SilentlyContinue).EnableScriptBlockLogging
 
 
-$ModuleLogging =
+module_logging =
 (Get-ItemProperty `
 "HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ModuleLogging" `
 -ErrorAction SilentlyContinue).EnableModuleLogging
 
 
-$Transcript =
+transcription =
 (Get-ItemProperty `
 "HKLM:\Software\Policies\Microsoft\Windows\PowerShell\Transcription" `
 -ErrorAction SilentlyContinue).EnableTranscripting
 
 
-$State.powershell_logging=@{
-
-"Script Block Logging" =
-if($ScriptBlock -eq 1) {"Enabled"} else {"Disabled"}
-
-
-"Module Logging" =
-if($ModuleLogging -eq 1) {"Enabled"} else {"Disabled"}
-
-
-"Transcription" =
-if($Transcript -eq 1) {"Enabled"} else {"Disabled"}
-
-
-"Required Event IDs"=@(
+event_ids=@(
 4103,
 4104
 )
-
-
-"Detection Coverage"=@(
-"PowerShell Module Logging",
-"PowerShell Script Block Logging",
-"PowerShell Transcription"
-)
-
-}
-
-Write-Host "OK"
-
-}
-
-catch {
-
-$State.powershell_logging=@{
-status="not_found"
-}
-
-Write-Host "WARN"
 
 }
 
