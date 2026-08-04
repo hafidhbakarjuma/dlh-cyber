@@ -131,27 +131,74 @@ $EventFiltering.AppendChild($rclone)
 
 
 ############################################################
-# Rule 2 - PsExec Detection
+# Rule 2 - PsExec Service Installation Detection
 ############################################################
 
-
 Write-Host "    Rule 2: PsExec service installation     [ADDED]"
-
 
 $psexec =
 $xml.CreateElement("RuleGroup")
 
 $psexec.SetAttribute(
-"name",
-"MedDefense - PsExec Detection"
+    "name",
+    "MedDefense - PsExec Service Installation Detection"
 )
 
 
-$service =
-$xml.CreateElement("CreateRemoteThread")
+# Detect PsExec executable execution
+
+$process =
+$xml.CreateElement("ProcessCreate")
 
 
-$psexec.AppendChild($service)
+$image =
+$xml.CreateElement("Image")
+
+
+$imageCondition =
+$xml.CreateElement("contains")
+
+
+$imageCondition.InnerText =
+"psexec.exe"
+
+
+$image.AppendChild($imageCondition)
+
+$process.AppendChild($image)
+
+
+$psexec.AppendChild($process)
+
+
+
+# Detect PsExec service registry creation
+
+$registry =
+$xml.CreateElement("RegistryEvent")
+
+
+$target =
+$xml.CreateElement("TargetObject")
+
+
+$registryCondition =
+$xml.CreateElement("contains")
+
+
+$registryCondition.InnerText =
+"Services"
+
+
+$target.AppendChild($registryCondition)
+
+
+$registry.AppendChild($target)
+
+
+$psexec.AppendChild($registry)
+
+
 
 $EventFiltering.AppendChild($psexec)
 
