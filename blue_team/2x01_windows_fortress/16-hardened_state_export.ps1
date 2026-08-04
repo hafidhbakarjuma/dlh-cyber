@@ -193,32 +193,67 @@ Write-Host "WARN"
 # PowerShell Logging
 ############################################################
 
-Write-Host "[*] Exporting PowerShell logging... "
+Write-Host "[] Exporting PowerShell logging... " -NoNewline
 
-$State.powershell_logging=@{
+try {
 
-script_block_logging =
+$ScriptBlock =
 (Get-ItemProperty `
 "HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" `
 -ErrorAction SilentlyContinue).EnableScriptBlockLogging
 
 
-module_logging =
+$ModuleLogging =
 (Get-ItemProperty `
 "HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ModuleLogging" `
 -ErrorAction SilentlyContinue).EnableModuleLogging
 
 
-transcription =
+$Transcript =
 (Get-ItemProperty `
 "HKLM:\Software\Policies\Microsoft\Windows\PowerShell\Transcription" `
 -ErrorAction SilentlyContinue).EnableTranscripting
 
 
-event_ids=@(
+$State.powershell_logging=@{
+
+"Script Block Logging" =
+if($ScriptBlock -eq 1) {"Enabled"} else {"Disabled"}
+
+
+"Module Logging" =
+if($ModuleLogging -eq 1) {"Enabled"} else {"Disabled"}
+
+
+"Transcription" =
+if($Transcript -eq 1) {"Enabled"} else {"Disabled"}
+
+
+"Required Event IDs"=@(
 4103,
 4104
 )
+
+
+"Detection Coverage"=@(
+"PowerShell Module Logging",
+"PowerShell Script Block Logging",
+"PowerShell Transcription"
+)
+
+}
+
+Write-Host "OK"
+
+}
+
+catch {
+
+$State.powershell_logging=@{
+status="not_found"
+}
+
+Write-Host "WARN"
 
 }
 
