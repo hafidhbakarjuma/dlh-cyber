@@ -97,6 +97,20 @@ Set-GPRegistryValue `
 Write-Host "    [DONE]"
 
 ############################################################
+# Disable SMBv1 Windows Feature
+############################################################
+
+Write-Host "[*] Removing SMBv1 Windows Feature..."
+
+Disable-WindowsOptionalFeature `
+    -Online `
+    -FeatureName SMB1Protocol `
+    -NoRestart `
+    -ErrorAction SilentlyContinue
+
+Write-Host "    SMB1Protocol Feature Disabled [DONE]"
+
+############################################################
 # SMB Signing
 ############################################################
 
