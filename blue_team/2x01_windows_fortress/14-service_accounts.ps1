@@ -411,6 +411,99 @@ if ($Account.LastLogonDate)
 
 }
 
+####################################################
+# Suspicious Logon Detection
+####################################################
+
+if ($Account.LastLogonDate)
+{
+    $LogonTime = $Account.LastLogonDate.ToString("HH:mm")
+
+    Write-Host " Last logon time: $LogonTime"
+
+    # Detect unusual healthcare off-hours activity
+    if (
+        ($Account.LastLogonDate.Hour -ge 0) -and
+        ($Account.LastLogonDate.Hour -lt 5)
+    )
+    {
+        Write-Host `
+        " Last logon: $LogonTime [!!! Suspicious off-hours activity]" `
+        -ForegroundColor Red
+    }
+}
+
+
+####################################################
+# Protect Service Accounts From Delegation Abuse
+####################################################
+
+Write-Host ""
+Write-Host "[*] Marking service accounts as sensitive..."
+
+foreach ($Account in $ServiceAccounts)
+{
+    if (
+    $Account.ServicePrincipalName.Count -gt 0 -or
+    $Account.Name -like "svc*"
+    )
+    {
+
+        Set-ADAccountControl `
+        -Identity $Account `
+        -AccountNotDelegated $true
+
+        Write-Host `
+        " $($Account.Name): Account is sensitive and cannot be delegated [SET]"
+    }
+}
+
+####################################################
+# Remove Excessive Privileges
+####################################################
+
+Write-Host ""
+Write-Host "[*] Removing unauthorized privileged memberships..."
+
+$PrivilegedGroups = @(
+"Domain Admins",
+"Enterprise Admins",
+"Administrators"
+)
+
+foreach ($Account in $ServiceAccounts)
+{
+
+foreach ($Group in $PrivilegedGroups)
+{
+
+$Membership =
+Get-ADGroupMember `
+-Identity $Group `
+-ErrorAction SilentlyContinue |
+Where-Object {
+$_.SamAccountName -eq $Account.SamAccountName
+}
+
+
+if ($Membership)
+{
+
+Remove-ADGroupMember `
+-Identity $Group `
+-Member $Account `
+-Confirm:$false
+
+Write-Host `
+" $($Account.Name): Removed from $Group [DONE]" `
+-ForegroundColor Green
+
+}
+
+}
+
+}
+
 
 ############################################################
 # Verification
