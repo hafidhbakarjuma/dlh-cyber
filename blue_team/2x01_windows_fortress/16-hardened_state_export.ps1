@@ -506,7 +506,7 @@ foreach($Account in $ServiceAccounts)
        "privileged membership" =
         $Account.MemberOf
 
-        interactive_logon_risk =
+        "interactive_logon_risk" =
         "Review required"
 
         last_logon =
