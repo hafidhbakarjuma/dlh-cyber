@@ -12,7 +12,7 @@ rules targeting MedDefense-specific threats:
 - Scheduled task persistence
 
 .PURPOSE
-Improve endpoint detection capability against known attacker
+Purpose: Improve endpoint detection capability against known attacker
 techniques from the Crimson Tide threat model.
 
 .AUTHOR
