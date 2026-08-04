@@ -465,6 +465,7 @@ try {
 
 Import-Module ActiveDirectory -ErrorAction Stop
 
+
 $ServiceAccounts =
 Get-ADUser `
 -Filter {ServicePrincipalName -like "*"} `
@@ -472,7 +473,8 @@ Get-ADUser `
 PasswordLastSet,
 TrustedForDelegation,
 MemberOf,
-LastLogonDate
+LastLogonDate,
+UserAccountControl
 
 
 $State.service_account_posture =
@@ -488,31 +490,74 @@ foreach($Account in $ServiceAccounts)
     }
 
 
+    #
+    # Check privileged group membership
+    #
+    $PrivilegedGroups =
+    $Account.MemberOf |
+    Where-Object {
+        $_ -match "Domain Admins|Enterprise Admins|Administrators|Account Operators"
+    }
+
+
+    #
+    # Check interactive logon risk
+    #
+    $InteractiveLogonRisk =
+    if(
+        $Account.UserAccountControl -band 0x200
+    )
+    {
+        "Interactive logon enabled [!]"
+    }
+    else
+    {
+        "Denied/Restricted"
+    }
+
+
+    #
+    # Export posture
+    #
     @{
         account = $Account.Name
 
-        "password age" = $PasswordAge
+
+        "password age" =
+        $PasswordAge
+
 
         delegation =
         if($Account.TrustedForDelegation)
         {
-            "Unconstrained"
+            "Unconstrained [!]"
         }
         else
         {
             "Restricted"
         }
 
-       "privileged membership" =
-        $Account.MemberOf
 
-        "interactive_logon_risk" =
-        "Review required"
+        "privileged membership" =
+        if($PrivilegedGroups)
+        {
+            $PrivilegedGroups
+        }
+        else
+        {
+            "None"
+        }
+
+
+        "interactive logon risk" =
+        $InteractiveLogonRisk
+
 
         last_logon =
         $Account.LastLogonDate
     }
 }
+
 
 Write-Host "OK"
 
@@ -524,40 +569,6 @@ $State.service_account_posture = @{
 }
 
 Write-Host "WARN"
-
-}
-
-
-
-############################################################
-# Validation Summary
-############################################################
-
-Write-Host "[*] Loading validation summary... "
-
-$Validation =
-Join-Path $PSScriptRoot `
-"validation_summary.json"
-
-
-if(Test-Path $Validation)
-{
-
-$State.validation_summary =
-Get-Content $Validation |
-ConvertFrom-Json
-
-}
-else
-{
-
-$State.validation_summary=@{
-
-status="not_found"
-
-message="Run 15-master_validation.ps1 first"
-
-}
 
 }
 
