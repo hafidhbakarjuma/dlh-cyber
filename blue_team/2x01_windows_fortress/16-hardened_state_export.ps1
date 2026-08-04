@@ -434,25 +434,23 @@ Write-Host "[*] Exporting authentication protocol posture... "
 
 $State.authentication_protocols=@{
 
-DES="Disabled"
+    DES="Disabled"
 
-RC4="Disabled"
+    RC4="Disabled"
 
-AES="Enabled"
+    AES="Enabled"
 
-NTLMv1="Disabled"
+    NTLMv1="Disabled"
 
-SMBv1="Disabled"
+    SMBv1="Disabled"
 
-SMBSigning="Required"
-SMB_Signing = @{
-    ClientRequired = (
+    "SMB signing"=@{
+        client_required =
         (Get-SmbClientConfiguration).RequireSecuritySignature
-    )
-    ServerRequired = (
+
+        server_required =
         (Get-SmbServerConfiguration).RequireSecuritySignature
-    )
-}
+    }
 }
 
 
