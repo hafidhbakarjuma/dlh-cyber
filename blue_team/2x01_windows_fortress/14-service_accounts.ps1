@@ -162,17 +162,16 @@ foreach ($Account in $ServiceAccounts) {
         ####################################################
         # Delegation Check
         ####################################################
-
-
+        
         if ($Account.TrustedForDelegation -eq $true)
         {
-
+        
             Write-Host `
-            "  Delegation: Unconstrained [!]" `
+            "  Delegation: unconstrained delegation enabled [!]" `
             -ForegroundColor Red
-
+        
         }
-
+        
 
 
         ####################################################
@@ -357,6 +356,60 @@ Set-GPRegistryValue `
 Write-Host `
 "Deny interactive logon configured [SET]"
 
+
+####################################################
+# Security Findings
+####################################################
+
+if ($PasswordAge -gt 180)
+{
+    Write-Host `
+    "  Finding: old password detected [!]" `
+    -ForegroundColor Red
+}
+
+
+if ($Account.TrustedForDelegation -eq $true)
+{
+    Write-Host `
+    "  Finding: unconstrained delegation detected [!]" `
+    -ForegroundColor Red
+}
+
+
+foreach ($Group in $Account.MemberOf)
+{
+
+    if (
+    $Group -match
+    "Domain Admins|Enterprise Admins|Administrators"
+    )
+    {
+
+        Write-Host `
+        "  Finding: excessive privileges detected [!]" `
+        -ForegroundColor Red
+
+    }
+
+}
+
+
+if ($Account.LastLogonDate)
+{
+
+    $Hour = $Account.LastLogonDate.Hour
+
+    if ($Hour -ge 0 -and $Hour -le 5)
+    {
+
+        Write-Host `
+        "  Finding: suspicious logon time detected [!!!]" `
+        -ForegroundColor Red
+
+    }
+
+}
 
 
 ############################################################
