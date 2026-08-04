@@ -456,60 +456,74 @@ $State.authentication_protocols=@{
 
 
 ############################################################
-# Service Accounts
+# Service Account Posture
 ############################################################
 
-Write-Host "[*] Exporting service account posture... "
+Write-Host "[] Exporting service account posture... " -NoNewline
 
 try {
 
-$Accounts =
+Import-Module ActiveDirectory -ErrorAction Stop
+
+$ServiceAccounts =
 Get-ADUser `
--Filter * `
+-Filter {ServicePrincipalName -like "*"} `
 -Properties `
 PasswordLastSet,
 TrustedForDelegation,
-MemberOf
+MemberOf,
+LastLogonDate
 
 
-$ServiceData=@()
-
-
-foreach($Account in $Accounts)
+$State.service_account_posture =
+foreach($Account in $ServiceAccounts)
 {
 
-if($Account.Name -like "svc*")
-{
+    $PasswordAge = "Unknown"
 
-$ServiceData += @{
+    if($Account.PasswordLastSet)
+    {
+        $PasswordAge =
+        ((Get-Date) - $Account.PasswordLastSet).Days
+    }
 
-name=$Account.Name
 
-password_age=
-((Get-Date)-$Account.PasswordLastSet).Days
+    @{
+        account = $Account.Name
 
-delegation=
-$Account.TrustedForDelegation
+        "password age" = $PasswordAge
 
-privileged_membership=
-$Account.MemberOf
+        delegation =
+        if($Account.TrustedForDelegation)
+        {
+            "Unconstrained"
+        }
+        else
+        {
+            "Restricted"
+        }
 
-interactive_logon_risk="review"
+        privileged_membership =
+        $Account.MemberOf
 
+        interactive_logon_risk =
+        "Review required"
+
+        last_logon =
+        $Account.LastLogonDate
+    }
 }
 
-}
-
-}
-
-
-$State.service_account_posture=$ServiceData
-
+Write-Host "OK"
 
 }
 catch {
 
-$State.service_account_posture="not_found"
+$State.service_account_posture = @{
+    status="not_found"
+}
+
+Write-Host "WARN"
 
 }
 
