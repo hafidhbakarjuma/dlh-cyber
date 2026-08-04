@@ -422,7 +422,14 @@ NTLMv1="Disabled"
 SMBv1="Disabled"
 
 SMBSigning="Required"
-
+SMB_Signing = @{
+    ClientRequired = (
+        (Get-SmbClientConfiguration).RequireSecuritySignature
+    )
+    ServerRequired = (
+        (Get-SmbServerConfiguration).RequireSecuritySignature
+    )
+}
 }
 
 
