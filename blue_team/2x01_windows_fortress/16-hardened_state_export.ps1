@@ -503,7 +503,7 @@ foreach($Account in $ServiceAccounts)
             "Restricted"
         }
 
-        privileged_membership =
+       "privileged membership" =
         $Account.MemberOf
 
         interactive_logon_risk =
