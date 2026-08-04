@@ -1,0 +1,55 @@
+<Sysmon schemaversion="4.90">
+
+<HashAlgorithms>
+    SHA256
+</HashAlgorithms>
+
+
+<EventFiltering>
+
+
+<!-- Process Creation -->
+<ProcessCreate onmatch="include">
+    <CommandLine condition="contains">powershell</CommandLine>
+    <CommandLine condition="contains">cmd</CommandLine>
+    <CommandLine condition="contains">rclone</CommandLine>
+    <CommandLine condition="contains">psexec</CommandLine>
+    <CommandLine condition="contains">encodedcommand</CommandLine>
+</ProcessCreate>
+
+
+<!-- Network Connections -->
+<NetworkConnect onmatch="include"/>
+
+
+<!-- File Creation -->
+<FileCreate onmatch="include"/>
+
+
+<!-- Image Loading -->
+<ImageLoad onmatch="include"/>
+
+
+<!-- Registry Changes -->
+<RegistryEvent onmatch="include"/>
+
+
+<!-- DNS Queries -->
+<DnsQuery onmatch="include"/>
+
+
+<!-- Driver Loading -->
+<DriverLoad onmatch="include"/>
+
+
+<!-- WMI Activity -->
+<WmiEvent onmatch="include"/>
+
+
+<!-- Named Pipes -->
+<PipeEvent onmatch="include"/>
+
+
+</EventFiltering>
+
+</Sysmon>
