@@ -299,31 +299,36 @@ Write-Host `
 ############################################################
 
 Write-Host ""
-Write-Host "[*] Exporting AppLocker Policy XML..."
+Write-Host "[*] Exporting AppLocker Policy..."
 
-$LocalPolicy = Get-AppLockerPolicy `
--Local `
--Xml
-
-$ExportFile = Join-Path `
+$ExportPath = Join-Path `
 $PSScriptRoot `
 "applocker_policy.xml"
 
-Export-AppLockerPolicy `
--Xml $LocalPolicy `
--Path $ExportFile
+
+try {
+
+    $PolicyXml = Get-AppLockerPolicy `
+    -Local `
+    -Xml
 
 
-if (Test-Path $ExportFile) {
+    Export-AppLockerPolicy `
+    -Xml $PolicyXml `
+    -Path $ExportPath
 
-    Write-Host " Policy exported to: applocker_policy.xml [VERIFIED]" `
-    -ForegroundColor Green
+
+    if (Test-Path $ExportPath) {
+
+        Write-Host "Policy exported to: applocker_policy.xml [VERIFIED]" `
+        -ForegroundColor Green
+
+    }
 
 }
-else {
+catch {
 
-    Write-Host " Policy export failed [FAILED]" `
-    -ForegroundColor Red
-
+    Write-Error "Failed to export AppLocker policy XML"
     exit 1
+
 }
