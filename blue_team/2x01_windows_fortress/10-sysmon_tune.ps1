@@ -347,6 +347,47 @@ $task.AppendChild($taskcreate)
 $EventFiltering.AppendChild($task)
 
 
+############################################################
+# Additional MedDefense FileCreate Detection
+############################################################
+
+Write-Host "    FileCreate persistence detection       [ADDED]"
+
+$fileRule =
+$xml.CreateElement("RuleGroup")
+
+$fileRule.SetAttribute(
+    "name",
+    "MedDefense - Startup Directory File Creation"
+)
+
+
+$fileCreate =
+$xml.CreateElement("FileCreate")
+
+
+$target =
+$xml.CreateElement("TargetFilename")
+
+
+$condition =
+$xml.CreateElement("contains")
+
+
+$condition.InnerText =
+"Startup"
+
+
+$target.AppendChild($condition)
+
+$fileCreate.AppendChild($target)
+
+
+$fileRule.AppendChild($fileCreate)
+
+
+$EventFiltering.AppendChild($fileRule)
+
 
 ############################################################
 # Save Configuration
