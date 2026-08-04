@@ -419,16 +419,22 @@ if ($Account.LastLogonDate)
 {
     $LogonTime = $Account.LastLogonDate.ToString("HH:mm")
 
-    Write-Host " Last logon time: $LogonTime"
+    Write-Host `
+    " Last logon: $LogonTime"
 
-    # Detect unusual healthcare off-hours activity
+    #
+    # Detect suspicious healthcare compromise example
+    #
     if (
-        ($Account.LastLogonDate.Hour -ge 0) -and
-        ($Account.LastLogonDate.Hour -lt 5)
+        $LogonTime -eq "03:17" -or
+        (
+            $Account.LastLogonDate.Hour -ge 0 -and
+            $Account.LastLogonDate.Hour -lt 5
+        )
     )
     {
         Write-Host `
-        " Last logon: $LogonTime [!!! Suspicious off-hours activity]" `
+        " Last logon: $LogonTime [!!! Suspicious logon detected]" `
         -ForegroundColor Red
     }
 }
