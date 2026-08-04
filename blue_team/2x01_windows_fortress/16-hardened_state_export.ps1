@@ -345,29 +345,52 @@ Select-Object Name,LogBlocked)
 
 
 ############################################################
-# AppLocker
+# AppLocker Posture
 ############################################################
 
-Write-Host "[*] Exporting AppLocker policy... "
+Write-Host "[] Exporting AppLocker policy... " -NoNewline
 
-$State.applocker_posture=@{
+try {
 
-policy_path=
-"$PSScriptRoot\applocker_policy.xml"
+    $AppLockerXML = Get-AppLockerPolicy `
+        -Effective `
+        -Xml
 
-mode="AuditOnly"
+    $State.applocker_posture = @{
+        enforcement_mode =
+        if ($AppLockerXML -match "AuditOnly") {
+            "AuditOnly"
+        }
+        else {
+            "Unknown"
+        }
 
-executable_rules=@(
-"Windows",
-"Program Files",
-"Program Files(x86)",
-"DicomViewer"
-)
+        executable_rules =
+        ([regex]::Matches(
+            $AppLockerXML,
+            "ExeRule"
+        )).Count
 
-script_rules=@(
-"Windows Scripts",
-"MedDefense Scripts"
-)
+        script_rules =
+        ([regex]::Matches(
+            $AppLockerXML,
+            "ScriptRule"
+        )).Count
+
+        exported_policy_path =
+        (Join-Path $PSScriptRoot "applocker_policy.xml")
+    }
+
+    Write-Host "OK"
+
+}
+catch {
+
+    $State.applocker_posture = @{
+        status="not_found"
+    }
+
+    Write-Host "WARN"
 
 }
 
