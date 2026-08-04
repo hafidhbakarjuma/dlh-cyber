@@ -45,6 +45,68 @@
 <!-- WMI Activity -->
 <WmiEvent onmatch="include"/>
 
+    <EventFiltering>
+
+  <!-- Rule 1: Rclone Exfiltration -->
+  <RuleGroup name="MedDefense - Rclone Exfiltration" groupRelation="or">
+    <ProcessCreate onmatch="include">
+      <Image condition="contains">
+        rclone.exe
+      </Image>
+    </ProcessCreate>
+  </RuleGroup>
+
+
+  <!-- Rule 2: PsExec Lateral Movement -->
+  <RuleGroup name="MedDefense - PsExec Detection" groupRelation="or">
+    <ProcessCreate onmatch="include">
+      <Image condition="contains">
+        psexec.exe
+      </Image>
+    </ProcessCreate>
+
+    <RegistryEvent onmatch="include">
+      <TargetObject condition="contains">
+        Services
+      </TargetObject>
+    </RegistryEvent>
+  </RuleGroup>
+
+
+  <!-- Rule 3: Encoded PowerShell -->
+  <RuleGroup name="MedDefense - Encoded PowerShell" groupRelation="or">
+    <ProcessCreate onmatch="include">
+      <CommandLine condition="contains">
+        -enc
+      </CommandLine>
+    </ProcessCreate>
+  </RuleGroup>
+
+
+  <!-- Rule 4: VSSAdmin Shadow Deletion -->
+  <RuleGroup name="MedDefense - VSSAdmin Shadow Delete" groupRelation="or">
+    <ProcessCreate onmatch="include">
+      <Image condition="contains">
+        vssadmin.exe
+      </Image>
+
+      <CommandLine condition="contains">
+        delete shadows
+      </CommandLine>
+    </ProcessCreate>
+  </RuleGroup>
+
+
+  <!-- Rule 5: Scheduled Task Persistence -->
+  <RuleGroup name="MedDefense - Scheduled Task Persistence" groupRelation="or">
+    <ProcessCreate onmatch="include">
+      <Image condition="contains">
+        schtasks.exe
+      </Image>
+    </ProcessCreate>
+  </RuleGroup>
+
+</EventFiltering>
 
 <!-- Named Pipes -->
 <PipeEvent onmatch="include"/>
