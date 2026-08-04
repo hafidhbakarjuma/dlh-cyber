@@ -7,7 +7,7 @@ Downloads, installs, and validates Sysmon using a detection-focused
 SwiftOnSecurity baseline configuration.
 
 .PURPOSE
-Deploy Sysmon endpoint telemetry to provide visibility into:
+Purpose: Deploy Sysmon endpoint telemetry to provide visibility into:
 process execution, network connections, file creation,
 registry changes, DNS activity, and persistence techniques.
 
