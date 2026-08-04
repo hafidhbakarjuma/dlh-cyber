@@ -36,6 +36,63 @@ catch {
     exit 1
 }
 
+############################################################
+# Before Verification
+############################################################
+
+Write-Host ""
+Write-Host "[*] Before Configuration"
+
+$BeforeServer = Get-SmbServerConfiguration
+$BeforeClient = Get-SmbClientConfiguration
+
+Write-Host "Before:"
+Write-Host "    SMBv1: $($BeforeServer.EnableSMB1Protocol)"
+Write-Host "    Signing Required: $($BeforeServer.RequireSecuritySignature)"
+Write-Host "    Encryption: $($BeforeServer.EncryptData)"
+
+############################################################
+# Apply Configuration
+############################################################
+
+# ... your hardening commands ...
+
+############################################################
+# After Verification
+############################################################
+
+Write-Host ""
+Write-Host "[*] After Configuration"
+
+$AfterServer = Get-SmbServerConfiguration
+$AfterClient = Get-SmbClientConfiguration
+
+Write-Host "After:"
+Write-Host "    SMBv1: $($AfterServer.EnableSMB1Protocol)"
+Write-Host "    Signing Required: $($AfterServer.RequireSecuritySignature)"
+Write-Host "    Encryption: $($AfterServer.EncryptData)"
+
+if (-not $AfterServer.EnableSMB1Protocol) {
+    Write-Host "    SMBv1: Disabled                        [VERIFIED]"
+}
+
+if ($AfterServer.RequireSecuritySignature) {
+    Write-Host "    Signing: Required                      [VERIFIED]"
+}
+
+if ($AfterServer.EncryptData) {
+    Write-Host "    Encryption: Enabled                    [VERIFIED]"
+}
+
+$LLMNR = Get-ItemProperty `
+    -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" `
+    -Name EnableMulticast `
+    -ErrorAction SilentlyContinue
+
+if ($LLMNR.EnableMulticast -eq 0) {
+    Write-Host "    LLMNR: Disabled                        [VERIFIED]"
+}
+
 $GPOName = "MedDefense - SMB Hardening"
 
 ############################################################
