@@ -572,6 +572,72 @@ Write-Host "WARN"
 
 }
 
+############################################################
+# Task 15 Validation Summary
+############################################################
+
+Write-Host "[] Loading validation summary... " -NoNewline
+
+try {
+
+$ValidationFile =
+Join-Path $PSScriptRoot "validation_summary.json"
+
+
+if(Test-Path $ValidationFile)
+{
+
+    $ValidationResults =
+    Get-Content $ValidationFile -Raw |
+    ConvertFrom-Json
+
+
+    $State.validation_summary =
+    @{
+        status = "loaded"
+
+        source =
+        $ValidationFile
+
+        results =
+        $ValidationResults
+    }
+
+    Write-Host "OK"
+
+}
+else
+{
+
+    $State.validation_summary =
+    @{
+        status = "not_found"
+
+        message =
+        "Task 15 validation summary file was not found"
+
+        source =
+        $ValidationFile
+    }
+
+    Write-Host "WARN"
+
+}
+
+}
+catch {
+
+$State.validation_summary =
+@{
+    status="not_found"
+
+    message=
+    "Unable to load Task 15 validation results"
+}
+
+Write-Host "WARN"
+
+}
 
 
 ############################################################
