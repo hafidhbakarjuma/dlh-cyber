@@ -357,64 +357,34 @@ Get-AppLockerPolicy `
 -Effective `
 -Xml
 
+$State.applocker_posture = @{
+    enforcement_mode =
+    if ($AppLockerPolicy -match "AuditOnly")
+    {
+        "AuditOnly"
+    }
+    else
+    {
+        "Unknown"
+    }
 
-$AppLockerRules =
-Get-AppLockerPolicy `
--Effective `
--Xml |
-Select-String "FilePathRule"
+    executable_rules =
+    ($AppLockerPolicy | Select-String "Exe").Count
 
+    script_rules =
+    ($AppLockerPolicy | Select-String "Script").Count
 
-$State.applocker_posture=@{
-
-enforcement_mode =
-if($AppLockerPolicy -match "AuditOnly")
-{
-"AuditOnly"
-}
-else
-{
-"Unknown"
-}
-
-
-executable_rules=@(
-"Allow C:\Windows\*",
-"Allow C:\Program Files\*",
-"Allow C:\Program Files (x86)\*",
-"Allow DicomViewer.exe"
-)
-
-
-script_rules=@(
-"Allow C:\Windows\*.ps1",
-"Allow C:\MedDefense_Lab\Scripts\*.ps1",
-"Allow C:\MedDefense_Lab\Scripts\*.bat",
-"Allow C:\MedDefense_Lab\Scripts\*.cmd",
-"Allow C:\MedDefense_Lab\Scripts\*.vbs"
-)
-
-
-rule_count =
-($AppLockerRules | Measure-Object).Count
-
-
-exported_policy_path =
-"$PSScriptRoot\applocker_policy.xml"
-
-
+    exported_policy =
+    "applocker_policy.xml"
 }
 
 Write-Host "OK"
 
 }
-
 catch {
 
-$State.applocker_posture=@{
-
-status="not_found"
-
+$State.applocker_posture = @{
+    status="not_found"
 }
 
 Write-Host "WARN"
@@ -472,6 +442,14 @@ NTLMv1="Disabled"
 SMBv1="Disabled"
 
 SMBSigning="Required"
+SMB_Signing = @{
+    ClientRequired = (
+        (Get-SmbClientConfiguration).RequireSecuritySignature
+    )
+    ServerRequired = (
+        (Get-SmbServerConfiguration).RequireSecuritySignature
+    )
+}
 
 }
 
@@ -569,24 +547,35 @@ message="Run 15-master_validation.ps1 first"
 
 }
 
+Write-Host "[] Loading validation summary... " -NoNewline
 
+$ValidationFile =
+Join-Path $PSScriptRoot "validation_results.json"
+
+if(Test-Path $ValidationFile)
+{
+
+$State.validation_summary =
+Get-Content $ValidationFile |
+ConvertFrom-Json
+
+Write-Host "OK"
+
+}
+else
+{
+
+$State.validation_summary = @{
+status="not_found"
+message="Task 15 validation results unavailable"
+}
+
+Write-Host "WARN"
+
+}
 
 ############################################################
 # Export JSON
 ############################################################
 
 
-$State |
-ConvertTo-Json `
--Depth 8 |
-Out-File `
-$OutputFile `
--Encoding UTF8
-
-
-Write-Host ""
-
-Write-Host "===================================="
-Write-Host " Hardened state exported to:"
-Write-Host $OutputFile -ForegroundColor Green
-Write-Host "===================================="
