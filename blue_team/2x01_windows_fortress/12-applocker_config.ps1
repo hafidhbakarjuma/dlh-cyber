@@ -295,15 +295,28 @@ Write-Host `
 
 
 ############################################################
-# Verify Export
+# Export AppLocker Policy XML
 ############################################################
 
 Write-Host ""
-Write-Host "[*] Verifying exported AppLocker policy..."
+Write-Host "[*] Exporting AppLocker Policy XML..."
 
-if ((Test-Path $ExportPath) -and ((Get-Item $ExportPath).Length -gt 0)) {
+$LocalPolicy = Get-AppLockerPolicy `
+-Local `
+-Xml
 
-    Write-Host " Policy exported: applocker_policy.xml [VERIFIED]" `
+$ExportFile = Join-Path `
+$PSScriptRoot `
+"applocker_policy.xml"
+
+Export-AppLockerPolicy `
+-Xml $LocalPolicy `
+-Path $ExportFile
+
+
+if (Test-Path $ExportFile) {
+
+    Write-Host " Policy exported to: applocker_policy.xml [VERIFIED]" `
     -ForegroundColor Green
 
 }
