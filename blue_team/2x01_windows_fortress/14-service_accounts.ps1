@@ -510,6 +510,80 @@ Write-Host `
 
 }
 
+####################################################
+# Deny Interactive Logon Rights
+####################################################
+
+Write-Host ""
+Write-Host "[*] Configuring Deny Interactive Logon..."
+
+$PolicyPath = "$env:TEMP\secpol.cfg"
+
+secedit /export `
+/cfg $PolicyPath `
+/quiet
+
+$Policy = Get-Content $PolicyPath
+
+$ServiceSIDs = @()
+
+foreach ($Account in $ServiceAccounts)
+{
+    if (
+        $Account.Name -like "svc*"
+    )
+    {
+        $SID = (
+            Get-ADUser `
+            -Identity $Account `
+            ).SID.Value
+
+        $ServiceSIDs += $SID
+    }
+}
+
+# SeDenyInteractiveLogonRight prevents local interactive logon
+$ExistingRule =
+$Policy |
+Where-Object {
+    $_ -match "SeDenyInteractiveLogonRight"
+}
+
+
+if ($ExistingRule)
+{
+    $NewRule =
+    "SeDenyInteractiveLogonRight = " +
+    (($ServiceSIDs -join ","))
+
+    $Policy =
+    $Policy -replace `
+    "SeDenyInteractiveLogonRight.*",
+    $NewRule
+}
+else
+{
+    $Policy +=
+    "SeDenyInteractiveLogonRight = " +
+    (($ServiceSIDs -join ","))
+}
+
+
+$Policy |
+Out-File `
+-FilePath $PolicyPath `
+-Encoding ASCII
+
+
+secedit /configure `
+/db "$env:TEMP\service_accounts.sdb" `
+/cfg $PolicyPath `
+/quiet
+
+
+Write-Host `
+" Service accounts: SeDenyInteractiveLogonRight [SET]" `
+-ForegroundColor Green
 
 ############################################################
 # Verification
