@@ -348,26 +348,76 @@ Select-Object Name,LogBlocked)
 # AppLocker
 ############################################################
 
-Write-Host "[*] Exporting AppLocker policy... "
+Write-Host "[] Exporting AppLocker policy... " -NoNewline
+
+try {
+
+$AppLockerPolicy =
+Get-AppLockerPolicy `
+-Effective `
+-Xml
+
+
+$AppLockerRules =
+Get-AppLockerPolicy `
+-Effective `
+-Xml |
+Select-String "FilePathRule"
+
 
 $State.applocker_posture=@{
 
-policy_path=
-"$PSScriptRoot\applocker_policy.xml"
+enforcement_mode =
+if($AppLockerPolicy -match "AuditOnly")
+{
+"AuditOnly"
+}
+else
+{
+"Unknown"
+}
 
-mode="AuditOnly"
 
 executable_rules=@(
-"Windows",
-"Program Files",
-"Program Files(x86)",
-"DicomViewer"
+"Allow C:\Windows\*",
+"Allow C:\Program Files\*",
+"Allow C:\Program Files (x86)\*",
+"Allow DicomViewer.exe"
 )
 
+
 script_rules=@(
-"Windows Scripts",
-"MedDefense Scripts"
+"Allow C:\Windows\*.ps1",
+"Allow C:\MedDefense_Lab\Scripts\*.ps1",
+"Allow C:\MedDefense_Lab\Scripts\*.bat",
+"Allow C:\MedDefense_Lab\Scripts\*.cmd",
+"Allow C:\MedDefense_Lab\Scripts\*.vbs"
 )
+
+
+rule_count =
+($AppLockerRules | Measure-Object).Count
+
+
+exported_policy_path =
+"$PSScriptRoot\applocker_policy.xml"
+
+
+}
+
+Write-Host "OK"
+
+}
+
+catch {
+
+$State.applocker_posture=@{
+
+status="not_found"
+
+}
+
+Write-Host "WARN"
 
 }
 
