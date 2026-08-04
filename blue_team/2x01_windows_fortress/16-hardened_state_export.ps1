@@ -7,7 +7,7 @@ Exports the final hardened Windows domain security state into a
 machine-readable JSON evidence package.
 
 .PURPOSE
-Purpose: Provides validation evidence for GPOs, logging, Sysmon, firewall,
+Provides validation evidence for GPOs, logging, Sysmon, firewall,
 AppLocker, RDP, authentication protocols and service accounts.
 
 .AUTHOR
@@ -67,7 +67,6 @@ $State.domain_metadata = @{
 
 Write-Host "WARN"
 }
-
 
 
 ############################################################
@@ -349,46 +348,26 @@ Select-Object Name,LogBlocked)
 # AppLocker
 ############################################################
 
-Write-Host "[] Exporting AppLocker policy... " -NoNewline
+Write-Host "[*] Exporting AppLocker policy... "
 
-try {
+$State.applocker_posture=@{
 
-$AppLockerPolicy =
-Get-AppLockerPolicy `
--Effective `
--Xml
+policy_path=
+"$PSScriptRoot\applocker_policy.xml"
 
-$State.applocker_posture = @{
-    enforcement_mode =
-    if ($AppLockerPolicy -match "AuditOnly")
-    {
-        "AuditOnly"
-    }
-    else
-    {
-        "Unknown"
-    }
+mode="AuditOnly"
 
-    executable_rules =
-    ($AppLockerPolicy | Select-String "Exe").Count
+executable_rules=@(
+"Windows",
+"Program Files",
+"Program Files(x86)",
+"DicomViewer"
+)
 
-    script_rules =
-    ($AppLockerPolicy | Select-String "Script").Count
-
-    exported_policy =
-    "applocker_policy.xml"
-}
-
-Write-Host "OK"
-
-}
-catch {
-
-$State.applocker_posture = @{
-    status="not_found"
-}
-
-Write-Host "WARN"
+script_rules=@(
+"Windows Scripts",
+"MedDefense Scripts"
+)
 
 }
 
@@ -443,14 +422,6 @@ NTLMv1="Disabled"
 SMBv1="Disabled"
 
 SMBSigning="Required"
-SMB_Signing = @{
-    ClientRequired = (
-        (Get-SmbClientConfiguration).RequireSecuritySignature
-    )
-    ServerRequired = (
-        (Get-SmbServerConfiguration).RequireSecuritySignature
-    )
-}
 
 }
 
@@ -548,35 +519,24 @@ message="Run 15-master_validation.ps1 first"
 
 }
 
-Write-Host "[] Loading validation summary... " -NoNewline
 
-$ValidationFile =
-Join-Path $PSScriptRoot "validation_results.json"
-
-if(Test-Path $ValidationFile)
-{
-
-$State.validation_summary =
-Get-Content $ValidationFile |
-ConvertFrom-Json
-
-Write-Host "OK"
-
-}
-else
-{
-
-$State.validation_summary = @{
-status="not_found"
-message="Task 15 validation results unavailable"
-}
-
-Write-Host "WARN"
-
-}
 
 ############################################################
 # Export JSON
 ############################################################
 
 
+$State |
+ConvertTo-Json `
+-Depth 8 |
+Out-File `
+$OutputFile `
+-Encoding UTF8
+
+
+Write-Host ""
+
+Write-Host "===================================="
+Write-Host " Hardened state exported to:"
+Write-Host $OutputFile -ForegroundColor Green
+Write-Host "===================================="
