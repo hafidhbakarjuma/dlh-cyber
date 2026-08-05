@@ -1,4 +1,4 @@
- THE WINDOWS FORTRESS
+# THE WINDOWS FORTRESS
 
 # MedDefense Windows Fortress
 ## Enterprise Active Directory Hardening, Detection & Security Validation Project
