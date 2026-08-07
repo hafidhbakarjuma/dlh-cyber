@@ -1,5 +1,5 @@
 <#
-NAME:
+Name:
     0-sysmon_validation.ps1
 
 .PURPOSE
