@@ -85,15 +85,19 @@ Write-Host "    [1/5] Process creation (Event ID 1)..."
 
 Start-Process cmd.exe "/c whoami" -Wait -NoNewWindow
 
-$Event = Wait-SysmonEvent -EventID 1 -SearchText "whoami"
+$Event = Wait-SysmonEvent -EventID 3 -SearchText "1.1.1.1"
 
-if ($Event -and $Event.Message -match "CommandLine") {
-    Report-Result "Process Creation" $true "cmd.exe /c whoami -> Sysmon EID 1 captured, cmdline present"
+if (
+    $Event -and
+    $Event.Message -match "DestinationIp" -and
+    $Event.Message -match "DestinationPort" -and
+    $Event.Message -match "Image"
+) {
+    Report-Result "Network Connection" $true "Outbound TCP -> Sysmon EID 3 captured, dest IP/port/process present"
 }
 else {
-    Report-Result "Process Creation" $false "Sysmon Event ID 1 missing"
+    Report-Result "Network Connection" $false "Sysmon Event ID 3 missing required network details"
 }
-
 ##############################################################
 # Test 2
 ##############################################################
