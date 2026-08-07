@@ -5,10 +5,10 @@ name:
     purpose: Validates that Sysmon is correctly capturing critical security telemetry
     by generating controlled events and verifying expected Sysmon Event IDs.
 
-AUTHOR:
+author:
     Hafidh Juma
 
-PROJECT:
+project:
     MedDefense Endpoint Telemetry Engineering
 #>
 
