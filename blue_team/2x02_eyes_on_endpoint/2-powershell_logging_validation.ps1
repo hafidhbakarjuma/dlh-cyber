@@ -107,16 +107,16 @@ function Report-Test {
     }
 
 
-   $script:Results += [PSCustomObject]@{
+  $script:Results += [PSCustomObject]@{
 
     Test = $Name
 
     Status =
-        if ($Success) {"CAPTURED"} else {"MISSED"}
+    if ($Success) {"CAPTURED"} else {"MISSED"}
 
     DetailLevel =
-        if ($Success) {"Full content captured"}
-        else {"Partial or missing content"}
+    if ($Success) {"full content captured"}
+    else {"partial content or missing"}
 
     Timestamp = Get-Date
 
