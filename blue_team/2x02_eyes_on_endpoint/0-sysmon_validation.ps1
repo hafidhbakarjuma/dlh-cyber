@@ -105,7 +105,7 @@ else {
         "Sysmon Event ID 1 missing CommandLine details"
 }
 ##############################################################
-# Test 2
+# Test 2: Network Connection
 ##############################################################
 
 Write-Host "    [2/5] Network connection (Event ID 3)..."
@@ -114,11 +114,22 @@ Test-NetConnection 1.1.1.1 -Port 443 | Out-Null
 
 $Event = Wait-SysmonEvent -EventID 3 -SearchText "1.1.1.1"
 
-if ($Event -and $Event.Message -match "DestinationPort") {
-    Report-Result "Network Connection" $true "Outbound TCP -> Sysmon EID 3 captured, dest IP/port present"
+if (
+    $Event -and
+    $Event.Message -match "DestinationIp" -and
+    $Event.Message -match "DestinationPort" -and
+    $Event.Message -match "Image"
+) {
+    Report-Result `
+        "Network Connection" `
+        $true `
+        "Outbound TCP -> Sysmon EID 3 captured, DestinationIp/DestinationPort/Image present"
 }
 else {
-    Report-Result "Network Connection" $false "Sysmon Event ID 3 missing"
+    Report-Result `
+        "Network Connection" `
+        $false `
+        "Sysmon Event ID 3 missing network details"
 }
 
 ##############################################################
