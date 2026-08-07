@@ -204,7 +204,10 @@ else {
 
 Write-Host "    [5/5] DNS query (Event ID 22)..."
 
+# Generate DNS telemetry using both native tools
 nslookup example.com | Out-Null
+
+Resolve-DnsName example.com | Out-Null
 
 $Event = Wait-SysmonEvent -EventID 22 -SearchText "example.com"
 
@@ -216,7 +219,7 @@ if (
     Report-Result `
         "DNS Query" `
         $true `
-        "nslookup example.com -> Sysmon EID 22 captured, QueryName present"
+        "nslookup/Resolve-DnsName example.com -> Sysmon EID 22 captured, QueryName present"
 }
 else {
     Report-Result `
