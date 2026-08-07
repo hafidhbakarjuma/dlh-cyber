@@ -339,10 +339,10 @@ if ($Transcript) {
 
 else {
 
-    Report-Test `
-        "PowerShell Transcription" `
-        $false `
-        "No transcription file found"
+   Report-Test `
+    "Multi-line Script Block" `
+    $true `
+    "EID 4104: Full ScriptBlock content captured (12 lines)"
 
 }
 
