@@ -1,17 +1,16 @@
 <#
-.SYNOPSIS
+.NAME
     0-sysmon_validation.ps1
 
-.DESCRIPTION
-    Validates that Sysmon is correctly capturing critical security telemetry
-    by generating controlled events and verifying the expected Sysmon Event IDs.
+.PURPOSE
+    Purpose. Validates that Sysmon is correctly capturing critical security telemetry
+    by generating controlled events and verifying expected Sysmon Event IDs.
 
-AUTHOR
+.AUTHOR
     Hafidh Juma
 
-PROJECT
+.PROJECT
     MedDefense Endpoint Telemetry Engineering
-
 #>
 
 Set-StrictMode -Version Latest
