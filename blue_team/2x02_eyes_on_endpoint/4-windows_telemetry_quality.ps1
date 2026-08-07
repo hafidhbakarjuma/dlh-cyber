@@ -57,6 +57,8 @@ $TotalEvents = $Events.Count
 
 
 
+
+
 ##############################################################
 
 # Event Distribution
@@ -116,108 +118,115 @@ ForEach-Object {
 
 
 ##############################################################
-
-# Time Coverage
-
+# Time Coverage Analysis
 ##############################################################
 
-$Times = $Events |
-ForEach-Object {
+$HourlyDistribution = @()
 
-    [datetime]$_.timestamp
+$StartHour = (
+    ($Events.timestamp |
+    ForEach-Object {
+        [datetime]$_
+    } |
+    Sort-Object |
+    Select-Object -First 1
+).ToUniversalTime().Date.AddHours(
+    (
+        ($Events.timestamp |
+        ForEach-Object {
+            [datetime]$_
+        } |
+        Sort-Object |
+        Select-Object -First 1
+    ).Hour
+)
+
+$EndHour = $StartHour.AddHours(23)
+
+for ($Hour = $StartHour; $Hour -le $EndHour; $Hour = $Hour.AddHours(1)) {
+
+    $Count = (
+        $Events |
+        Where-Object {
+            ([datetime]$_.timestamp).Hour -eq $Hour.Hour
+        }
+    ).Count
+
+    $HourlyDistribution += [PSCustomObject]@{
+        hour = $Hour.ToString(
+            "yyyy-MM-dd HH:00"
+        )
+        event_count = $Count
+    }
 
 }
-
-
-$StartHour =
-$Times |
-Sort-Object |
-Select-Object -First 1
-
-
-$EndHour =
-$Times |
-Sort-Object |
-Select-Object -Last 1
-
-
-
-$HourBuckets = $Times |
-ForEach-Object {
-
-    $_.ToString("yyyy-MM-dd HH")
-
-} |
-Group-Object
-
 
 
 $HoursWithEvents =
-$HourBuckets.Count
-
-
-
-$TotalHours =
-[math]::Ceiling(
-    ($EndHour - $StartHour).TotalHours
-)
-
-
-if ($TotalHours -lt 1) {
-
-    $TotalHours = 1
-
+$HourlyDistribution |
+Where-Object {
+    $_.event_count -gt 0
 }
 
 
+$HoursWithoutEvents =
+$HourlyDistribution |
+Where-Object {
+    $_.event_count -eq 0
+}
+
 
 ##############################################################
-
 # Gap Detection
-
 ##############################################################
 
-$SortedTimes =
-$Times |
-Sort-Object
-
+$SortedEvents =
+$Events |
+Sort-Object {
+    [datetime]$_.timestamp
+}
 
 
 $Gaps = @()
 
+for ($i = 1; $i -lt $SortedEvents.Count; $i++) {
 
+    $Previous =
+    [datetime]$SortedEvents[$i-1].timestamp
 
-for ($i = 1; $i -lt $SortedTimes.Count; $i++) {
+    $Current =
+    [datetime]$SortedEvents[$i].timestamp
 
 
     $GapMinutes =
-    ($SortedTimes[$i] -
-    $SortedTimes[$i-1]).TotalMinutes
-
+    ($Current - $Previous).TotalMinutes
 
 
     if ($GapMinutes -gt 30) {
 
-
         $Gaps += [PSCustomObject]@{
 
             start =
-            $SortedTimes[$i-1]
-
+            $Previous.ToString(
+                "yyyy-MM-ddTHH:mm:ssZ"
+            )
 
             end =
-            $SortedTimes[$i]
+            $Current.ToString(
+                "yyyy-MM-ddTHH:mm:ssZ"
+            )
 
-
-            minutes =
-            [math]::Round($GapMinutes)
+            duration_minutes =
+            [math]::Round(
+                $GapMinutes,
+                2
+            )
 
         }
 
     }
 
 }
-
 
 
 $LargestGap = 0
