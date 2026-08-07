@@ -75,13 +75,19 @@ Write-Host "Enabled Event IDs: $($EnabledEvents -join ', ')"
 
 $ConfigText = Get-Content $SysmonConfig -Raw
 
-
 $FilterConflicts = @()
 
-
+# Detect exclude filters
 if ($ConfigText -match "exclude") {
 
     $FilterConflicts += "Exclude rules detected; some telemetry may be suppressed"
+
+}
+
+# Detect include filters
+if ($ConfigText -match "include") {
+
+    $FilterConflicts += "Include rules detected; verify allowed telemetry is not too restrictive"
 
 }
 
