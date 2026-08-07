@@ -24,32 +24,40 @@ $Missed = 0
 Write-Host "[*] Running Sysmon telemetry validation..." -ForegroundColor Cyan
 
 function Wait-SysmonEvent {
-    param(
-        [int]$EventID,
-        [string]$SearchText,
-        [int]$Timeout = 15
-    )
+param(
+    [int]$EventID,
+    [string]$SearchText,
+    [int]$Timeout = 15
+)
 
-    $Start = Get-Date
+$Start = Get-Date
 
-    while ((Get-Date) -lt $Start.AddSeconds($Timeout)) {
+while ((Get-Date) -lt $Start.AddSeconds($Timeout)) {
 
-        $Event = Get-WinEvent -LogName $SysmonLog -MaxEvents 80 |
-            Where-Object {
-                $_.Id -eq $EventID -and
-                $_.TimeCreated -ge $Start.AddSeconds(-5) -and
-                $_.Message -match [regex]::Escape($SearchText)
-            } |
-            Select-Object -First 1
+    $Event = Get-WinEvent -LogName $SysmonLog -MaxEvents 80 |
+        Where-Object {
+            $_.Id -eq $EventID -and
+            $_.TimeCreated -ge $Start.AddSeconds(-5) -and
+            $_.Message -match [regex]::Escape($SearchText)
+        } |
+        Select-Object -First 1
 
-        if ($Event) {
-            return $Event
-        }
+    if ($Event) {
 
-        Start-Sleep -Milliseconds 500
+        # Log event timestamp
+        $Event | Add-Member `
+            -MemberType NoteProperty `
+            -Name Timestamp `
+            -Value $Event.TimeCreated `
+            -Force
+
+        return $Event
     }
 
-    return $null
+    Start-Sleep -Milliseconds 500
+}
+
+return $null
 }
 
 function Report-Result {
