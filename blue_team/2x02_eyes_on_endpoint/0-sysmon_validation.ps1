@@ -199,20 +199,30 @@ else {
 }
 
 ##############################################################
-# Test 5
+# Test 5: DNS Query
 ##############################################################
 
 Write-Host "    [5/5] DNS query (Event ID 22)..."
 
-Resolve-DnsName example.com | Out-Null
+nslookup example.com | Out-Null
 
 $Event = Wait-SysmonEvent -EventID 22 -SearchText "example.com"
 
-if ($Event) {
-    Report-Result "DNS Query" $true "Resolve example.com -> Sysmon EID 22 captured"
+if (
+    $Event -and
+    $Event.Message -match "QueryName" -and
+    $Event.Message -match "example.com"
+) {
+    Report-Result `
+        "DNS Query" `
+        $true `
+        "nslookup example.com -> Sysmon EID 22 captured, QueryName present"
 }
 else {
-    Report-Result "DNS Query" $false "Sysmon Event ID 22 missing"
+    Report-Result `
+        "DNS Query" `
+        $false `
+        "Sysmon Event ID 22 missing DNS details"
 }
 
 ##############################################################
