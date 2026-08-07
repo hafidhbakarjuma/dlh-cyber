@@ -242,12 +242,25 @@ else {
 
 Write-Host "[*] Cleanup: removing test artifacts..."
 
+# Remove test file
 if (Test-Path $TestFile) {
     Remove-Item $TestFile -Force
 }
 
+# Remove registry test value
 if (Test-Path $RegKey) {
-    Remove-Item $RegKey -Recurse -Force
+    Remove-ItemProperty `
+        -Path $RegKey `
+        -Name "SysmonTest" `
+        -Force
+}
+
+# Remove empty registry key
+if (Test-Path $RegKey) {
+    Remove-Item `
+        $RegKey `
+        -Recurse `
+        -Force
 }
 
 ##############################################################
