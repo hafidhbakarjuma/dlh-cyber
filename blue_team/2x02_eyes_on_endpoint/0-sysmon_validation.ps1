@@ -78,25 +78,31 @@ function Report-Result {
 }
 
 ##############################################################
-# Test 1
+# Test 1: Process Creation
 ##############################################################
 
 Write-Host "    [1/5] Process creation (Event ID 1)..."
 
 Start-Process cmd.exe "/c whoami" -Wait -NoNewWindow
 
-$Event = Wait-SysmonEvent -EventID 3 -SearchText "1.1.1.1"
+$Event = Wait-SysmonEvent -EventID 1 -SearchText "whoami"
 
 if (
     $Event -and
-    $Event.Message -match "DestinationIp" -and
-    $Event.Message -match "DestinationPort" -and
-    $Event.Message -match "Image"
+    $Event.Message -match "CommandLine" -and
+    $Event.Message -match "cmd.exe" -and
+    $Event.Message -match "whoami"
 ) {
-    Report-Result "Network Connection" $true "Outbound TCP -> Sysmon EID 3 captured, dest IP/port/process present"
+    Report-Result `
+        "Process Creation" `
+        $true `
+        "cmd.exe /c whoami -> Sysmon EID 1 captured, CommandLine present"
 }
 else {
-    Report-Result "Network Connection" $false "Sysmon Event ID 3 missing required network details"
+    Report-Result `
+        "Process Creation" `
+        $false `
+        "Sysmon Event ID 1 missing CommandLine details"
 }
 ##############################################################
 # Test 2
