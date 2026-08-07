@@ -25,8 +25,10 @@ $ErrorActionPreference = "Stop"
 
 $OutputFile = ".\windows_events_export.json"
 
+$EndTime = Get-Date
+
 $StartTime =
-(Get-Date).AddHours(-24)
+$EndTime.AddHours(-24)
 
 
 $Hostname =
@@ -405,6 +407,7 @@ foreach ($Log in $Logs) {
             -FilterHashtable @{
                 LogName = $Log.Channel
                 StartTime = $StartTime
+                EndTime = $EndTime
             } `
             -ErrorAction Stop
 
