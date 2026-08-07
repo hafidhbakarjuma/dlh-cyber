@@ -50,12 +50,9 @@ function Search-PowerShellEvent {
         [int]$Timeout = 15
     )
 
-
     $Start = Get-Date
 
-
     while ((Get-Date) -lt $Start.AddSeconds($Timeout)) {
-
 
         $Event = Get-WinEvent `
             -LogName $PowerShellLog `
@@ -64,23 +61,18 @@ function Search-PowerShellEvent {
 
                 $_.Id -eq $EventID -and
                 $_.TimeCreated -ge $Start.AddSeconds(-5) -and
+                $_.Message -match "ScriptBlock" -and
                 $_.Message -match $SearchText
 
             } |
             Select-Object -First 1
 
-
         if ($Event) {
-
             return $Event
-
         }
 
-
         Start-Sleep -Milliseconds 500
-
     }
-
 
     return $null
 }
@@ -148,21 +140,24 @@ Search-PowerShellEvent `
     -SearchText "Get-Process"
 
 
-if ($Event) {
+if (
+    $Event -and
+    $Event.Message -match "ScriptBlock" -and
+    $Event.Message -match "Get-Process"
+) {
 
     Report-Test `
         "Simple Command" `
         $true `
-        'EID 4104: "Get-Process" captured'
+        'EID 4104: ScriptBlock "Get-Process" captured'
 
 }
-
 else {
 
     Report-Test `
         "Simple Command" `
         $false `
-        "EID 4104: Get-Process missing"
+        "EID 4104 ScriptBlock missing"
 
 }
 
