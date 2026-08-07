@@ -184,88 +184,132 @@ function Convert-WindowsEvent {
 # Security Event Enrichment
 ##############################################################
 
-    switch ($Event.Id) {
+switch ($Event.Id) {
 
 
-        4624 {
+    4624 {
+
+        $Record.TargetUserName =
+            ($Message -split "`n" |
+            Select-String "Account Name").Line
+
+        $Record.LogonType =
+            ($Message -split "`n" |
+            Select-String "Logon Type").Line
+
+        $Record.IpAddress =
+            ($Message -split "`n" |
+            Select-String "Source Network Address").Line
+
+        $Record.WorkstationName =
+            ($Message -split "`n" |
+            Select-String "Workstation Name").Line
 
 
-            $Record.target_user =
-                ($Message -split "`n" |
-                Select-String "Account Name").Line
+        # Normalized SOC fields
+
+        $Record.target_user =
+            $Record.TargetUserName
+
+        $Record.logon_type =
+            $Record.LogonType
+
+        $Record.source_ip =
+            $Record.IpAddress
+
+        $Record.workstation =
+            $Record.WorkstationName
+
+    }
 
 
-            $Record.logon_type =
-                ($Message -split "`n" |
-                Select-String "Logon Type").Line
+    4625 {
 
 
-            $Record.source_ip =
-                ($Message -split "`n" |
-                Select-String "Source Network Address").Line
+        $Record.TargetUserName =
+            ($Message -split "`n" |
+            Select-String "Account Name").Line
 
 
-            $Record.workstation =
-                ($Message -split "`n" |
-                Select-String "Workstation Name").Line
+        $Record.FailureReason =
+            ($Message -split "`n" |
+            Select-String "Failure Reason").Line
 
 
-        }
+        $Record.IpAddress =
+            ($Message -split "`n" |
+            Select-String "Source Network Address").Line
 
 
-        4625 {
+
+        # Normalized SOC fields
+
+        $Record.target_user =
+            $Record.TargetUserName
+
+        $Record.failure_reason =
+            $Record.FailureReason
+
+        $Record.source_ip =
+            $Record.IpAddress
+
+    }
 
 
-            $Record.target_user =
-                ($Message -split "`n" |
-                Select-String "Account Name").Line
+
+    4672 {
 
 
-            $Record.failure_reason =
-                ($Message -split "`n" |
-                Select-String "Failure Reason").Line
+        $Record.PrivilegedAccount =
+            ($Message -split "`n" |
+            Select-String "Account Name").Line
 
 
-            $Record.source_ip =
-                ($Message -split "`n" |
-                Select-String "Source Network Address").Line
+
+        # Normalized SOC field
+
+        $Record.privileged_account =
+            $Record.PrivilegedAccount
+
+    }
 
 
-        }
+
+    4688 {
 
 
-        4672 {
+        $Record.NewProcessName =
+            ($Message -split "`n" |
+            Select-String "New Process Name").Line
 
 
-            $Record.privileged_account =
-                ($Message -split "`n" |
-                Select-String "Account Name").Line
+        $Record.CommandLine =
+            ($Message -split "`n" |
+            Select-String "Command Line").Line
 
 
-        }
+        $Record.ParentProcessName =
+            ($Message -split "`n" |
+            Select-String "Creator Process Name").Line
 
 
-        4688 {
+
+        # Normalized SOC fields
+
+        $Record.process_name =
+            $Record.NewProcessName
 
 
-            $Record.process_name =
-                ($Message -split "`n" |
-                Select-String "New Process Name").Line
+        $Record.command_line =
+            $Record.CommandLine
 
 
-            $Record.command_line =
-                ($Message -split "`n" |
-                Select-String "Command Line").Line
+        $Record.parent_process =
+            $Record.ParentProcessName
 
+    }
 
-            $Record.parent_process =
-                ($Message -split "`n" |
-                Select-String "Creator Process Name").Line
-
-
-        }
-
-
+}
 
 ##############################################################
 # PowerShell
