@@ -161,12 +161,12 @@ else {
         "Sysmon Event ID 11 missing TargetFilename details"
 }
 ##############################################################
-# Test 4
+# Test 4: Registry Modification
 ##############################################################
 
 Write-Host "    [4/5] Registry modification (Event ID 13)..."
 
-$RegKey = "HKCU:\Software\SysmonValidation"
+$RegKey = "HKCU:\Software\SysmonTest"
 
 if (!(Test-Path $RegKey)) {
     New-Item $RegKey | Out-Null
@@ -174,18 +174,28 @@ if (!(Test-Path $RegKey)) {
 
 New-ItemProperty `
     -Path $RegKey `
-    -Name TestValue `
-    -Value "Telemetry" `
+    -Name "SysmonTest" `
+    -Value "TelemetryValidation" `
     -PropertyType String `
     -Force | Out-Null
 
-$Event = Wait-SysmonEvent -EventID 13 -SearchText "SysmonValidation"
+$Event = Wait-SysmonEvent -EventID 13 -SearchText "SysmonTest"
 
-if ($Event) {
-    Report-Result "Registry Modification" $true "HKCU\\Software\\SysmonValidation -> Sysmon EID 13 captured"
+if (
+    $Event -and
+    $Event.Message -match "TargetObject" -and
+    $Event.Message -match "SysmonTest"
+) {
+    Report-Result `
+        "Registry Modification" `
+        $true `
+        "HKCU\Software\SysmonTest -> Sysmon EID 13 captured, registry details present"
 }
 else {
-    Report-Result "Registry Modification" $false "Sysmon Event ID 13 missing"
+    Report-Result `
+        "Registry Modification" `
+        $false `
+        "Sysmon Event ID 13 missing registry details"
 }
 
 ##############################################################
