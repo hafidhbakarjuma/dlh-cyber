@@ -3,13 +3,13 @@ name:
     0-sysmon_validation.ps1
 
 .PURPOSE
-    Purpose. Validates that Sysmon is correctly capturing critical security telemetry
+    Purpose: Validates that Sysmon is correctly capturing critical security telemetry
     by generating controlled events and verifying expected Sysmon Event IDs.
 
-.AUTHOR
+AUTHOR:
     Hafidh Juma
 
-.PROJECT
+PROJECT:
     MedDefense Endpoint Telemetry Engineering
 #>
 
