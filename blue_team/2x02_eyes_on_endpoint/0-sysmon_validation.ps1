@@ -133,7 +133,7 @@ else {
 }
 
 ##############################################################
-# Test 3
+# Test 3: File Creation
 ##############################################################
 
 Write-Host "    [3/5] File creation (Event ID 11)..."
@@ -144,13 +144,22 @@ New-Item -ItemType File -Path $TestFile -Force | Out-Null
 
 $Event = Wait-SysmonEvent -EventID 11 -SearchText "sysmon_validation.txt"
 
-if ($Event) {
-    Report-Result "File Creation" $true "$TestFile -> Sysmon EID 11 captured"
+if (
+    $Event -and
+    $Event.Message -match "TargetFilename" -and
+    $Event.Message -match "sysmon_validation.txt"
+) {
+    Report-Result `
+        "File Creation" `
+        $true `
+        "$TestFile -> Sysmon EID 11 captured, TargetFilename present"
 }
 else {
-    Report-Result "File Creation" $false "Sysmon Event ID 11 missing"
+    Report-Result `
+        "File Creation" `
+        $false `
+        "Sysmon Event ID 11 missing TargetFilename details"
 }
-
 ##############################################################
 # Test 4
 ##############################################################
