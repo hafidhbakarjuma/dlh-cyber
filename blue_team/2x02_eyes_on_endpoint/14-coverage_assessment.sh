@@ -147,7 +147,10 @@ LINUX_CATEGORY_COUNTS="$(
 )"
 
 ##############################################################
-# Detection Matrix Helpers
+# Detection Matrix Summary
+#
+# Summarize simulated actions, captured actions, missed actions,
+# and multi-source detections across Windows and Linux.
 ##############################################################
 
 get_matrix_array() {
@@ -217,12 +220,12 @@ LINUX_CAPTURED="$(get_matrix_captured "$LINUX_MATRIX")"
 WINDOWS_MULTI="$(get_matrix_multisource "$WINDOWS_MATRIX")"
 LINUX_MULTI="$(get_matrix_multisource "$LINUX_MATRIX")"
 
-DETECTION_TOTAL=$((WINDOWS_MATRIX_TOTAL + LINUX_MATRIX_TOTAL))
-DETECTION_CAPTURED=$((WINDOWS_CAPTURED + LINUX_CAPTURED))
-DETECTION_MISSED=$((DETECTION_TOTAL - DETECTION_CAPTURED))
-MULTI_SOURCE=$((WINDOWS_MULTI + LINUX_MULTI))
+SIMULATED_ACTIONS=$((WINDOWS_MATRIX_TOTAL + LINUX_MATRIX_TOTAL))
+CAPTURED_ACTIONS=$((WINDOWS_CAPTURED + LINUX_CAPTURED))
+MISSED_ACTIONS=$((SIMULATED_ACTIONS - CAPTURED_ACTIONS))
+MULTI_SOURCE_DETECTIONS=$((WINDOWS_MULTI + LINUX_MULTI))
 
-echo "Detection matrix: ${DETECTION_CAPTURED}/${DETECTION_TOTAL} captured"
+echo "Detection matrix: ${CAPTURED_ACTIONS}/${SIMULATED_ACTIONS} captured"
 
 ##############################################################
 # ATT&CK Coverage
@@ -508,19 +511,20 @@ jq -n \
             }
         },
 
-        detection_matrix_summary: {
-            total_simulated_actions: $detection_total,
-            captured_actions: $detection_captured,
-            missed_actions: $detection_missed,
-            "multi-source_detections": $multi_source,
+             detection_matrix_summary: {
+            "total simulated actions": $simulated_actions,
+            "captured actions": $captured_actions,
+            "missed actions": $missed_actions,
+            "multi-source detections": $multi_source_detections,
+        
             capture_percentage:
                 (
-                    if $detection_total > 0
-                    then (($detection_captured * 10000 / $detection_total) | round / 100)
+                    if $simulated_actions > 0
+                    then (($captured_actions * 10000 / $simulated_actions) | round / 100)
                     else 0
                     end
                 )
-        },
+            },
 
         attack_coverage: {
             covered_techniques: $covered,
