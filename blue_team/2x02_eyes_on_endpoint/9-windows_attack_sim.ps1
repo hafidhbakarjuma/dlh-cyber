@@ -228,38 +228,65 @@ try {
 }
 finally {
 
-    ##############################################################
-    # Cleanup
-    ##############################################################
+```powershell
+##############################################################
+# Cleanup
+##############################################################
 
-    if (Get-ScheduledTask `
+finally {
+
+    Write-Host "[*] Cleaning up artifacts..."
+
+    ##########################################################
+    # Remove Scheduled Task
+    ##########################################################
+
+    $ExistingTask = Get-ScheduledTask `
         -TaskName $ScheduledTaskName `
-        -ErrorAction SilentlyContinue) {
+        -ErrorAction SilentlyContinue
 
-        schtasks.exe /delete `
-            /tn $ScheduledTaskName `
-            /f | Out-Null
+    if ($null -ne $ExistingTask) {
+
+        Unregister-ScheduledTask `
+            -TaskName $ScheduledTaskName `
+            -Confirm:$false `
+            -ErrorAction SilentlyContinue
+
     }
 
+    ##########################################################
+    # Remove Startup File
+    ##########################################################
+
     if (Test-Path $StartupFile) {
+
         Remove-Item `
             -Path $StartupFile `
             -Force `
             -ErrorAction SilentlyContinue
+
     }
+
+    ##########################################################
+    # Remove Test User
+    ##########################################################
 
     $ExistingUser = Get-LocalUser `
         -Name $TestUser `
         -ErrorAction SilentlyContinue
 
     if ($null -ne $ExistingUser) {
+
         Remove-LocalUser `
             -Name $TestUser `
             -ErrorAction SilentlyContinue
+
     }
 
     Write-Host "    User removed, task deleted, file removed [CLEAN]"
 }
+```
+
 
 ##############################################################
 # Final Output
