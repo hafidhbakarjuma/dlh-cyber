@@ -118,15 +118,8 @@ write_event() {
 
 ##############################################################
 # Timestamp Normalization
+# Converts log timestamps to ISO 8601 UTC format.
 ##############################################################
-
-normalize_syslog_timestamp() {
-    local raw="$1"
-
-    date -u -d "$raw $(date +%Y)" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null ||
-        date -u -d "$raw" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null ||
-        date -u '+%Y-%m-%dT%H:%M:%SZ'
-}
 
 ##############################################################
 # Time Filtering
