@@ -118,62 +118,87 @@ ForEach-Object {
 
 
 ##############################################################
-# Time Coverage Analysis
+# Time Coverage Analysis - Events Per Hour
 ##############################################################
+
+# Calculate events per hour and identify hours with and without events
 
 $HourlyDistribution = @()
 
-$StartHour = (
-    ($Events.timestamp |
-    ForEach-Object {
-        [datetime]$_
-    } |
-    Sort-Object |
-    Select-Object -First 1
-).ToUniversalTime().Date.AddHours(
-    (
-        ($Events.timestamp |
-        ForEach-Object {
-            [datetime]$_
-        } |
-        Sort-Object |
-        Select-Object -First 1
-    ).Hour
-)
+$SortedTimestamps =
+$Events |
+ForEach-Object {
+    [datetime]$_.timestamp
+} |
+Sort-Object
 
-$EndHour = $StartHour.AddHours(23)
+if ($SortedTimestamps.Count -gt 0) {
 
-for ($Hour = $StartHour; $Hour -le $EndHour; $Hour = $Hour.AddHours(1)) {
+    $StartHour =
+    $SortedTimestamps[0].ToUniversalTime()
 
-    $Count = (
-        $Events |
-        Where-Object {
-            ([datetime]$_.timestamp).Hour -eq $Hour.Hour
+    $StartHour =
+    $StartHour.Date.AddHours($StartHour.Hour)
+
+    $EndHour =
+    $SortedTimestamps[-1].ToUniversalTime()
+
+    $EndHour =
+    $EndHour.Date.AddHours($EndHour.Hour)
+
+    for (
+        $Hour = $StartHour;
+        $Hour -le $EndHour;
+        $Hour = $Hour.AddHours(1)
+    ) {
+
+        $NextHour =
+        $Hour.AddHours(1)
+
+        $Count =
+        (
+            $Events |
+            Where-Object {
+                $Timestamp =
+                ([datetime]$_.timestamp).ToUniversalTime()
+
+                $Timestamp -ge $Hour -and
+                $Timestamp -lt $NextHour
+            }
+        ).Count
+
+        $HourlyDistribution +=
+        [PSCustomObject]@{
+
+            hour =
+            $Hour.ToString("yyyy-MM-dd HH:00")
+
+            events_per_hour =
+            $Count
+
+            event_count =
+            $Count
         }
-    ).Count
-
-    $HourlyDistribution += [PSCustomObject]@{
-        hour = $Hour.ToString(
-            "yyyy-MM-dd HH:00"
-        )
-        event_count = $Count
     }
-
 }
-
 
 $HoursWithEvents =
 $HourlyDistribution |
 Where-Object {
-    $_.event_count -gt 0
+    $_.events_per_hour -gt 0
 }
-
 
 $HoursWithoutEvents =
 $HourlyDistribution |
 Where-Object {
-    $_.event_count -eq 0
+    $_.events_per_hour -eq 0
 }
+
+$HoursWithEventsCount =
+$HoursWithEvents.Count
+
+$HoursWithoutEventsCount =
+$HoursWithoutEvents.Count
 
 
 ##############################################################
