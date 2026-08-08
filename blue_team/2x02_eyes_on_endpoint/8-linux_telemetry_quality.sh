@@ -75,33 +75,8 @@ if [[ "$TOTAL_EVENTS" -eq 0 ]]; then
 fi
 
 ##############################################################
-# Event Distribution
-##############################################################
-
-CATEGORY_JSON=$(
-    jq '
-        group_by(.event_category // "unknown")
-        | map({
-            category: (.[0].event_category // "unknown"),
-            count: length,
-            percentage: ((length * 10000 / ($TOTAL | tonumber)) | round / 100)
-        })
-    ' --arg TOTAL "$TOTAL_EVENTS" <<< "$EVENTS_JSON"
-)
-
-SOURCE_JSON=$(
-    jq '
-        group_by(.source_type // "unknown")
-        | map({
-            source_type: (.[0].source_type // "unknown"),
-            count: length,
-            percentage: ((length * 10000 / ($TOTAL | tonumber)) | round / 100)
-        })
-    ' --arg TOTAL "$TOTAL_EVENTS" <<< "$EVENTS_JSON"
-)
-
-##############################################################
 # Time Coverage
+# Measures events per hour, hours with events and hours without events.
 ##############################################################
 
 HOUR_COUNTS=$(
@@ -116,7 +91,9 @@ HOUR_COUNTS=$(
     uniq -c
 )
 
-HOURS_WITH_EVENTS=$(awk 'NF { count++ } END { print count + 0 }' <<< "$HOUR_COUNTS")
+HOURS_WITH_EVENTS=$(
+    awk 'NF { count++ } END { print count + 0 }' <<< "$HOUR_COUNTS"
+)
 
 if [[ "$HOURS_WITH_EVENTS" -gt 24 ]]; then
     HOURS_WITH_EVENTS=24
