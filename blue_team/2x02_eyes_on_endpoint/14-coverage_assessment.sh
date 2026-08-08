@@ -390,22 +390,30 @@ KNOWN_GAPS="$(
         [
             ($blind[] |
                 {
-                    description: "No telemetry evidence captured for simulated ATT&CK technique.",
-                    impacted_platform: "Windows/Linux",
-                    impacted_technique: .,
-                    reason: "Detection matrix contains a missed action.",
-                    recommended_instrumentation_improvement:
+                    description:
+                        "No telemetry evidence captured for simulated ATT&CK technique.",
+                    impacted_platform:
+                        "Windows/Linux",
+                    impacted_technique:
+                        .,
+                    reason:
+                        "Detection matrix contains a missed action.",
+                    recommendation:
                         "Add or refine endpoint telemetry rules and validate with another controlled simulation."
                 }
             ),
 
             ($partial[] |
                 {
-                    description: "Telemetry captured the technique but did not provide complete detail.",
-                    impacted_platform: "Windows/Linux",
-                    impacted_technique: .,
-                    reason: "Detection matrix reports partial visibility.",
-                    recommended_instrumentation_improvement:
+                    description:
+                        "Telemetry captured the technique but did not provide complete detail.",
+                    impacted_platform:
+                        "Windows/Linux",
+                    impacted_technique:
+                        .,
+                    reason:
+                        "Detection matrix reports partial visibility.",
+                    recommendation:
                         "Increase logging detail and ensure the relevant key fields are collected."
                 }
             )
