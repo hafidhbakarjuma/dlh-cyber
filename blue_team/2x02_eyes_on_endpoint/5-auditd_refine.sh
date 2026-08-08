@@ -8,7 +8,9 @@
 # Author: Hafidh Juma
 # Project: MedDefense Endpoint Telemetry Engineering
 
-set -euo pipefail
+set -e
+set -u
+set -o pipefail
 
 ##############################################################
 # Configuration
