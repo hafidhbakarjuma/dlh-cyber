@@ -512,7 +512,7 @@ jq -n \
             total_simulated_actions: $detection_total,
             captured_actions: $detection_captured,
             missed_actions: $detection_missed,
-            multi_source_detections: $multi_source,
+            "multi-source_detections": $multi_source,
             capture_percentage:
                 (
                     if $detection_total > 0
