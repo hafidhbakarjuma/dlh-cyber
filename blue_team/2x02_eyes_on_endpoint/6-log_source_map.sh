@@ -267,7 +267,7 @@ fi
 
 printf "\n"
 printf "%-20s %-38s %-10s %-12s %-12s %-10s\n" \
-    "Source" "Path" "Format" "Rotation" "Events/hr" "Relevance"
+    "Source" "Path" "Format" "Rotation" "events/hr" "Relevance"
 
 printf "%-20s %-38s %-10s %-12s %-12s %-10s\n" \
     "------" "----" "------" "--------" "---------" "---------"
