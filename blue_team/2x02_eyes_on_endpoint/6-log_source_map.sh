@@ -287,16 +287,30 @@ done
 ##############################################################
 
 MISSING=0
+INACTIVE=0
 
 check_expected() {
     local name="$1"
     local path="$2"
+    local rate
 
     if [[ ! -f "$path" ]]; then
         echo "[!] Missing expected source: $name ($path)"
         MISSING=$((MISSING + 1))
-    elif [[ ! -s "$path" ]]; then
-        echo "[!] Expected source exists but is empty: $name ($path)"
+        return
+    fi
+
+    if [[ ! -s "$path" ]]; then
+        echo "[!] Expected source is not generating events: $name ($path)"
+        INACTIVE=$((INACTIVE + 1))
+        return
+    fi
+
+    rate=$(get_events_per_hour "$path")
+
+    if [[ "$rate" -eq 0 ]]; then
+        echo "[!] Expected source is not generating events: $name ($path)"
+        INACTIVE=$((INACTIVE + 1))
     fi
 }
 
