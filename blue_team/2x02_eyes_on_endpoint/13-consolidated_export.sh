@@ -86,11 +86,16 @@ load_events() {
 
 ##############################################################
 # Timestamp Normalization
+#
+# Convert all event timestamps to ISO 8601 UTC format.
+# Example: 2026-03-25T14:30:01Z
 ##############################################################
 
 normalize_events() {
     local file="$1"
 
+    # Input may be JSON array or JSON Lines.
+    # Convert both formats into a JSON array first.
     load_events "$file" |
         jq '
             map(
@@ -100,8 +105,7 @@ normalize_events() {
                             (.timestamp | fromdateiso8601) |
                             todateiso8601
                         )
-                        catch
-                            .timestamp
+                        catch .timestamp
                     )
             )
         '
