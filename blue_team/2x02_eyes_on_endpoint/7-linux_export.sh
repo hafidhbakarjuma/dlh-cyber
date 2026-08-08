@@ -10,7 +10,8 @@ set -u
 set -o pipefail
 
 ##############################################################
-# Configuration
+# Output Configuration
+# JSON Lines telemetry export for SOC analysis.
 ##############################################################
 
 LOG_DIR="/var/log"
@@ -19,7 +20,7 @@ AUDIT_LOG="${LOG_DIR}/audit/audit.log"
 SYSLOG="${LOG_DIR}/syslog"
 
 OUTPUT_DIR="./telemetry"
-OUTPUT_FILE="${OUTPUT_DIR}/linux_telemetry.jsonl"
+OUTPUT_FILE="${OUTPUT_DIR}/linux_events_export.json"
 
 START_TIME="${1:-$(date -u -d '24 hours ago' '+%Y-%m-%dT%H:%M:%SZ')}"
 END_TIME="${2:-$(date -u '+%Y-%m-%dT%H:%M:%SZ')}"
