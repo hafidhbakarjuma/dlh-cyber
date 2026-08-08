@@ -59,7 +59,7 @@ fi
 # Required Commands
 ##############################################################
 
-for command in awk grep sed date hostname jq; do
+for command in awk grep sed date hostname jq ausearch; do
     if ! command -v "$command" >/dev/null 2>&1; then
         echo "[!] Required command not found: $command"
         exit 1
