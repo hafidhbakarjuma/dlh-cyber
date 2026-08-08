@@ -131,31 +131,30 @@ try {
         -MitreTechnique "MITRE ATT&CK T1098 - Account Manipulation" `
         -Timestamp $Timestamp
 
-    ##########################################################
-    # 3. Encoded PowerShell
-    ##########################################################
+##########################################################
+# 3. Encoded PowerShell
+##########################################################
 
-    $Timestamp = Get-UtcTimestamp
+$Timestamp = Get-UtcTimestamp
+Write-Host "    [3/6] Running encoded PowerShell... $Timestamp"
 
-    Write-Host "    [3/6] Running encoded PowerShell... $Timestamp"
+# Harmless payload used only to generate telemetry.
+$Payload = 'Write-Host "C2 beacon"'
 
-    # Harmless payload used only to generate telemetry.
-    $Payload = 'Write-Host "C2 beacon"'
+$EncodedCommand = [Convert]::ToBase64String(
+    [Text.Encoding]::Unicode.GetBytes($Payload)
+)
 
-    $EncodedCommand = [Convert]::ToBase64String(
-        [Text.Encoding]::Unicode.GetBytes($Payload)
-    )
+powershell.exe `
+    -NoProfile `
+    -enc $EncodedCommand
 
-    powershell.exe `
-        -NoProfile `
-        -EncodedCommand $EncodedCommand
-
-    Add-GroundTruth `
-        -ActionNumber 3 `
-        -Description "Executed harmless encoded PowerShell payload" `
-        -ExpectedDetectionSource "Sysmon Event ID 1; PowerShell Event ID 4104" `
-        -MitreTechnique "MITRE ATT&CK T1059.001 - PowerShell" `
-        -Timestamp $Timestamp
+Add-GroundTruth `
+    -ActionNumber 3 `
+    -Description "Executed harmless encoded PowerShell payload" `
+    -ExpectedDetectionSource "Sysmon Event ID 1; PowerShell Event ID 4104" `
+    -MitreTechnique "MITRE ATT&CK T1059.001 - PowerShell" `
+    -Timestamp $Timestamp
 
     ##########################################################
     # 4. Scheduled Task Persistence
