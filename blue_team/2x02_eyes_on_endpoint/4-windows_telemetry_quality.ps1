@@ -202,15 +202,20 @@ $HoursWithoutEvents.Count
 
 
 ##############################################################
-# Gap Detection
+# Gap Detection - Periods Longer Than 30 Minutes
 ##############################################################
+
+# Identify telemetry gaps longer than 30 minutes.
+# Any period with more than 30 minutes between events
+# is recorded as a potential telemetry coverage gap.
+
+$GapThresholdMinutes = 30
 
 $SortedEvents =
 $Events |
 Sort-Object {
     [datetime]$_.timestamp
 }
-
 
 $Gaps = @()
 
@@ -222,22 +227,21 @@ for ($i = 1; $i -lt $SortedEvents.Count; $i++) {
     $Current =
     [datetime]$SortedEvents[$i].timestamp
 
-
     $GapMinutes =
     ($Current - $Previous).TotalMinutes
 
+    if ($GapMinutes -gt $GapThresholdMinutes) {
 
-    if ($GapMinutes -gt 30) {
-
-        $Gaps += [PSCustomObject]@{
+        $Gaps +=
+        [PSCustomObject]@{
 
             start =
-            $Previous.ToString(
+            $Previous.ToUniversalTime().ToString(
                 "yyyy-MM-ddTHH:mm:ssZ"
             )
 
             end =
-            $Current.ToString(
+            $Current.ToUniversalTime().ToString(
                 "yyyy-MM-ddTHH:mm:ssZ"
             )
 
@@ -247,22 +251,19 @@ for ($i = 1; $i -lt $SortedEvents.Count; $i++) {
                 2
             )
 
+            threshold =
+            "30 minutes"
         }
-
     }
-
 }
 
-
 $LargestGap = 0
-
 
 if ($Gaps.Count -gt 0) {
 
     $LargestGap =
-    ($Gaps.minutes |
+    ($Gaps.duration_minutes |
     Measure-Object -Maximum).Maximum
-
 }
 
 
