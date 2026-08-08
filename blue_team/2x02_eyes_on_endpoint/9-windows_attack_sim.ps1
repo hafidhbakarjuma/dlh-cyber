@@ -1,9 +1,9 @@
 #!/usr/bin/env pwsh
 
-# Name: 9-windows_attack_sim.ps1
-# Purpose: Execute a controlled attacker simulation and record ground truth telemetry.
-# Author: Hafidh Juma
-# Project: MedDefense Endpoint Telemetry Engineering
+# name: 9-windows_attack_sim.ps1
+# purpose: Execute a controlled attacker simulation and record ground truth telemetry.
+# author: Hafidh Juma
+# project: MedDefense Endpoint Telemetry Engineering
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
