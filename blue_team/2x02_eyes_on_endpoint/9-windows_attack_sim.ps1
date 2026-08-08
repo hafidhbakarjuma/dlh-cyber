@@ -118,31 +118,26 @@ try {
         -MitreTechnique "T1098 - Account Manipulation" `
         -Timestamp $Timestamp
 
-    ##########################################################
-    # 3. Encoded PowerShell
-    ##########################################################
+##########################################################
+# 3. Encoded PowerShell
+##########################################################
 
-    $Timestamp = Get-UtcTimestamp
+$Timestamp = Get-UtcTimestamp
+Write-Host "    [3/6] Running encoded PowerShell... $Timestamp"
 
-    Write-Host "    [3/6] Running encoded PowerShell... $Timestamp"
+$Payload = 'Write-Host "C2 beacon"'
+$EncodedCommand = [Convert]::ToBase64String(
+    [Text.Encoding]::Unicode.GetBytes($Payload)
+)
 
-    $Payload = 'Write-Host "C2 beacon"'
+powershell.exe -NoProfile -enc $EncodedCommand
 
-    $EncodedCommand = [Convert]::ToBase64String(
-        [Text.Encoding]::Unicode.GetBytes($Payload)
-    )
-
-    powershell.exe `
-        -NoProfile `
-        -NonInteractive `
-        -EncodedCommand $EncodedCommand | Out-Null
-
-    Add-GroundTruth `
-        -ActionNumber 3 `
-        -Description "Executed harmless encoded PowerShell payload" `
-        -ExpectedDetectionSource "Sysmon Event ID 1; PowerShell Event ID 4104" `
-        -MitreTechnique "T1059.001 - Command and Scripting Interpreter: PowerShell" `
-        -Timestamp $Timestamp
+Add-GroundTruth `
+    -ActionNumber 3 `
+    -Description "Executed harmless encoded PowerShell command" `
+    -ExpectedDetectionSource "Sysmon Event ID 1; PowerShell Event ID 4104" `
+    -MitreTechnique "T1059.001 - PowerShell" `
+    -Timestamp $Timestamp
 
     ##########################################################
     # 4. Scheduled Task Persistence
