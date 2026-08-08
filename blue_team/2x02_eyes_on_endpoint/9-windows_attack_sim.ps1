@@ -1,10 +1,9 @@
-```powershell
 #!/usr/bin/env pwsh
 
-# name: 9-windows_attack_sim.ps1
-# purpose: Execute a controlled attacker simulation and record ground truth telemetry.
-# author: Hafidh Juma
-# project: MedDefense Endpoint Telemetry Engineering
+# Name: 9-windows_attack_sim.ps1
+# Purpose: Execute a controlled attacker simulation and record ground truth telemetry.
+# Author: Hafidh Juma
+# Project: MedDefense Endpoint Telemetry Engineering
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -15,9 +14,12 @@ $ErrorActionPreference = "Stop"
 
 $TestUser = "support_update"
 $TestPassword = ConvertTo-SecureString "MedDefense-Test-2026!" -AsPlainText -Force
+
 $GroundTruthFile = Join-Path $PSScriptRoot "windows_attack_log.json"
+
 $StartupDirectory = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
 $StartupFile = Join-Path $StartupDirectory "meddefense_telemetry_test.txt"
+
 $ScheduledTaskName = "MedDefense-Telemetry-Test"
 
 $GroundTruth = @()
@@ -40,11 +42,11 @@ function Add-GroundTruth {
     )
 
     $script:GroundTruth += [PSCustomObject]@{
-        action_number = $ActionNumber
-        description = $Description
-        timestamp = $Timestamp
+        action_number             = $ActionNumber
+        description               = $Description
+        timestamp                 = $Timestamp
         expected_detection_source = $ExpectedDetectionSource
-        mitre_attack_technique = $MitreTechnique
+        mitre_attack_technique    = $MitreTechnique
     }
 }
 
@@ -98,7 +100,7 @@ try {
         -ActionNumber 1 `
         -Description "Created local user support_update" `
         -ExpectedDetectionSource "Security Event ID 4720" `
-        -MitreTechnique "T1136.001 - Create Account: Local Account" `
+        -MitreTechnique "MITRE ATT&CK T1136.001 - Create Account: Local Account" `
         -Timestamp $Timestamp
 
     ##########################################################
@@ -117,7 +119,7 @@ try {
         -ActionNumber 2 `
         -Description "Added support_update to local Administrators group" `
         -ExpectedDetectionSource "Security Event ID 4732" `
-        -MitreTechnique "T1098 - Account Manipulation" `
+        -MitreTechnique "MITRE ATT&CK T1098 - Account Manipulation" `
         -Timestamp $Timestamp
 
     ##########################################################
@@ -128,20 +130,22 @@ try {
 
     Write-Host "    [3/6] Running encoded PowerShell... $Timestamp"
 
+    # Harmless payload used only to generate telemetry.
     $Payload = 'Write-Host "C2 beacon"'
 
     $EncodedCommand = [Convert]::ToBase64String(
         [Text.Encoding]::Unicode.GetBytes($Payload)
     )
 
-    # Explicit -enc is intentional for telemetry validation.
-    powershell.exe -NoProfile -enc $EncodedCommand
+    powershell.exe `
+        -NoProfile `
+        -EncodedCommand $EncodedCommand
 
     Add-GroundTruth `
         -ActionNumber 3 `
-        -Description "Executed harmless encoded PowerShell command" `
+        -Description "Executed harmless encoded PowerShell payload" `
         -ExpectedDetectionSource "Sysmon Event ID 1; PowerShell Event ID 4104" `
-        -MitreTechnique "T1059.001 - PowerShell" `
+        -MitreTechnique "MITRE ATT&CK T1059.001 - PowerShell" `
         -Timestamp $Timestamp
 
     ##########################################################
@@ -152,9 +156,10 @@ try {
 
     Write-Host "    [4/6] Creating scheduled task... $Timestamp"
 
-    schtasks.exe /create `
+    schtasks.exe `
+        /create `
         /tn $ScheduledTaskName `
-        /tr "cmd.exe /c exit" `
+        /tr 'cmd.exe /c echo MedDefense telemetry test' `
         /sc once `
         /st 23:59 `
         /f | Out-Null
@@ -163,7 +168,7 @@ try {
         -ActionNumber 4 `
         -Description "Created scheduled task for persistence simulation" `
         -ExpectedDetectionSource "Security Event ID 4698; Sysmon Event ID 1" `
-        -MitreTechnique "T1053.005 - Scheduled Task/Job: Scheduled Task" `
+        -MitreTechnique "MITRE ATT&CK T1053.005 - Scheduled Task/Job: Scheduled Task" `
         -Timestamp $Timestamp
 
     ##########################################################
@@ -181,41 +186,41 @@ try {
 
     Add-GroundTruth `
         -ActionNumber 5 `
-        -Description "Initiated outbound TCP connection to safe external IP" `
+        -Description "Initiated outbound TCP connection test to 1.1.1.1:443" `
         -ExpectedDetectionSource "Sysmon Event ID 3" `
-        -MitreTechnique "T1071 - Application Layer Protocol" `
+        -MitreTechnique "MITRE ATT&CK T1071.001 - Web Protocols" `
         -Timestamp $Timestamp
 
     ##########################################################
-    # 6. Startup File
+    # 6. Startup Directory File
     ##########################################################
 
     $Timestamp = Get-UtcTimestamp
 
     Write-Host "    [6/6] Dropping file in Startup... $Timestamp"
 
-    if (-not (Test-Path $StartupDirectory)) {
+    if (-not (Test-Path -LiteralPath $StartupDirectory)) {
         New-Item `
-            -Path $StartupDirectory `
             -ItemType Directory `
+            -Path $StartupDirectory `
             -Force | Out-Null
     }
 
     Set-Content `
         -Path $StartupFile `
-        -Value "MedDefense telemetry validation test" `
+        -Value "MedDefense telemetry simulation" `
         -Encoding UTF8
 
     Add-GroundTruth `
         -ActionNumber 6 `
-        -Description "Dropped test file in Windows Startup directory" `
+        -Description "Dropped test file into Windows Startup directory" `
         -ExpectedDetectionSource "Sysmon Event ID 11" `
-        -MitreTechnique "T1547.001 - Registry Run Keys / Startup Folder" `
+        -MitreTechnique "MITRE ATT&CK T1547.001 - Registry Run Keys / Startup Folder" `
         -Timestamp $Timestamp
 
-    ##############################################################
-    # Write Ground Truth
-    ##############################################################
+    ##########################################################
+    # Save Ground Truth
+    ##########################################################
 
     $GroundTruth |
         ConvertTo-Json -Depth 5 |
@@ -223,70 +228,52 @@ try {
             -Path $GroundTruthFile `
             -Encoding UTF8
 
+    Write-Host ""
     Write-Host "[*] Cleaning up artifacts..."
 
 }
 finally {
 
-```powershell
-##############################################################
-# Cleanup
-##############################################################
-
-finally {
-
-    Write-Host "[*] Cleaning up artifacts..."
-
     ##########################################################
-    # Remove Scheduled Task
+    # Cleanup Scheduled Task
     ##########################################################
 
-    $ExistingTask = Get-ScheduledTask `
+    if (Get-ScheduledTask `
         -TaskName $ScheduledTaskName `
-        -ErrorAction SilentlyContinue
-
-    if ($null -ne $ExistingTask) {
+        -ErrorAction SilentlyContinue) {
 
         Unregister-ScheduledTask `
             -TaskName $ScheduledTaskName `
             -Confirm:$false `
             -ErrorAction SilentlyContinue
-
     }
 
     ##########################################################
-    # Remove Startup File
+    # Cleanup Startup File
     ##########################################################
 
-    if (Test-Path $StartupFile) {
-
+    if (Test-Path -LiteralPath $StartupFile) {
         Remove-Item `
-            -Path $StartupFile `
+            -LiteralPath $StartupFile `
             -Force `
             -ErrorAction SilentlyContinue
-
     }
 
     ##########################################################
-    # Remove Test User
+    # Cleanup Test User
     ##########################################################
 
-    $ExistingUser = Get-LocalUser `
+    if (Get-LocalUser `
         -Name $TestUser `
-        -ErrorAction SilentlyContinue
-
-    if ($null -ne $ExistingUser) {
+        -ErrorAction SilentlyContinue) {
 
         Remove-LocalUser `
             -Name $TestUser `
             -ErrorAction SilentlyContinue
-
     }
 
-    Write-Host "    User removed, task deleted, file removed [CLEAN]"
+    Write-Host "    User removed, task deleted, file removed           [CLEAN]"
 }
-```
-
 
 ##############################################################
 # Final Output
@@ -294,4 +281,3 @@ finally {
 
 Write-Host "Actions executed: $($GroundTruth.Count)"
 Write-Host "Ground truth saved to: $GroundTruthFile"
-```
