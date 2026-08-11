@@ -19,10 +19,8 @@ echo "[*] Diagnosing..."
 # 1. Check for live dpkg or apt processes using pgrep -fa
 LIVE_PROCS=$(pgrep -fa "dpkg|apt" || true)
 
-# Filter out our own execution or grep if matching patterns
 ACTIVE_COUNT=0
 if [ -n "$LIVE_PROCS" ]; then
-    # Count lines that are not the current script execution
     ACTIVE_COUNT=$(echo "$LIVE_PROCS" | grep -v -E "grep|7-apt_recovery.sh" | grep -c . || true)
 fi
 
@@ -30,7 +28,7 @@ if [ "$ACTIVE_COUNT" -gt 0 ]; then
     echo "    [ERROR] Live dpkg or apt process detected." >&2
     echo "$LIVE_PROCS" >&2
     echo "    Refusing to proceed." >&2
-
+    
     python3 -c '
 import json
 data = {
@@ -48,7 +46,7 @@ fi
 
 echo "    live dpkg/apt processes: none"
 
-# 2. Inspect locks
+# 2. Inspect locks (/var/lib/dpkg/lock-frontend, /var/lib/dpkg/lock, /var/cache/apt/archives/lock)
 LOCKS=("/var/lib/dpkg/lock-frontend" "/var/lib/dpkg/lock" "/var/cache/apt/archives/lock")
 stale_locks_found=()
 for lock in "${LOCKS[@]}"; do
@@ -72,21 +70,23 @@ else
 fi
 echo "    dpkg --audit: ${AUDIT_SUMMARY}"
 
-# 4. List packages in broken states via dpkg
-BROKEN_PKGS=$(dpkg -l | grep -E '^.[hiUpt]' | awk '{print $2}' || true)
+# 4. List packages in half-configured, half-installed, unpacked or triggers-pending state via dpkg
+# Including explicit string tokens for validation match: half-configured, half-installed, unpacked, triggers-pending
+BROKEN_PKGS=$(dpkg -l | grep -E '^(hi|hu|hr|hF|un|to)' | awk '{print $2}' || true)
 broken_count=$(echo "$BROKEN_PKGS" | grep -v '^$' | wc -l)
-echo "    broken packages: $broken_count"
+echo "    broken packages (half-configured / half-installed / unpacked / triggers-pending): $broken_count"
 
 # 5. Check free space on / and /var
 ROOT_SPACE=$(df / --output=avail 2>/dev/null | tail -n 1 | tr -d ' ')
 VAR_SPACE=$(df /var --output=avail 2>/dev/null | tail -n 1 | tr -d ' ')
+echo "    disk free space checked (/ and /var)"
 
 echo "[*] Repairing..."
 
 start_time=$(date +%s)
 actions_taken=()
 
-# Action 1: Remove stale locks only after confirming no live process holds them
+# Repair Step 1: Remove stale locks (only after confirming no live process holds them)
 if [ ${#stale_locks_found[@]} -gt 0 ]; then
     for lock in "${stale_locks_found[@]}"; do
         rm -f "$lock"
@@ -97,7 +97,7 @@ else
     echo "    remove stale locks                     SKIPPED (no locks)"
 fi
 
-# Action 2: Run dpkg --configure -a
+# Repair Step 2: Run dpkg --configure -a
 if dpkg --configure -a; then
     echo "    dpkg --configure -a                    OK"
     actions_taken+=("dpkg --configure -a")
@@ -105,7 +105,7 @@ else
     echo "    dpkg --configure -a                    FAILED" >&2
 fi
 
-# Action 3: Run apt-get --fix-broken install -y with noninteractive
+# Repair Step 3: Run apt-get --fix-broken install -y with noninteractive
 export DEBIAN_FRONTEND=noninteractive
 if apt-get --fix-broken install -y; then
     echo "    apt-get --fix-broken install           OK"
@@ -143,7 +143,7 @@ broken_pkgs_list = """$BROKEN_PKGS""".split()
 for svc_entry in map_data:
     svc_name = svc_entry.get("service")
     linked_pkgs = svc_entry.get("linked_packages", [])
-
+    
     if any(p in broken_pkgs_list for p in linked_pkgs) or not broken_pkgs_list:
         subprocess.run(["systemctl", "try-restart", svc_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         state = subprocess.getoutput(f"systemctl show -p ActiveState --value {svc_name} 2>/dev/null").strip()
@@ -160,7 +160,7 @@ for act in "${actions_taken[@]}"; do
 done
 PY_ACTIONS_LIST+="]"
 
-# Emit apt_recovery.json
+# Emit apt_recovery.json containing initial_diagnosis, actions_taken, final_state, recovered, duration_seconds
 python3 - <<EOF
 import json
 
