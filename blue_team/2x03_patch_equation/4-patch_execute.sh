@@ -200,3 +200,11 @@ if any_failed:
 else:
     sys.exit(0)
 EOF
+
+# Explicit bash exit codes for static checkers
+PY_EXIT=$?
+if [ $PY_EXIT -eq 0 ]; then
+    exit 0
+else
+    exit 1
+fi
