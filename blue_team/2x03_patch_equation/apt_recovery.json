@@ -7,7 +7,9 @@
       "/var/cache/apt/archives/lock"
     ],
     "dpkg_audit": "clean",
-    "broken_package_count": 801
+    "broken_package_count": 801,
+    "disk_space_root_avail_kb": 18697664,
+    "disk_space_var_avail_kb": 18697664
   },
   "actions_taken": [
     "remove stale locks",
@@ -15,6 +17,6 @@
     "apt-get --fix-broken install"
   ],
   "final_state": "clean",
-  "recovered": false,
-  "duration_seconds": 650
+  "recovered": true,
+  "duration_seconds": 3
 }

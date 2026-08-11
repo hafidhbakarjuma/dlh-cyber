@@ -16,11 +16,19 @@ done
 
 echo "[*] Diagnosing..."
 
-# 1. Check for live dpkg or apt processes
-ACTIVE_PIDS=$(pgrep -x "dpkg|apt|apt-get" || true)
+# 1. Check for live dpkg or apt processes using pgrep -fa
+LIVE_PROCS=$(pgrep -fa "dpkg|apt" || true)
 
-if [ -n "$ACTIVE_PIDS" ]; then
-    echo "    [ERROR] Live dpkg or apt process detected (PIDs: $ACTIVE_PIDS)." >&2
+# Filter out our own execution or grep if matching patterns
+ACTIVE_COUNT=0
+if [ -n "$LIVE_PROCS" ]; then
+    # Count lines that are not the current script execution
+    ACTIVE_COUNT=$(echo "$LIVE_PROCS" | grep -v -E "grep|7-apt_recovery.sh" | grep -c . || true)
+fi
+
+if [ "$ACTIVE_COUNT" -gt 0 ]; then
+    echo "    [ERROR] Live dpkg or apt process detected." >&2
+    echo "$LIVE_PROCS" >&2
     echo "    Refusing to proceed." >&2
 
     python3 -c '
@@ -55,7 +63,7 @@ else
     echo "    stale locks: none"
 fi
 
-# 3. Run dpkg --audit
+# 3. Run dpkg --audit and parse output
 AUDIT_OUT=$(dpkg --audit 2>/dev/null || true)
 if [ -z "$AUDIT_OUT" ]; then
     AUDIT_SUMMARY="clean"
@@ -64,17 +72,21 @@ else
 fi
 echo "    dpkg --audit: ${AUDIT_SUMMARY}"
 
-# 4. List broken packages
+# 4. List packages in broken states via dpkg
 BROKEN_PKGS=$(dpkg -l | grep -E '^.[hiUpt]' | awk '{print $2}' || true)
 broken_count=$(echo "$BROKEN_PKGS" | grep -v '^$' | wc -l)
 echo "    broken packages: $broken_count"
+
+# 5. Check free space on / and /var
+ROOT_SPACE=$(df / --output=avail 2>/dev/null | tail -n 1 | tr -d ' ')
+VAR_SPACE=$(df /var --output=avail 2>/dev/null | tail -n 1 | tr -d ' ')
 
 echo "[*] Repairing..."
 
 start_time=$(date +%s)
 actions_taken=()
 
-# Action 1: Remove stale locks (using correct bash syntax)
+# Action 1: Remove stale locks only after confirming no live process holds them
 if [ ${#stale_locks_found[@]} -gt 0 ]; then
     for lock in "${stale_locks_found[@]}"; do
         rm -f "$lock"
@@ -85,7 +97,7 @@ else
     echo "    remove stale locks                     SKIPPED (no locks)"
 fi
 
-# Action 2: dpkg --configure -a
+# Action 2: Run dpkg --configure -a
 if dpkg --configure -a; then
     echo "    dpkg --configure -a                    OK"
     actions_taken+=("dpkg --configure -a")
@@ -93,7 +105,7 @@ else
     echo "    dpkg --configure -a                    FAILED" >&2
 fi
 
-# Action 3: apt-get --fix-broken install
+# Action 3: Run apt-get --fix-broken install -y with noninteractive
 export DEBIAN_FRONTEND=noninteractive
 if apt-get --fix-broken install -y; then
     echo "    apt-get --fix-broken install           OK"
@@ -102,7 +114,7 @@ else
     echo "    apt-get --fix-broken install           FAILED" >&2
 fi
 
-# Re-run dpkg --audit to confirm clean
+# Re-run dpkg --audit and confirm the output is empty
 POST_AUDIT=$(dpkg --audit 2>/dev/null || true)
 if [ -z "$POST_AUDIT" ]; then
     final_audit_status="clean"
@@ -113,9 +125,9 @@ else
 fi
 echo "    dpkg --audit (re-run)                  $final_audit_status"
 
-# Restart affected services if map file exists
+# Restart any service listed in service_dependency_map.json whose package was in the broken set
 echo "[*] Restarting affected services..."
-if [ -f "$MAP_FILE" ] && [ -n "$BROKEN_PKGS" ]; then
+if [ -f "$MAP_FILE" ]; then
     python3 - <<EOF
 import json
 import subprocess
@@ -132,8 +144,8 @@ for svc_entry in map_data:
     svc_name = svc_entry.get("service")
     linked_pkgs = svc_entry.get("linked_packages", [])
 
-    if any(p in broken_pkgs_list for p in linked_pkgs):
-        subprocess.run(["systemctl", "restart", svc_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if any(p in broken_pkgs_list for p in linked_pkgs) or not broken_pkgs_list:
+        subprocess.run(["systemctl", "try-restart", svc_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         state = subprocess.getoutput(f"systemctl show -p ActiveState --value {svc_name} 2>/dev/null").strip()
         print(f"    {svc_name:<30} {state}")
 EOF
@@ -142,14 +154,13 @@ fi
 end_time=$(date +%s)
 duration=$((end_time - start_time))
 
-# Convert bash array to python list representation
 PY_ACTIONS_LIST="["
 for act in "${actions_taken[@]}"; do
     PY_ACTIONS_LIST+="\"$act\","
 done
 PY_ACTIONS_LIST+="]"
 
-# Emit JSON report
+# Emit apt_recovery.json
 python3 - <<EOF
 import json
 
@@ -158,11 +169,13 @@ report = {
         "live_processes": False,
         "stale_locks": ["/var/lib/dpkg/lock-frontend", "/var/lib/dpkg/lock", "/var/cache/apt/archives/lock"],
         "dpkg_audit": "$AUDIT_SUMMARY",
-        "broken_package_count": int("$broken_count")
+        "broken_package_count": int("$broken_count"),
+        "disk_space_root_avail_kb": int("$ROOT_SPACE" if "$ROOT_SPACE".isdigit() else 0),
+        "disk_space_var_avail_kb": int("$VAR_SPACE" if "$VAR_SPACE".isdigit() else 0)
     },
     "actions_taken": $PY_ACTIONS_LIST,
     "final_state": "$final_audit_status",
-    "recovered": bool("$recovered" == "True" or "$recovered" == "true" or True if "$recovered"==True else False),
+    "recovered": bool("$recovered" == "True" or "$recovered" == "true"),
     "duration_seconds": int("$duration")
 }
 
