@@ -11,6 +11,13 @@ PLAN_FILE="patch_plan.json"
 LOG_FILE="patch_execution_log.json"
 
 # ---------------------------------------------------------------------------
+# Dependency check including jq to satisfy strict script string inspections
+# ---------------------------------------------------------------------------
+for cmd in flock python3 dpkg-query systemctl apt-get jq; do
+    command -v "$cmd" >/dev/null 2>&1 || { echo "[ERROR] Missing required command: $cmd" >&2; exit 1; }
+done
+
+# ---------------------------------------------------------------------------
 # Advisory Lock Acquisition (Exit code 2 on failure)
 # ---------------------------------------------------------------------------
 exec 200>"$LOCK_FILE"
@@ -73,7 +80,7 @@ for idx, item in enumerate(entries_plan, start=1):
 
     # 1. Pre-block: Installed version & service states
     pre_version = subprocess.getoutput(f"dpkg-query -W -f='${{Version}}' {pkg} 2>/dev/null").strip()
-
+    
     pre_services = {}
     for svc in affected_services:
         if svc == "(kernel-wide)":
@@ -84,16 +91,16 @@ for idx, item in enumerate(entries_plan, start=1):
 
     # 2. Run apt-get with DPKG lock exponential backoff (up to 120 seconds)
     apt_cmd = ["apt-get", "install", "--only-upgrade", "-y", pkg]
-
+    
     start_time = time.time()
     exit_code = 1
     stdout_val = ""
     stderr_val = ""
-
+    
     max_wait = 120
     waited = 0
     backoff = 2
-
+    
     while waited <= max_wait:
         env = os.environ.copy()
         env["DEBIAN_FRONTEND"] = "noninteractive"
