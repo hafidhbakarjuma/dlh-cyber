@@ -5,5 +5,20 @@
     "missing": 2,
     "new": 0
   },
-  "files": []
+  "files": [
+    {
+      "path": "/etc/init.d/wazuh-agent",
+      "classification": "missing",
+      "owning_package": "wazuh-agent",
+      "expected": false,
+      "diff_summary": "File is missing"
+    },
+    {
+      "path": "/etc/systemd/system/wazuh-agent.service",
+      "classification": "missing",
+      "owning_package": "wazuh-agent",
+      "expected": false,
+      "diff_summary": "File is missing"
+    }
+  ]
 }

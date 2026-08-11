@@ -26,7 +26,7 @@ done
 echo "[*] Analyzing configuration file drift against pre-patch baseline..."
 
 # ---------------------------------------------------------------------------
-# Python Drift Detection Engine with explicit diff -u integration
+# Python Drift Detection Engine
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import json
@@ -86,9 +86,23 @@ for path in sorted(current_conffiles):
     pre_hash = pre_hashes.get(path)
     file_exists = os.path.isfile(path)
 
+    # Find owning package via dpkg -S
+    owning_pkg = subprocess.getoutput(f"dpkg -S {path} 2>/dev/null | head -n1 | cut -d: -f1").strip()
+    if not owning_pkg or "no path found" in owning_pkg:
+        owning_pkg = "unknown"
+
+    is_expected = True if owning_pkg in upgraded_packages else False
+
     if not file_exists:
         classification = "missing"
         counts["missing"] += 1
+        file_records.append({
+            "path": path,
+            "classification": classification,
+            "owning_package": owning_pkg,
+            "expected": is_expected,
+            "diff_summary": "File is missing"
+        })
         continue
 
     # Compute current SHA-256 hash
@@ -111,22 +125,13 @@ for path in sorted(current_conffiles):
     else:
         classification = "modified"
         counts["modified"] += 1
+        if not is_expected:
+            unexpected_drift_found = True
 
-    # Find owning package via dpkg -S
-    owning_pkg = subprocess.getoutput(f"dpkg -S {path} 2>/dev/null | head -n1 | cut -d: -f1").strip()
-    if not owning_pkg or "no path found" in owning_pkg:
-        owning_pkg = "unknown"
-
-    # Determine if drift is expected
-    is_expected = True if owning_pkg in upgraded_packages else False
-    if classification == "modified" and not is_expected:
-        unexpected_drift_found = True
-
-    # Generate unified diff truncated to 40 lines via diff -u if a backup exists
+    # Generate unified diff truncated to 40 lines via diff -u if backup exists
     diff_snippet = ""
     backup_path = os.path.join(backup_dir, path.lstrip("/"))
     if classification == "modified" and os.path.exists(backup_path):
-        # Explicit invocation of diff -u truncated via head -n 40
         diff_cmd = f"diff -u {backup_path} {path} | head -n 40"
         diff_snippet = subprocess.getoutput(diff_cmd)
     else:
