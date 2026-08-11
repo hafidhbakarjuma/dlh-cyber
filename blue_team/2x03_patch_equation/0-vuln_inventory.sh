@@ -1,4 +1,3 @@
-```bash
 #!/bin/bash
 
 # 0-vuln_inventory.sh
