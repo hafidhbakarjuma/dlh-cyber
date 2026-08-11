@@ -9,9 +9,10 @@ set -uo pipefail
 PRE_PATCH_FILE="pre_patch_state.json"
 LOG_FILE="patch_execution_log.json"
 OUTPUT_FILE="config_drift.json"
+BACKUP_DIR="/var/backups/meddefense-pre"
 
 # Dependency checks
-for cmd in jq python3 sha256sum dpkg-query diff; do
+for cmd in jq python3 sha256sum dpkg-query diff head; do
     command -v "$cmd" >/dev/null 2>&1 || { echo "[ERROR] Missing required command: $cmd" >&2; exit 1; }
 done
 
@@ -25,7 +26,7 @@ done
 echo "[*] Analyzing configuration file drift against pre-patch baseline..."
 
 # ---------------------------------------------------------------------------
-# Python Drift Detection Engine
+# Python Drift Detection Engine with explicit diff -u integration
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import json
@@ -33,11 +34,11 @@ import subprocess
 import hashlib
 import os
 import sys
-import difflib
 
 pre_file = "pre_patch_state.json"
 log_file = "patch_execution_log.json"
 output_file = "config_drift.json"
+backup_dir = "/var/backups/meddefense-pre"
 
 try:
     with open(pre_file, "r") as f:
@@ -60,7 +61,7 @@ if os.path.exists(log_file):
 
 pre_hashes = pre_data.get("conffile_hashes", {})
 
-# Also collect current package-tracked conffiles under /etc via dpkg-query to catch new ones
+# Collect current package-tracked conffiles under /etc via dpkg-query
 current_conffiles = set(pre_hashes.keys())
 try:
     dpkg_output = subprocess.getoutput("dpkg-query -W -f='${Package}\n${Conffiles}\n' 2>/dev/null")
@@ -85,11 +86,10 @@ for path in sorted(current_conffiles):
     pre_hash = pre_hashes.get(path)
     file_exists = os.path.isfile(path)
 
-    # Determine classification
     if not file_exists:
         classification = "missing"
         counts["missing"] += 1
-        continue  # skip hash calculation if missing
+        continue
 
     # Compute current SHA-256 hash
     try:
@@ -107,26 +107,30 @@ for path in sorted(current_conffiles):
     elif pre_hash == current_hash:
         classification = "unchanged"
         counts["unchanged"] += 1
-        continue # skip unchanged files from detailed array if desired, or keep summary
+        continue
     else:
         classification = "modified"
         counts["modified"] += 1
 
     # Find owning package via dpkg -S
-    owning_pkg = subprocess.getoutput(f"dpkg-S {path} 2>/dev/null | head -n1 | cut -d: -f1").strip()
+    owning_pkg = subprocess.getoutput(f"dpkg -S {path} 2>/dev/null | head -n1 | cut -d: -f1").strip()
     if not owning_pkg or "no path found" in owning_pkg:
         owning_pkg = "unknown"
 
-    # Determine if drift is expected (owning package was upgraded in patch run)
+    # Determine if drift is expected
     is_expected = True if owning_pkg in upgraded_packages else False
     if classification == "modified" and not is_expected:
         unexpected_drift_found = True
 
-    # Generate truncated unified diff if modified (comparing backup/baseline if available or noting change)
+    # Generate unified diff truncated to 40 lines via diff -u if a backup exists
     diff_snippet = ""
-    if classification == "modified":
-        # Since we don't store full pre-patch content in JSON by default, we capture basic diff metadata or file attribute diff
-        diff_snippet = f"File hash changed from {pre_hash[:12]}... to {current_hash[:12]}..."
+    backup_path = os.path.join(backup_dir, path.lstrip("/"))
+    if classification == "modified" and os.path.exists(backup_path):
+        # Explicit invocation of diff -u truncated via head -n 40
+        diff_cmd = f"diff -u {backup_path} {path} | head -n 40"
+        diff_snippet = subprocess.getoutput(diff_cmd)
+    else:
+        diff_snippet = f"File hash changed from {pre_hash[:12] if pre_hash else 'N/A'} to {current_hash[:12]}"
 
     file_records.append({
         "path": path,
