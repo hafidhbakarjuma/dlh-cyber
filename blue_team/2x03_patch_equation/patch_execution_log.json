@@ -1,0 +1,29 @@
+{
+  "started_at": "2026-08-11T13:32:32Z",
+  "finished_at": "2026-08-11T13:32:34Z",
+  "hostname": "billing-srv-01",
+  "plan_source_hash": "bab3423872dfb68c00a3f541d90300217d59d77b73e2805d8bba08d72112210a",
+  "summary": {
+    "succeeded": 1,
+    "failed": 0
+  },
+  "entries": [
+    {
+      "package": "apache2",
+      "rank": 1,
+      "status": "success",
+      "duration_seconds": 2.1,
+      "pre": {
+        "version": "2.4.52-1ubuntu4.23",
+        "services": {}
+      },
+      "post": {
+        "version": "2.4.52-1ubuntu4.23",
+        "services": {}
+      },
+      "restart_results": {},
+      "stdout_tail": "Reading package lists...\nBuilding dependency tree...\nReading state information...\napache2 is already the newest version (2.4.52-1ubuntu4.23).\n0 upgraded, 0 newly installed, 0 to remove and 57 not upgraded.",
+      "stderr_tail": ""
+    }
+  ]
+}
