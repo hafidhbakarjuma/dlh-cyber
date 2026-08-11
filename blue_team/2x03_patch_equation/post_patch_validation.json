@@ -1,0 +1,315 @@
+{
+  "total_checks": 46,
+  "passed": 43,
+  "failed": 3,
+  "details": [
+    {
+      "category": "service_state",
+      "target": "apache2.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "apparmor.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "apport.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "auditd.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "cron.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "dbus.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "getty@tty2.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "kmod-static-nodes.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "lvm2-pvscan@8:3.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "mysql.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "packagekit.service",
+      "pre_state": "active",
+      "post_state": "inactive",
+      "status": "regression"
+    },
+    {
+      "category": "service_state",
+      "target": "plymouth-quit-wait.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "plymouth-quit.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "plymouth-read-write.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "polkit.service",
+      "pre_state": "active",
+      "post_state": "inactive",
+      "status": "regression"
+    },
+    {
+      "category": "service_state",
+      "target": "rsyslog.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "snapd.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "ssh.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-binfmt.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-fsck@dev-disk-by\\x2duuid-907d4524\\x2dc1c7\\x2d4387\\x2da530\\x2d8bfda4b27e0d.service",
+      "pre_state": "active",
+      "post_state": "inactive",
+      "status": "regression"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-journal-flush.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-journald.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-logind.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-modules-load.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-networkd.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-random-seed.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-remount-fs.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-sysctl.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-sysusers.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-timesyncd.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-tmpfiles-setup-dev.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-tmpfiles-setup.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-udev-trigger.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-udevd.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-update-utmp.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "systemd-user-sessions.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "user-runtime-dir@1000.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "user@1000.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "service_state",
+      "target": "wazuh-agent.service",
+      "pre_state": "active",
+      "post_state": "active",
+      "status": "pass"
+    },
+    {
+      "category": "listening_socket",
+      "target": "udp   UNCONN 0      0                192.168.178.107%enp0s3:68         0.0.0.0:*    users:((\"systemd-network\",pid=18140,fd=22))",
+      "status": "pass"
+    },
+    {
+      "category": "listening_socket",
+      "target": "udp   UNCONN 0      0      [fe80::a00:27ff:fef2:2af]%enp0s3:546           [::]:*    users:((\"systemd-network\",pid=18140,fd=24))",
+      "status": "pass"
+    },
+    {
+      "category": "listening_socket",
+      "target": "tcp   LISTEN 0      151                             0.0.0.0:3306       0.0.0.0:*    users:((\"mysqld\",pid=690,fd=23))",
+      "status": "pass"
+    },
+    {
+      "category": "listening_socket",
+      "target": "tcp   LISTEN 0      128                             0.0.0.0:22         0.0.0.0:*    users:((\"sshd\",pid=645,fd=3))",
+      "status": "pass"
+    },
+    {
+      "category": "listening_socket",
+      "target": "tcp   LISTEN 0      70                            127.0.0.1:33060      0.0.0.0:*    users:((\"mysqld\",pid=690,fd=21))",
+      "status": "pass"
+    },
+    {
+      "category": "listening_socket",
+      "target": "tcp   LISTEN 0      511                                   *:80               *:*    users:((\"apache2\",pid=660,fd=3),(\"apache2\",pid=659,fd=3),(\"apache2\",pid=658,fd=3),(\"apache2\",pid=657,fd=3),(\"apache2\",pid=656,fd=3),(\"apache2\",pid=648,fd=3))",
+      "status": "pass"
+    },
+    {
+      "category": "listening_socket",
+      "target": "tcp   LISTEN 0      128                                [::]:22            [::]:*    users:((\"sshd\",pid=645,fd=4))",
+      "status": "pass"
+    }
+  ]
+}
