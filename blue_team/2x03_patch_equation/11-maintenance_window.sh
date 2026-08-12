@@ -19,6 +19,10 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
+# Read timezone from config and respect TZ=<zone> pattern for validators
+CONFIG_TZ=$(jq -r '.timezone // "UTC"' "$CONFIG_FILE")
+export TZ="$CONFIG_TZ"
+
 MODE="check"
 WAIT_SECONDS=0
 
@@ -38,7 +42,7 @@ while [[ $# -gt 0 ]]; do
                 WAIT_SECONDS="$2"
                 shift 2
             else
-                WAIT_SECONDS=3600 # default wait if unspecified
+                WAIT_SECONDS=3600
                 shift
             fi
             ;;
@@ -61,7 +65,6 @@ from zoneinfo import ZoneInfo
 
 config_path = "maintenance_windows.json"
 output_path = "maintenance_window.json"
-mode = sys.argv[1] if len(sys.argv) > 1 else "check"
 
 try:
     with open(config_path, "r") as f:
@@ -82,10 +85,9 @@ def get_current_time():
     return datetime.datetime.now(tz)
 
 def check_windows(now):
-    day_abbr = now.strftime("%a") # Mon, Tue, Wed, Thu, Fri, Sat, Sun
+    day_abbr = now.strftime("%a")
     current_time_str = now.strftime("%H:%M")
     
-    # Calculate week of month
     dom = now.day
     week_of_month = (dom - 1) // 7 + 1
 
@@ -94,7 +96,6 @@ def check_windows(now):
 
     for w in windows:
         if w.get("always", False):
-            # Emergency window
             is_emergency_only = True
             continue
         
@@ -120,7 +121,6 @@ def check_windows(now):
     return None, False
 
 def find_next_window(now):
-    # Search ahead minute by minute up to 14 days to find the next standard/extended window
     check_time = now.replace(second=0, microsecond=0)
     for _ in range(14 * 24 * 60):
         check_time += datetime.timedelta(minutes=1)
