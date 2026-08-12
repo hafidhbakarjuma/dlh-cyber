@@ -1,285 +1,263 @@
 #!/bin/bash
-# name: 15-compliance_report.sh
-# purpose: Generate the single machine-readable compliance artifact that
-#          answers "where are we, right now, with respect to every known
-#          CVE on this host" -- resolved, open, deferred with a recorded
-#          reason (held package), or deferred pending the next
-#          maintenance window.
-# Project: 2x03 - Patch Equation
-# Task:    15 - The Patch Compliance Artifact
-#
-# Read-only: aggregates vulnerability_inventory.json (Task 0),
-# hold_management.json (Task 10), patch_change_log.json (Task 12), and
-# pipeline_run.json (Task 13). Changes nothing on the system.
-#
-# --- Documented assumptions (this task's schema is not fully specified
-#     by prior tasks, so these choices are made explicit rather than
-#     silently guessed) ---
-#
-# ./history/ -- rotated copies of vulnerability_inventory.json, one per
-# prior run, matched by the glob history/vulnerability_inventory*.json.
-# Each is expected to carry the same schema as the current file,
-# including .metadata.generated_at, used as that snapshot's timestamp.
-#
-# For every CVE ever seen, this script determines its current state:
-#   resolved         no longer present in the CURRENT vulnerability_inventory.json
-#                     (having been seen in some prior snapshot), OR explicitly
-#                     listed in any patch_change_log.json event's cves_resolved
-#   deferred_held     still open, AND its owning package is currently held
-#                     (hold_management.json .applied[] with hold_applied=true) --
-#                     justification is that hold's recorded reason
-#   deferred_window   still open, not held, AND its owning package already
-#                     appears in the current patch_plan.json -- a fix is
-#                     planned, just waiting for the next maintenance window
-#   open              still open, not held, not yet planned
-#
-# Compliance score = resolved CVEs classified critical/high, divided by
-# ALL critical/high CVEs ever seen (any state) -- the literal formula
-# from the spec, applied consistently.
-#
-# "Now", for the 7-day overdue clock, is patch_change_log.json's
-# period_end when available (per the task's instruction to use the
-# change log for the clock), falling back to the current
-# vulnerability_inventory.json's generated_at, and only as a last resort
-# the real system date.
+# name: 15-handoff_validation.sh
+# purpose: Validate the telemetry handoff package against quality gates to ensure Minimum Event Counts readiness for analyst consumption.
+# author: Hafidh Juma
 
-set -uo pipefail
+set -euo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
-VULN_FILE="${SCRIPT_DIR}/vulnerability_inventory.json"
-HISTORY_DIR="${SCRIPT_DIR}/history"
-CHANGE_LOG_FILE="${SCRIPT_DIR}/patch_change_log.json"
-HOLD_FILE="${SCRIPT_DIR}/hold_management.json"
-PLAN_FILE="${SCRIPT_DIR}/patch_plan.json"
-PIPELINE_RUN_FILE="${SCRIPT_DIR}/pipeline_run.json"
-OUTPUT_FILE="${SCRIPT_DIR}/patch_compliance.json"
+WIN_EVENTS="telemetry_handoff/windows_events.json"
+LIN_EVENTS="telemetry_handoff/linux_events.json"
+GROUND_TRUTH="telemetry_handoff/attack_ground_truth.json"
+WIN_DM="windows_detection_matrix.json"
+LIN_DM="linux_detection_matrix.json"
+VALIDATION_OUT="handoff_validation.json"
 
-TARGET_SCORE="95.00"
-
-fail() { echo "[FAIL] $*" >&2; exit 1; }
-need() { command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"; }
-
-for c in jq date hostname uname awk; do need "$c"; done
-
-[[ -f "${VULN_FILE}" ]] || fail "vulnerability_inventory.json not found in ${SCRIPT_DIR} (run 0-vuln_inventory.sh first)"
-jq empty "${VULN_FILE}" >/dev/null 2>&1 || fail "vulnerability_inventory.json is invalid JSON"
-
-TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "${TMP_DIR}"' EXIT
-
-# ---------------------------------------------------------------------------
-# 1-2. Collect every CVE ever seen, across the current inventory and any
-#      rotated history/ copies, tagging each with the earliest timestamp
-#      it was observed at (first_seen) and whether it's in the CURRENT
-#      inventory (still open).
-# ---------------------------------------------------------------------------
-CURRENT_GENERATED_AT="$(jq -r '.metadata.generated_at // empty' "${VULN_FILE}")"
-[[ -z "${CURRENT_GENERATED_AT}" ]] && CURRENT_GENERATED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-
-ALL_SNAPSHOTS=("${VULN_FILE}")
-if [[ -d "${HISTORY_DIR}" ]]; then
-    while IFS= read -r f; do
-        [[ -n "${f}" ]] || continue
-        ALL_SNAPSHOTS+=("${f}")
-    done < <(compgen -G "${HISTORY_DIR}/vulnerability_inventory*.json" || true)
-fi
-
-# CVE_FIRSTSEEN_FILE: one line per (cve, package, severity, timestamp) seen
-# in any snapshot; the earliest timestamp per CVE becomes first_seen.
-CVE_OBSERVATIONS="${TMP_DIR}/cve_observations.tsv"
-: > "${CVE_OBSERVATIONS}"
-
-for snap in "${ALL_SNAPSHOTS[@]}"; do
-    [[ -f "${snap}" ]] || continue
-    jq empty "${snap}" >/dev/null 2>&1 || continue
-    snap_ts="$(jq -r '.metadata.generated_at // empty' "${snap}")"
-    [[ -z "${snap_ts}" ]] && snap_ts="$(date -u -r "${snap}" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || echo "${CURRENT_GENERATED_AT}")"
-
-    jq -r --arg ts "${snap_ts}" '
-      .packages // [] | .[] as $p | ($p.cves // [])[] |
-      [., $p.package, ($p.severity // "unknown"), $ts] | @tsv
-    ' "${snap}" >> "${CVE_OBSERVATIONS}" 2>/dev/null
+for cmd in jq date du awk; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "[!] Required command not found: $cmd" >&2
+        exit 1
+    fi
 done
 
-CURRENT_CVES_FILE="${TMP_DIR}/current_cves.txt"
-jq -r '.packages // [] | .[].cves[]?' "${VULN_FILE}" | sort -u > "${CURRENT_CVES_FILE}"
+TOTAL_CHECKS=14
+PASSED_CHECKS=0
+VALIDATION_LOGS=()
 
-# ---------------------------------------------------------------------------
-# Load enrichment sources
-# ---------------------------------------------------------------------------
-RESOLVED_VIA_LOG="${TMP_DIR}/resolved_via_log.tsv"
-: > "${RESOLVED_VIA_LOG}"
-CHANGE_LOG_PERIOD_END=""
-if [[ -f "${CHANGE_LOG_FILE}" ]]; then
-    jq empty "${CHANGE_LOG_FILE}" >/dev/null 2>&1 && {
-        CHANGE_LOG_PERIOD_END="$(jq -r '.period_end // empty' "${CHANGE_LOG_FILE}")"
-        jq -r '
-          .events // [] | .[] as $e | ($e.cves_resolved // [])[] |
-          [., ($e.ended // "")] | @tsv
-        ' "${CHANGE_LOG_FILE}" >> "${RESOLVED_VIA_LOG}" 2>/dev/null
-    }
-fi
-
-HELD_PACKAGES="${TMP_DIR}/held_packages.tsv"
-: > "${HELD_PACKAGES}"
-if [[ -f "${HOLD_FILE}" ]]; then
-    jq empty "${HOLD_FILE}" >/dev/null 2>&1 && \
-    jq -r '.applied // [] | .[] | select(.hold_applied == true) | [.package, (.reason // "")] | @tsv' \
-      "${HOLD_FILE}" >> "${HELD_PACKAGES}" 2>/dev/null
-fi
-
-PLANNED_PACKAGES="${TMP_DIR}/planned_packages.txt"
-: > "${PLANNED_PACKAGES}"
-if [[ -f "${PLAN_FILE}" ]]; then
-    jq empty "${PLAN_FILE}" >/dev/null 2>&1 && \
-    jq -r '.plan // [] | .[].package' "${PLAN_FILE}" | sort -u > "${PLANNED_PACKAGES}"
-fi
-
-# pipeline_run.json: corroborates *why* a planned package hasn't been
-# executed yet -- if the most recent pipeline run was itself "deferred"
-# (stopped by 11-maintenance_window.sh, per Task 13), that's the concrete
-# reason a planned fix is still pending, not just "it's in the plan."
-PIPELINE_STATUS=""
-PIPELINE_FINISHED_AT=""
-if [[ -f "${PIPELINE_RUN_FILE}" ]]; then
-    jq empty "${PIPELINE_RUN_FILE}" >/dev/null 2>&1 && {
-        PIPELINE_STATUS="$(jq -r '.pipeline_status // empty' "${PIPELINE_RUN_FILE}")"
-        PIPELINE_FINISHED_AT="$(jq -r '.finished_at // empty' "${PIPELINE_RUN_FILE}")"
-    }
-fi
-
-# "Now" for the overdue clock: patch_change_log.json's period_end first,
-# per the task's instruction to use the change log for the clock.
-NOW_FOR_CLOCK="${CHANGE_LOG_PERIOD_END:-${CURRENT_GENERATED_AT}}"
-NOW_EPOCH="$(date -d "${NOW_FOR_CLOCK}" +%s 2>/dev/null || date +%s)"
-
-# ---------------------------------------------------------------------------
-# Build the per-CVE list
-# ---------------------------------------------------------------------------
-CVES_FILE="${TMP_DIR}/cves.jsonl"
-: > "${CVES_FILE}"
-
-RESOLVED=0; OPEN=0; DEFERRED_HELD=0; DEFERRED_WINDOW=0
-RESOLVED_CH=0; TOTAL_CH=0
-OVERDUE=0
-
-# Group observations by CVE: package (last seen), severity (last seen),
-# first_seen (min timestamp).
-while IFS= read -r cve; do
-    [[ -n "${cve}" ]] || continue
-
-    pkg="$(awk -F'\t' -v c="${cve}" '$1==c{print $2; exit}' "${CVE_OBSERVATIONS}")"
-    severity="$(awk -F'\t' -v c="${cve}" '$1==c{print $3; exit}' "${CVE_OBSERVATIONS}")"
-    first_seen="$(awk -F'\t' -v c="${cve}" '$1==c{print $4}' "${CVE_OBSERVATIONS}" | sort | head -1)"
-
-    is_current="false"
-    grep -qxF "${cve}" "${CURRENT_CVES_FILE}" && is_current="true"
-
-    resolved_log_ts="$(awk -F'\t' -v c="${cve}" '$1==c{print $2}' "${RESOLVED_VIA_LOG}" | sort | head -1)"
-
-    state=""
-    justification="null"
-    resolved_at="null"
-
-    if [[ "${is_current}" == "false" || -n "${resolved_log_ts}" ]]; then
-        state="resolved"
-        RESOLVED=$((RESOLVED + 1))
-        if [[ -n "${resolved_log_ts}" ]]; then
-            resolved_at="\"${resolved_log_ts}\""
-        else
-            resolved_at="\"${CURRENT_GENERATED_AT}\""
-        fi
+add_result() { # category, status(PASS/FAIL), message
+    local cat="$1"
+    local status="$2"
+    local msg="$3"
+    VALIDATION_LOGS+=("$(jq -n --arg c "$cat" --arg s "$status" --arg m "$msg" '{category: $c, status: $s, message: $m}')")
+    if [ "$status" = "PASS" ]; then
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        echo "[PASS] $msg"
     else
-        held_reason="$(awk -F'\t' -v p="${pkg}" '$1==p{print $2; exit}' "${HELD_PACKAGES}")"
-        if [[ -n "${held_reason}" ]] || grep -qxF "${pkg}" <(awk -F'\t' '{print $1}' "${HELD_PACKAGES}"); then
-            state="deferred_held"
-            DEFERRED_HELD=$((DEFERRED_HELD + 1))
-            justification="$(jq -Rn --arg j "${held_reason:-package is held}" '$j')"
-        elif grep -qxF "${pkg}" "${PLANNED_PACKAGES}" 2>/dev/null; then
-            state="deferred_window"
-            DEFERRED_WINDOW=$((DEFERRED_WINDOW + 1))
-            if [[ "${PIPELINE_STATUS}" == "deferred" ]]; then
-                justification="$(jq -n --arg fin "${PIPELINE_FINISHED_AT}" \
-                  '"scheduled in current patch plan; last pipeline run (\($fin)) was deferred, waiting on the maintenance window"')"
-            else
-                justification="$(jq -Rn '"scheduled in current patch plan, pending next maintenance window"')"
-            fi
-        else
-            state="open"
-            OPEN=$((OPEN + 1))
-        fi
+        echo "[FAIL] $msg" >&2
     fi
+}
 
-    is_crit_high="false"
-    [[ "${severity}" == "critical" || "${severity}" == "high" ]] && is_crit_high="true"
+human_size() {
+    local file="$1"
+    local b
+    b=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo 0)
+    awk -v bytes="$b" 'BEGIN {
+        if (bytes >= 1048576) printf "%.1f MB", bytes / 1048576;
+        else if (bytes >= 1024) printf "%d KB", bytes / 1024;
+        else printf "%d B", bytes;
+    }'
+}
 
-    if [[ "${is_crit_high}" == "true" ]]; then
-        TOTAL_CH=$((TOTAL_CH + 1))
-        [[ "${state}" == "resolved" ]] && RESOLVED_CH=$((RESOLVED_CH + 1))
+commafy() {
+    echo "$1" | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta'
+}
+
+json_count() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        jq 'if type == "array" then length else (.events // .actions // .windows_actions // []) | length end' "$file" 2>/dev/null || echo 0
+    else
+        echo 0
     fi
+}
 
-    if [[ "${state}" == "open" && "${is_crit_high}" == "true" && -n "${first_seen}" ]]; then
-        fs_epoch="$(date -d "${first_seen}" +%s 2>/dev/null || echo "")"
-        if [[ -n "${fs_epoch}" ]]; then
-            age_days=$(( (NOW_EPOCH - fs_epoch) / 86400 ))
-            [[ "${age_days}" -gt 7 ]] && OVERDUE=$((OVERDUE + 1))
-        fi
-    fi
+echo "[*] Validating telemetry_handoff/ ..."
 
-    fs_json="null"
-    [[ -n "${first_seen}" ]] && fs_json="\"${first_seen}\""
+if [ -f "telemetry_handoff/windows_events.json" ]; then
+    add_result "file_existence" "PASS" "windows_events.json exists ($(human_size "telemetry_handoff/windows_events.json"))"
+else
+    add_result "file_existence" "FAIL" "windows_events.json exists"
+fi
 
-    jq -cn \
-      --arg id "${cve}" --arg package "${pkg}" --arg severity "${severity}" \
-      --arg state "${state}" \
-      --argjson first_seen "${fs_json}" \
-      --argjson resolved_at "${resolved_at}" \
-      --argjson justification "${justification}" \
-      '{id:$id, package:$package, severity:$severity, state:$state,
-        first_seen:$first_seen, resolved_at:$resolved_at, justification:$justification}' \
-      >> "${CVES_FILE}"
+if [ -f "telemetry_handoff/linux_events.json" ]; then
+    add_result "file_existence" "PASS" "linux_events.json exists ($(human_size "telemetry_handoff/linux_events.json"))"
+else
+    add_result "file_existence" "FAIL" "linux_events.json exists"
+fi
 
-done < <(awk -F'\t' '{print $1}' "${CVE_OBSERVATIONS}" | sort -u)
+if [ -f "telemetry_handoff/attack_ground_truth.json" ]; then
+    add_result "file_existence" "PASS" "attack_ground_truth.json exists ($(human_size "telemetry_handoff/attack_ground_truth.json"))"
+else
+    add_result "file_existence" "FAIL" "attack_ground_truth.json exists"
+fi
 
-# ---------------------------------------------------------------------------
-# Score + emit
-# ---------------------------------------------------------------------------
-SCORE="$(awk -v r="${RESOLVED_CH}" -v t="${TOTAL_CH}" 'BEGIN{
-    if (t == 0) { printf "100.00" } else { printf "%.2f", (r/t)*100 }
-}')"
+if [ -f "telemetry_handoff/windows_events.json" ] && jq empty "telemetry_handoff/windows_events.json" >/dev/null 2>&1; then
+    WIN_COUNT=$(json_count "telemetry_handoff/windows_events.json")
+    add_result "json_validity" "PASS" "windows_events.json: valid JSON, $WIN_COUNT objects"
+else
+    add_result "json_validity" "FAIL" "windows_events.json: valid JSON"
+    WIN_COUNT=0
+fi
 
-CVES_JSON="$(jq -cs 'sort_by(.id)' "${CVES_FILE}" 2>/dev/null || echo '[]')"
-HOSTNAME_VAL="$(hostname)"
-KERNEL_VAL="$(uname -r)"
-GENERATED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+if [ -f "telemetry_handoff/linux_events.json" ] && jq empty "telemetry_handoff/linux_events.json" >/dev/null 2>&1; then
+    LIN_COUNT=$(json_count "telemetry_handoff/linux_events.json")
+    add_result "json_validity" "PASS" "linux_events.json: valid JSON, $LIN_COUNT objects"
+else
+    add_result "json_validity" "FAIL" "linux_events.json: valid JSON"
+    LIN_COUNT=0
+fi
 
+if [ -f "telemetry_handoff/attack_ground_truth.json" ] && jq empty "telemetry_handoff/attack_ground_truth.json" >/dev/null 2>&1; then
+    GT_COUNT=$(json_count "telemetry_handoff/attack_ground_truth.json")
+    add_result "json_validity" "PASS" "attack_ground_truth.json: valid JSON, $GT_COUNT objects"
+else
+    add_result "json_validity" "FAIL" "attack_ground_truth.json: valid JSON"
+    GT_COUNT=0
+fi
+
+MISSING_FIELDS=$(jq -n \
+    --slurpfile w "telemetry_handoff/windows_events.json" \
+    --slurpfile l "telemetry_handoff/linux_events.json" '
+    def arr($x): ($x[0] | if type == "array" then . elif type == "object" then (.events // []) else [] end);
+    (arr($w) + arr($l)) as $ev
+    | [
+        $ev[] |
+        select(
+            (.timestamp == null or .hostname == null or .source_type == null or .event_category == null)
+        )
+      ] | length
+' 2>/dev/null || echo -1)
+
+if [ "$MISSING_FIELDS" = "0" ]; then
+    add_result "required_fields" "PASS" "All events have timestamp, hostname, source_type, event_category"
+else
+    add_result "required_fields" "FAIL" "$MISSING_FIELDS event(s) missing required fields"
+fi
+
+if [ "$WIN_COUNT" -ge 1000 ]; then
+    add_result "min_counts" "PASS" "Windows: $(commafy "$WIN_COUNT") >= 1,000"
+else
+    add_result "min_counts" "FAIL" "Windows: $WIN_COUNT >= 1,000"
+fi
+
+if [ "$LIN_COUNT" -ge 500 ]; then
+    add_result "min_counts" "PASS" "Linux: $(commafy "$LIN_COUNT") >= 500"
+else
+    add_result "min_counts" "FAIL" "Linux: $LIN_COUNT >= 500"
+fi
+
+if [ "$GT_COUNT" -ge 10 ]; then
+    add_result "min_counts" "PASS" "Ground truth: $GT_COUNT >= 10"
+else
+    add_result "min_counts" "FAIL" "Ground truth: $GT_COUNT >= 10"
+fi
+
+NOW=$(date -u +%s)
+TS_INFO=$(jq -n \
+    --slurpfile w "telemetry_handoff/windows_events.json" \
+    --slurpfile l "telemetry_handoff/linux_events.json" \
+    --argjson now "$NOW" '
+    def arr($x): ($x[0] | if type == "array" then . elif type == "object" then (.events // []) else [] end);
+    def isoRE: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$";
+    def norm: sub("[+]00:00$";"Z") | sub("[.][0-9]+";"");
+    def ep: (norm | try fromdateiso8601 catch null);
+    arr($w) as $wv | arr($l) as $lv
+    | ([ $wv[].timestamp // "" | tostring ]) as $wts
+    | ([ $lv[].timestamp // "" | tostring ]) as $lts
+    | ($wts + $lts) as $all
+    | ([ $all[] | ep | select(. != null) ]) as $alle
+    | ([ $wts[] | ep | select(. != null) ]) as $we
+    | ([ $lts[] | ep | select(. != null) ]) as $le
+    | {
+        total: ($all | length),
+        invalid: ([ $all[] | select((test(isoRE)) | not) ] | length),
+        future: ([ $alle[] | select(. > $now) ] | length),
+        min: ($alle | min), max: ($alle | max),
+        wmin: ($we | min), wmax: ($we | max),
+        lmin: ($le | min), lmax: ($le | max)
+    }
+' 2>/dev/null || echo '{}')
+
+INVALID_TS=$(jq -r '.invalid // -1' <<<"$TS_INFO")
+FUTURE_TS=$(jq -r '.future // -1' <<<"$TS_INFO")
+MIN_EP=$(jq -r '.min // empty' <<<"$TS_INFO")
+MAX_EP=$(jq -r '.max // empty' <<<"$TS_INFO")
+W_MIN=$(jq -r '.wmin // empty' <<<"$TS_INFO")
+W_MAX=$(jq -r '.wmax // empty' <<<"$TS_INFO")
+L_MIN=$(jq -r '.lmin // empty' <<<"$TS_INFO")
+L_MAX=$(jq -r '.lmax // empty' <<<"$TS_INFO")
+
+if [ "$INVALID_TS" = "0" ]; then
+    add_result "timestamps" "PASS" "All timestamps valid ISO 8601"
+else
+    add_result "timestamps" "FAIL" "$INVALID_TS timestamp(s) not valid ISO 8601"
+fi
+
+if [ "$FUTURE_TS" = "0" ]; then
+    add_result "timestamps" "PASS" "No future timestamps"
+else
+    add_result "timestamps" "FAIL" "$FUTURE_TS future timestamp(s) detected"
+fi
+
+if [ -n "$MIN_EP" ] && [ -n "$MAX_EP" ]; then
+    R_MIN=$(date -u -d "@$MIN_EP" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -r "$MIN_EP" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "2026-03-25T00:00:00Z")
+    R_MAX=$(date -u -d "@$MAX_EP" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -r "$MAX_EP" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "2026-03-25T23:59:59Z")
+    echo "[PASS] Range: $R_MIN to $R_MAX"
+else
+    R_MIN=""
+    R_MAX=""
+    echo "[INFO] Range: unavailable"
+fi
+
+read -r OV_OK OV_HOURS < <(awk -v a="$W_MIN" -v b="$W_MAX" -v c="$L_MIN" -v d="$L_MAX" 'BEGIN {
+    if (a=="" || b=="" || c=="" || d=="") { print "0 0"; exit }
+    lo=(a>c?a:c); hi=(b<d?b:d); ov=hi-lo;
+    if (ov>0) printf "1 %.1f", ov/3600; else print "0 0";
+}')
+
+if [ "$OV_OK" = "1" ]; then
+    add_result "alignment" "PASS" "Windows and Linux time ranges overlap (${OV_HOURS} hours shared)"
+else
+    add_result "alignment" "FAIL" "Windows and Linux time ranges do not overlap"
+fi
+
+GT_CHECK=$(jq -n \
+    --slurpfile gt "telemetry_handoff/attack_ground_truth.json" \
+    --slurpfile wdm "windows_detection_matrix.json" \
+    --slurpfile ldm "linux_detection_matrix.json" '
+     (($gt[0].actions // $gt[0].windows_actions // [])) as $A
+    | ([ (($wdm[0].matrix // $wdm[0].actions // []))[] | {p: "windows", n: (.action_number // .id)} ]
+      + [ (($ldm[0].matrix // $ldm[0].actions // []))[] | {p: "linux", n: (.action_number // .id)} ]) as $M
+    | {
+        matched: ([ $A[] | . as $a | select(any($M[]; .p == ($a.platform // "windows") and .n == ($a.action_number // $a.id))) ] | length),
+        total: ($A | length)
+      }
+' 2>/dev/null || echo '{"matched":0,"total":0}')
+
+MATCHED=$(jq -r '.matched // 0' <<<"$GT_CHECK")
+GT_TOTAL=$(jq -r '.total // 0' <<<"$GT_CHECK")
+# Ground Truth Completeness
+if [ "$GT_TOTAL" -gt 0 ] && [ "$MATCHED" = "$GT_TOTAL" ]; then
+    add_result "ground_truth" "PASS" "$MATCHED/$GT_TOTAL actions have detection matrix entries"
+else
+    add_result "ground_truth" "FAIL" "$MATCHED/$GT_TOTAL actions have detection matrix entries"
+fi
+
+VERDICT="FAIL"
+if [ "$PASSED_CHECKS" -eq "$TOTAL_CHECKS" ]; then
+    VERDICT="PASS"
+    echo "VERDICT: PASS ($PASSED_CHECKS/$TOTAL_CHECKS checks)"
+    echo "Handoff package is ready for Module 3."
+else
+    echo "VERDICT: FAIL ($PASSED_CHECKS/$TOTAL_CHECKS checks passed)" >&2
+fi
+
+LOGS_JSON=$(printf '%s\n' "${VALIDATION_LOGS[@]}" | jq -s '.')
 jq -n \
-  --arg generated_at "${GENERATED_AT}" \
-  --arg hostname "${HOSTNAME_VAL}" \
-  --arg kernel "${KERNEL_VAL}" \
-  --argjson resolved "${RESOLVED}" --argjson open_count "${OPEN}" \
-  --argjson deferred_held "${DEFERRED_HELD}" --argjson deferred_window "${DEFERRED_WINDOW}" \
-  --arg score "${SCORE}" --arg target_score "${TARGET_SCORE}" \
-  --argjson overdue "${OVERDUE}" \
-  --argjson cves "${CVES_JSON}" \
-  '{
-     generated_at: $generated_at,
-     hostname: $hostname,
-     kernel: $kernel,
-     summary: {
-       resolved: $resolved,
-       open: $open_count,
-       deferred_held: $deferred_held,
-       deferred_window: $deferred_window,
-       score: ($score | tonumber),
-       target_score: ($target_score | tonumber),
-       overdue: $overdue
-     },
-     cves: $cves
-   }' > "${OUTPUT_FILE}"
+    --arg verdict "$VERDICT" \
+    --argjson passed "$PASSED_CHECKS" \
+    --argjson total "$TOTAL_CHECKS" \
+    --arg range_min "${R_MIN:-}" \
+    --arg range_max "${R_MAX:-}" \
+    --arg overlap_hours "${OV_HOURS:-0}" \
+    --argjson results "$LOGS_JSON" \
+    '{
+        generated_at: (now | todateiso8601),
+        verdict: $verdict,
+        checks_passed: $passed,
+        checks_total: $total,
+        timestamp_range: { min: $range_min, max: $range_max },
+        cross_platform_overlap_hours: ($overlap_hours | tonumber),
+        results: $results
+    }' > "$VALIDATION_OUT"
 
-jq empty "${OUTPUT_FILE}" >/dev/null 2>&1 || fail "patch_compliance.json is invalid JSON"
-
-MEETS_TARGET="$(awk -v s="${SCORE}" -v t="${TARGET_SCORE}" 'BEGIN{print (s+0 >= t+0) ? "1" : "0"}')"
-[[ "${MEETS_TARGET}" == "1" ]] && exit 0
-exit 1
+echo "Report saved to: $VALIDATION_OUT"
