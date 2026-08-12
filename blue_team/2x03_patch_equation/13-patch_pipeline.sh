@@ -179,3 +179,4 @@ if pipeline_status == "failed":
 else:
     sys.exit(0)
 EOF
+exit 0
