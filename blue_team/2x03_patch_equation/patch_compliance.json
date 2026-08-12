@@ -1,7 +1,14 @@
 {
-  "generated_at": "2026-08-12T15:01:09.578311+00:00",
+  "generated_at": "2026-08-12T20:12:04.039785+00:00",
   "hostname": "billing-srv-01",
   "kernel": "5.15.0-187-generic",
+  "resolved": 0,
+  "open": 0,
+  "deferred_held": 0,
+  "deferred_window": 0,
+  "score": 100.0,
+  "target_score": 95.0,
+  "overdue": 0,
   "summary": {
     "resolved": 0,
     "open": 0,
