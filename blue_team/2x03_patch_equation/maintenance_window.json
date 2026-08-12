@@ -1,0 +1,11 @@
+{
+  "now": "2026-08-12 14:59:42 CEST",
+  "timezone": "Europe/Paris",
+  "active_window": null,
+  "next_window": {
+    "name": "standard",
+    "timestamp": "2026-08-15 02:00"
+  },
+  "seconds_until_next": 212417,
+  "decision": "defer"
+}
