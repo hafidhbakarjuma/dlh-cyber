@@ -17,7 +17,7 @@ echo "[*] Parsing APT history logs and generating change log..."
 
 # ---------------------------------------------------------------------------
 # Python Change Log Extraction & Enrichment Engine
-# Parses Upgrade, Install, and Remove transactions from APT history logs
+# Group transactions into change events within 15 minutes proximity
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import os
@@ -126,12 +126,13 @@ raw_transactions.sort(key=lambda x: x["dt"])
 events = []
 current_group = []
 
+# Group transactions into change events within 15 minutes of each other
 for tx in raw_transactions:
     if not current_group:
         current_group.append(tx)
     else:
         diff = (tx["dt"] - current_group[-1]["dt"]).total_seconds()
-        if diff <= 900:
+        if diff <= 15 * 60:
             current_group.append(tx)
         else:
             events.append(current_group)
