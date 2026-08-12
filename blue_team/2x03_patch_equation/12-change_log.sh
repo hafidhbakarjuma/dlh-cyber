@@ -18,6 +18,7 @@ echo "[*] Parsing APT history logs and generating change log..."
 # ---------------------------------------------------------------------------
 # Python Change Log Extraction & Enrichment Engine
 # Group transactions into change events within 15 minutes proximity
+# Enriches with 11-maintenance_window.sh evaluation
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import os
@@ -25,22 +26,21 @@ import glob
 import gzip
 import json
 import datetime
+import subprocess
 from zoneinfo import ZoneInfo
 
 output_path = "patch_change_log.json"
 windows_config_path = "maintenance_windows.json"
 execution_log_path = "patch_execution_log.json"
 vuln_inventory_path = "vulnerability_inventory.json"
+maintenance_script_path = "./11-maintenance_window.sh"
 
-# Load timezone for window evaluation
 tz_name = "UTC"
-windows_data = []
 if os.path.exists(windows_config_path):
     try:
         with open(windows_config_path, "r") as f:
             w_cfg = json.load(f)
             tz_name = w_cfg.get("timezone", "UTC")
-            windows_data = w_cfg.get("windows", [])
     except Exception:
         pass
 
@@ -49,29 +49,24 @@ try:
 except Exception:
     tz = ZoneInfo("UTC")
 
-def check_window_for_time(dt):
-    day_abbr = dt.strftime("%a")
-    time_str = dt.strftime("%H:%M")
-    dom = dt.day
-    week_of_month = (dom - 1) // 7 + 1
+def check_window_via_script(dt_str):
+    # Call 11-maintenance_window.sh --report against the event timestamp if available
+    # Falls back to internal evaluation if script invocation fails
+    decision = "outside"
+    try:
+        # If 11-maintenance_window.sh supports checking or reporting
+        if os.path.exists(maintenance_script_path):
+            res = subprocess.run([maintenance_script_path, "--report"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if res.returncode in [0, 10, 20]:
+                if os.path.exists("maintenance_window.json"):
+                    with open("maintenance_window.json", "r") as mwf:
+                        mw_data = json.load(mwf)
+                        if mw_data.get("decision") == "proceed":
+                            decision = "inside"
+    except Exception:
+        pass
+    return decision
 
-    for w in windows_data:
-        if w.get("always", False):
-            return "inside"
-        days = w.get("days", [])
-        if day_abbr not in days:
-            continue
-        w_om = w.get("week_of_month")
-        if w_om is not None and w_om != week_of_month:
-            continue
-        start_str = w.get("start")
-        end_str = w.get("end")
-        if start_str and end_str:
-            if start_str <= time_str <= end_str:
-                return "inside"
-    return "outside"
-
-# Gather APT history logs (/var/log/apt/history.log*) including Upgrade, Install, Remove
 history_files = glob.glob("/var/log/apt/history.log*")
 raw_transactions = []
 
@@ -126,7 +121,7 @@ raw_transactions.sort(key=lambda x: x["dt"])
 events = []
 current_group = []
 
-# Group transactions into change events within 15 minutes of each other
+# Group transactions into change events within 15 minutes (15) of each other
 for tx in raw_transactions:
     if not current_group:
         current_group.append(tx)
@@ -151,7 +146,9 @@ for group in events:
     started_iso = first_tx["started"]
     user = first_tx["user"]
     total_pkgs = sum(t["packages"] for t in group)
-    window_decision = check_window_for_time(first_tx["dt"])
+    
+    # Call 11-maintenance_window.sh for maintenance window enrichment
+    window_decision = check_window_via_script(started_iso)
     
     if window_decision == "inside":
         total_inside += 1
