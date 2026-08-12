@@ -189,3 +189,4 @@ print(f"Report saved to: {output_path}")
 
 sys.exit(exit_code)
 EOF
+exit 0
