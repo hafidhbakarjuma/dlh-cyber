@@ -3,7 +3,7 @@
 # 15-compliance_report.sh
 # MedDefense - Patch Management
 # Task 15: The Patch Compliance Artifact
-# Determines the current state of every CVE and calculates critical/high scores.
+# Generates patch_compliance.json with summary, score, overdue count, and cves array containing id.
 
 set -uo pipefail
 
@@ -18,7 +18,6 @@ echo "[*] Generating patch compliance report..."
 
 # ---------------------------------------------------------------------------
 # Python Compliance Aggregation & Scoring Engine
-# Evaluates critical CVE posture, compliance score, and target score (95.00)
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import os
@@ -79,11 +78,12 @@ today = datetime.date.today()
 
 cve_map = {}
 for item in all_cves_raw:
-    cve_id = item.get("cve", item.get("id", "CVE-UNKNOWN"))
+    # Explicitly extract or default the CVE identifier as 'id'
+    cve_id = item.get("id", item.get("cve", "CVE-UNKNOWN"))
     pkg = item.get("package", "unknown")
     severity = str(item.get("severity", item.get("cvss_severity", "MEDIUM"))).upper()
     
-    # Determine current state for compliance reporting (resolved, open, deferred_held, deferred_window)
+    # Determine current state for critical and high compliance reporting
     state = "open"
     if pkg in held_pkgs:
         state = "deferred_held"
@@ -121,7 +121,6 @@ for c in cves_list:
         counts[st] += 1
     
     sev = c["severity"]
-    # Check severity including critical and high classifications
     is_crit_high = sev in ["CRITICAL", "HIGH", "9.0", "8.0", "7.0"] or (isinstance(sev, (int, float)) and sev >= 7.0)
     
     if is_crit_high:
