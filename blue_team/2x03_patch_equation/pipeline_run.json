@@ -1,0 +1,51 @@
+{
+  "started_at": "2026-08-12T13:16:14.344329+00:00",
+  "finished_at": "2026-08-12T13:17:26.075195+00:00",
+  "hostname": "billing-srv-01",
+  "pipeline_status": "failed",
+  "stages": [
+    {
+      "stage": "0-vuln_inventory.sh",
+      "status": "ok",
+      "exit_code": 0,
+      "duration_seconds": 44.36,
+      "stdout": "",
+      "stderr": "[INFO] Enumerating installed packages...\n[INFO] Checking for available package upgrades...\n[INFO] Building vulnerability inventory...\n[INFO] Processing apt (updates)...\n[INFO] Processing apt-utils (updates)...\n[INFO] Processing cloud-init (security)...\n[INFO] Processing cryptsetup (updates)...\n[INFO] Processing cryptsetup-bin (updates)...\n[INFO] Processing cryptsetup-initramfs (updates)...\n[INFO] Processing dmeventd (updates)...\n[INFO] Processing dmidecode (updates)...\n[INFO] Processing dmsetup (updates)...\n[INFO] Processing ethtool (updates)...\n[INFO] Processing fwupd (updates)...\n[INFO] Processing initramfs-tools (updates)...\n[INFO] Processing initramfs-tools-bin (updates)...\n[INFO] Processing initramfs-tools-core (updates)...\n[INFO] Processing iproute2 (updates)...\n[INFO] Processing landscape-common (updates)...\n[INFO] Processing libapparmor1 (security)...\n[INFO] Processing libapt-pkg6.0 (updates)...\n[INFO] Processing libcryptsetup12 (updates)...\n[INFO] Processing libdevmapper1.02.1 (updates)...\n[INFO] Processing libdevmapper-event1.02.1 (updates)...\n[INFO] Processing libjcat1 (updates)...\n[INFO] Processing libldap-common (security)...\n[INFO] Processing liblvm2cmd2.03 (updates)...\n[INFO] Processing libmbim-glib4 (updates)...\n[INFO] Processing libmbim-proxy (updates)...\n[INFO] Processing libmm-glib0 (updates)...\n[INFO] Processing libnetplan0 (security)...\n[INFO] Processing libopeniscsiusr (updates)...\n[INFO] Processing libpcap0.8 (updates)...\n[INFO] Processing libseccomp2 (updates)...\n[INFO] Processing libxmlb2 (updates)...\n[INFO] Processing linux-base (updates)...\n[INFO] Processing lshw (updates)...\n[INFO] Processing lvm2 (updates)...\n[INFO] Processing modemmanager (updates)...\n[INFO] Processing netplan.io (security)...\n[INFO] Processing open-iscsi (updates)...\n[INFO] Processing pci.ids (updates)...\n[INFO] Processing powermgmt-base (updates)...\n[INFO] Processing python3-attr (updates)...\n[INFO] Processing python3-distupgrade (updates)...\n[INFO] Processing python3-update-manager (updates)...\n[INFO] Processing snapd (security)...\n[INFO] Processing sosreport (security)...\n[INFO] Processing systemd-hwe-hwdb (updates)...\n[INFO] Processing ubuntu-advantage-tools (security)...\n[INFO] Processing ubuntu-drivers-common (security)...\n[INFO] Processing ubuntu-minimal (updates)...\n[INFO] Processing ubuntu-pro-client (security)...\n[INFO] Processing ubuntu-pro-client-l10n (security)...\n[INFO] Processing ubuntu-release-upgrader-core (updates)...\n[INFO] Processing ubuntu-server (updates)...\n[INFO] Processing ubuntu-server-minimal (updates)...\n[INFO] Processing ubuntu-standard (updates)...\n[INFO] Processing update-manager-core (updates)...\n[INFO] Processing xfsprogs (updates)...\n[INFO] Vulnerability inventory successfully written to: /home/analyst/dlh-cyber/blue_team/2x03_patch_equation/vulnerability_inventory.json\n"
+    },
+    {
+      "stage": "1-service_deps.sh",
+      "status": "ok",
+      "exit_code": 0,
+      "duration_seconds": 20.26,
+      "stdout": "Successfully generated service_dependency_map.json\n",
+      "stderr": ""
+    },
+    {
+      "stage": "2-pre_patch_snapshot.sh",
+      "status": "ok",
+      "exit_code": 0,
+      "duration_seconds": 7.1,
+      "stdout": "[INFO] Capturing pre-patch system state...\n[INFO] Recording installed package versions...\n[INFO] Recording active systemd service states...\n[INFO] Recording listening sockets...\n[INFO] Calculating SHA-256 hashes of package-tracked configuration files under /etc...\n[INFO] Generating pre_patch_state.json...\nSnapshot: pre_patch_state.json\nSize: 184K\nKernel: 5.15.0-187-generic\nReboot required: false\n",
+      "stderr": ""
+    },
+    {
+      "stage": "3-patch_plan.sh",
+      "status": "failed",
+      "exit_code": 1,
+      "duration_seconds": 0.01,
+      "stdout": "",
+      "stderr": "[ERROR] Input file is empty (0 bytes): vulnerability_inventory.json. Please re-generate it.\n"
+    }
+  ],
+  "artifacts": {
+    "0-vuln_inventory.sh": "vulnerability_inventory.json",
+    "1-service_deps.sh": "service_dependency_map.json",
+    "2-pre_patch_snapshot.sh": "pre_patch_state.json",
+    "3-patch_plan.sh": "patch_plan.json",
+    "11-maintenance_window.sh": "maintenance_window.json",
+    "4-patch_execute.sh": "patch_execution_log.json",
+    "5-post_patch_validate.sh": "validation_report.json",
+    "6-config_drift.sh": "config_drift_report.json",
+    "12-change_log.sh": "patch_change_log.json"
+  }
+}⏎
