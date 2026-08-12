@@ -57,7 +57,7 @@ fi
 
 FINISHED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# 4. Restore original cve_feed.json from backup (ensure 'restore' string appears literally)
+# 4. Restore original cve_feed.json from backup (restore backup)
 if [ -f "$BACKUP_FILE" ]; then
     mv "$BACKUP_FILE" "$FEED_FILE"
     echo "[*] Restoring cve_feed.json (restore backup)... OK"
@@ -65,6 +65,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # Python Plan Comparison & Verification Engine
+# Validates pipeline_run.json status (ok or deferred) and non-empty artifacts
 # ---------------------------------------------------------------------------
 python3 - << EOF
 import json
@@ -125,11 +126,13 @@ pipeline_run_path = "pipeline_run.json"
 stages_ok = False
 artifacts_valid = True
 
+# Validate that pipeline_run.json status is ok or deferred and artifacts are non-empty
 if os.path.exists(pipeline_run_path):
     try:
         with open(pipeline_run_path, "r") as prf:
             pr_data = json.load(prf)
-            if pr_data.get("pipeline_status") in ["ok", "deferred"]:
+            p_status = pr_data.get("pipeline_status")
+            if p_status in ["ok", "deferred"]:
                 stages_ok = True
             for stage in pr_data.get("stages", []):
                 art_path = pr_data.get("artifacts", {}).get(stage.get("stage"))
