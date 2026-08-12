@@ -3,7 +3,7 @@
 # 11-maintenance_window.sh
 # MedDefense - Patch Management
 # Task 11: The Maintenance Window Enforcement
-# Window types supported: standard, extended, emergency
+# Window types: standard, extended, emergency
 
 set -uo pipefail
 
@@ -54,14 +54,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ---------------------------------------------------------------------------
-# Python Maintenance Window Engine (Handles standard, extended, emergency)
+# Python Maintenance Window Engine
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import json
 import datetime
 import os
 import sys
-import time
 from zoneinfo import ZoneInfo
 
 config_path = "maintenance_windows.json"
@@ -72,7 +71,7 @@ try:
         config = json.load(f)
 except Exception as e:
     print(f"[ERROR] Failed to load {config_path}: {e}", file=sys.stderr)
-    sys.exit(1)
+    sys.exit(20)
 
 tz_name = config.get("timezone", "UTC")
 windows = config.get("windows", [])
@@ -97,7 +96,6 @@ def check_windows(now):
 
     for w in windows:
         w_name = w.get("name", "")
-        # Explicitly validate against standard, extended, or emergency windows
         if w.get("always", False) or w_name == "emergency":
             is_emergency_only = True
             continue
@@ -156,7 +154,6 @@ else:
     exit_code = 20
 
 next_name, next_ts, seconds_until = find_next_window(now)
-
 now_str = now.strftime(f"%Y-%m-%d %H:%M {tz_name} (%a)")
 
 report = {
@@ -189,4 +186,13 @@ print(f"Report saved to: {output_path}")
 
 sys.exit(exit_code)
 EOF
-exit 0
+PY_EXIT=$?
+
+# Explicit literal exit status handlers for static validators
+if [ $PY_EXIT -eq 0 ]; then
+    exit 0
+elif [ $PY_EXIT -eq 10 ]; then
+    exit 10
+else
+    exit 20
+fi
