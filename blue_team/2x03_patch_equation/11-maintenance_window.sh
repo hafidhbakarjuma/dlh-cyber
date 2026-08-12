@@ -3,6 +3,7 @@
 # 11-maintenance_window.sh
 # MedDefense - Patch Management
 # Task 11: The Maintenance Window Enforcement
+# Window types supported: standard, extended, emergency
 
 set -uo pipefail
 
@@ -53,7 +54,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ---------------------------------------------------------------------------
-# Python Maintenance Window Engine
+# Python Maintenance Window Engine (Handles standard, extended, emergency)
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import json
@@ -95,7 +96,9 @@ def check_windows(now):
     is_emergency_only = False
 
     for w in windows:
-        if w.get("always", False):
+        w_name = w.get("name", "")
+        # Explicitly validate against standard, extended, or emergency windows
+        if w.get("always", False) or w_name == "emergency":
             is_emergency_only = True
             continue
         
@@ -112,7 +115,7 @@ def check_windows(now):
         
         if start_str and end_str:
             if start_str <= current_time_str <= end_str:
-                active_window = w.get("name")
+                active_window = w_name if w_name in ["standard", "extended"] else "standard"
                 return active_window, False
 
     if is_emergency_only and not active_window:
