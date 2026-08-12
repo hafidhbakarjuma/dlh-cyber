@@ -17,6 +17,7 @@ echo "[*] Parsing APT history logs and generating change log..."
 
 # ---------------------------------------------------------------------------
 # Python Change Log Extraction & Enrichment Engine
+# Parses Upgrade, Install, and Remove transactions from APT history logs
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import os
@@ -49,7 +50,6 @@ except Exception:
     tz = ZoneInfo("UTC")
 
 def check_window_for_time(dt):
-    # Evaluates whether a datetime falls within standard or extended maintenance windows
     day_abbr = dt.strftime("%a")
     time_str = dt.strftime("%H:%M")
     dom = dt.day
@@ -71,7 +71,7 @@ def check_window_for_time(dt):
                 return "inside"
     return "outside"
 
-# Gather APT history logs (/var/log/apt/history.log*)
+# Gather APT history logs (/var/log/apt/history.log*) including Upgrade, Install, Remove
 history_files = glob.glob("/var/log/apt/history.log*")
 raw_transactions = []
 
@@ -85,7 +85,6 @@ for hfile in history_files:
         with opener(hfile, "rt", errors="ignore") as f:
             content = f.read()
             
-        # Split records by Start-Date
         records = content.split("Start-Date: ")
         for rec in records:
             if not rec.strip():
@@ -103,13 +102,11 @@ for hfile in history_files:
                 elif line.startswith("Requested-By:"):
                     user_raw = line.split(":", 1)[1].strip()
                     user = user_raw.split(" ")[0]
-                elif line.startswith("Upgrade:") or line.startswith("Install:"):
+                elif line.startswith("Upgrade:") or line.startswith("Install:") or line.startswith("Remove:"):
                     pkg_line = line.split(":", 1)[1].strip()
-                    # Count comma-separated package entries
                     pkgs_count += len([p for p in pkg_line.split(",") if p.strip()])
 
             try:
-                # Parse timestamp: e.g. 2026-03-21  23:01:05
                 dt = datetime.datetime.strptime(start_date_str, "%Y-%m-%d  %H:%M:%S")
                 dt = dt.replace(tzinfo=tz)
                 raw_transactions.append({
@@ -124,10 +121,8 @@ for hfile in history_files:
     except Exception:
         continue
 
-# Sort transactions chronologically
 raw_transactions.sort(key=lambda x: x["dt"])
 
-# Group transactions into events by proximity (within 15 minutes)
 events = []
 current_group = []
 
@@ -136,30 +131,19 @@ for tx in raw_transactions:
         current_group.append(tx)
     else:
         diff = (tx["dt"] - current_group[-1]["dt"]).total_seconds()
-        if diff <= 900: # 15 minutes = 900 seconds
+        if diff <= 900:
             current_group.append(tx)
         else:
-            # Finalize current group
             events.append(current_group)
             current_group = [tx]
 
 if current_group:
     events.append(current_group)
 
-# Format final event objects
 formatted_events = []
 total_inside = 0
 total_outside = 0
 total_cves = 0
-
-# Check linked execution log
-exec_log_data = []
-if os.path.exists(execution_log_path):
-    try:
-        with open(execution_log_path, "r") as ef:
-            exec_log_data = json.load(ef)
-    except Exception:
-        pass
 
 for group in events:
     first_tx = group[0]
@@ -173,22 +157,14 @@ for group in events:
     else:
         total_outside += 1
 
-    linked_log = None
-    # Check if timestamps overlap with execution log
-    for ex in exec_log_data:
-        # Simple overlap check if available
-        pass
-    if os.path.exists(execution_log_path):
-        linked_log = execution_log_path
-
     event_obj = {
         "started": started_iso,
         "user": user,
         "within_window": window_decision,
         "packages": total_pkgs
     }
-    if linked_log:
-        event_obj["linked_execution_log"] = linked_log
+    if os.path.exists(execution_log_path):
+        event_obj["linked_execution_log"] = execution_log_path
 
     formatted_events.append(event_obj)
 
