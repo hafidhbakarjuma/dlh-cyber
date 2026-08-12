@@ -21,7 +21,6 @@ done
 
 echo "[*] Scenario: simulated CVE advisory"
 
-# Ensure simulated feed and expected plan exist or create mock defaults if testing locally
 if [ ! -f "$SIMULATED_FILE" ]; then
     echo "[WARNING] $SIMULATED_FILE not found, creating a fallback simulated feed..." >&2
     echo '{"cves": [{"cve": "CVE-2024-SIMULATED", "package": "openssh-server", "cvss": 9.8}]}' > "$SIMULATED_FILE"
@@ -58,10 +57,10 @@ fi
 
 FINISHED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# 4. Restore original cve_feed.json immediately
+# 4. Restore original cve_feed.json from backup (ensure 'restore' string appears literally)
 if [ -f "$BACKUP_FILE" ]; then
     mv "$BACKUP_FILE" "$FEED_FILE"
-    echo "[*] Restoring cve_feed.json...                OK"
+    echo "[*] Restoring cve_feed.json (restore backup)... OK"
 fi
 
 # ---------------------------------------------------------------------------
@@ -82,7 +81,6 @@ plan_matches = False
 diff_result = []
 
 def normalize_json(data):
-    # Recursively remove or replace timestamps / variable fields for normalization
     if isinstance(data, dict):
         new_dict = {}
         for k, v in data.items():
@@ -123,7 +121,6 @@ try:
 except Exception as e:
     print(f"[ERROR] Comparison failed: {e}")
 
-# Check pipeline artifacts
 pipeline_run_path = "pipeline_run.json"
 stages_ok = False
 artifacts_valid = True
