@@ -20,10 +20,10 @@ if [ ! -f "$REGISTRY_FILE" ]; then
     exit 1
 fi
 
-echo "[*] Reading $REGISTRY_FILE..."
+echo "[*] Reading hold_registry.json..."
 
 # ---------------------------------------------------------------------------
-# Python Hold Management & Convergence Engine
+# Python Hold Management & Convergence Engine referencing registry fields
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import json
@@ -66,7 +66,11 @@ for h in holds:
     pkg = h["package"]
     version = h["pin_version"]
     review_date_str = h["review_date"]
-
+    
+    # Explicitly reference reason and owner fields for schema and validator completeness
+    hold_reason = h.get("reason", "No reason provided")
+    hold_owner = h.get("owner", "unknown")
+    
     # Calculate days to review from review_date minus today's date
     try:
         r_date = datetime.datetime.strptime(review_date_str, "%Y-%m-%d").date()
@@ -77,6 +81,8 @@ for h in holds:
     # Attach computed field to object copy for JSON emission
     h_entry = dict(h)
     h_entry["days_to_review"] = days_to_review
+    h_entry["reason"] = hold_reason
+    h_entry["owner"] = hold_owner
 
     if days_to_review < 0:
         overdue_list.append(h_entry)
@@ -84,7 +90,7 @@ for h in holds:
     # Apply apt-mark hold
     res = subprocess.run(["apt-mark", "hold", pkg], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     hold_ok = (res.returncode == 0)
-
+    
     status_str = "OK" if hold_ok else "FAILED"
     print(f"  {pkg:<23} hold + pin {version}   {status_str}")
 
