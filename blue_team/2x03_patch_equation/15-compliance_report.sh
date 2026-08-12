@@ -3,6 +3,7 @@
 # 15-compliance_report.sh
 # MedDefense - Patch Management
 # Task 15: The Patch Compliance Artifact
+# Determines the current state of every CVE in inventory history
 
 set -uo pipefail
 
@@ -17,6 +18,7 @@ echo "[*] Generating patch compliance report..."
 
 # ---------------------------------------------------------------------------
 # Python Compliance Aggregation & Scoring Engine
+# Determines current state (resolved, open, deferred_held, deferred_window)
 # ---------------------------------------------------------------------------
 python3 - << 'EOF'
 import os
@@ -37,7 +39,7 @@ hostname = socket.gethostname()
 kernel = platform.release()
 generated_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-# Gather all historical vulnerability entries (current + history)
+# Gather all historical vulnerability entries (current + history under ./history/)
 all_cves_raw = []
 if os.path.exists(vuln_inventory_path):
     try:
@@ -73,17 +75,15 @@ if os.path.exists(hold_mgmt_path):
     except Exception:
         pass
 
-# Load change log info for open duration checks
 today = datetime.date.today()
 
-# Deduplicate and process CVEs
 cve_map = {}
 for item in all_cves_raw:
     cve_id = item.get("cve", item.get("id", "CVE-UNKNOWN"))
     pkg = item.get("package", "unknown")
     severity = str(item.get("severity", item.get("cvss_severity", "MEDIUM"))).upper()
     
-    # State determination logic
+    # Determine current state for compliance reporting
     state = "open"
     if pkg in held_pkgs:
         state = "deferred_held"
@@ -104,7 +104,6 @@ for item in all_cves_raw:
 
 cves_list = list(cve_map.values())
 
-# Count states for critical / high and summary
 counts = {
     "resolved": 0,
     "open": 0,
@@ -129,7 +128,6 @@ for c in cves_list:
         if st == "resolved":
             crit_high_resolved += 1
         elif st == "open":
-            # Check if open for more than 7 days
             try:
                 f_seen = datetime.datetime.strptime(c["first_seen"], "%Y-%m-%d").date()
                 if (today - f_seen).days > 7:
@@ -137,7 +135,6 @@ for c in cves_list:
             except Exception:
                 pass
 
-# Compute compliance score
 if crit_high_total > 0:
     score = round((crit_high_resolved / crit_high_total) * 100.0, 2)
 else:
