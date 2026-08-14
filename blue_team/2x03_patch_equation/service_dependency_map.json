@@ -1,14 +1,21 @@
 [
 {
-  "service": "apache2.service",
-  "exec_path": "/usr/sbin/apache2",
-  "owning_package": "apache2-bin",
+  "service": "accounts-daemon.service",
+  "exec_path": "/usr/libexec/accounts-daemon",
+  "owning_package": "accountsservice",
   "linked_packages": [
-    "apache2-bin",
+    "accountsservice",
+    "libatomic1",
+    "libblkid1",
     "libc6",
-    "libcrypt1",
-    "libexpat1",
-    "libpcre3"
+    "libffi8",
+    "libglib2.0-0t64",
+    "libmount1",
+    "libpcre2-8-0",
+    "libpolkit-gobject-1-0",
+    "libselinux1",
+    "libsystemd0",
+    "zlib1g"
   ],
   "criticality": "low",
   "restart_required_on_patch": true
@@ -16,12 +23,49 @@
 ,{
   "service": "auditd.service",
   "exec_path": "/usr/sbin/auditd",
-  "owning_package": "",
+  "owning_package": "auditd",
   "linked_packages": [
+    "auditd",
     "libaudit1",
-    "libauparse0",
+    "libauparse0t64",
     "libc6",
-    "libcap-ng0"
+    "libcap-ng0",
+    "libcom-err2",
+    "libgssapi-krb5-2",
+    "libk5crypto3",
+    "libkeyutils1",
+    "libkrb5-3",
+    "libkrb5support0",
+    "libwrap0"
+  ],
+  "criticality": "low",
+  "restart_required_on_patch": true
+}
+,{
+  "service": "colord.service",
+  "exec_path": "/usr/libexec/colord",
+  "owning_package": "colord",
+  "linked_packages": [
+    "colord",
+    "libatomic1",
+    "libblkid1",
+    "libc6",
+    "libcolord2",
+    "libffi8",
+    "libglib2.0-0t64",
+    "libgudev-1.0-0",
+    "libgusb2a",
+    "libjson-glib-1.0-0",
+    "liblcms2-2",
+    "libmount1",
+    "libpcre2-8-0",
+    "libpolkit-gobject-1-0",
+    "libselinux1",
+    "libsqlite3-0",
+    "libsystemd0",
+    "libudev1",
+    "libusb-1.0-0",
+    "zlib1g"
   ],
   "criticality": "low",
   "restart_required_on_patch": true
@@ -36,6 +80,7 @@
     "libc6",
     "libcap-ng0",
     "libpam0g",
+    "libpcre2-8-0",
     "libselinux1"
   ],
   "criticality": "low",
@@ -44,76 +89,140 @@
 ,{
   "service": "dbus.service",
   "exec_path": "/usr/bin/dbus-daemon",
-  "owning_package": "dbus",
+  "owning_package": "dbus-daemon",
   "linked_packages": [
-    "dbus",
+    "dbus-daemon",
+    "libapparmor1",
     "libaudit1",
     "libc6",
-    "libcap2",
     "libcap-ng0",
     "libdbus-1-3",
     "libexpat1",
-    "libgpg-error0",
-    "liblzma5",
-    "libselinux1"
+    "libpcre2-8-0",
+    "libselinux1",
+    "libsystemd0"
   ],
   "criticality": "low",
   "restart_required_on_patch": true
 }
 ,{
-  "service": "getty@tty2.service",
-  "exec_path": "/usr/bin/login",
-  "owning_package": "",
+  "service": "lightdm.service",
+  "exec_path": "/usr/sbin/lightdm",
+  "owning_package": "lightdm",
   "linked_packages": [
+    "libatomic1",
     "libaudit1",
+    "libblkid1",
     "libc6",
     "libcap-ng0",
-    "libpam0g"
-  ],
-  "criticality": "low",
-  "restart_required_on_patch": true
-}
-,{
-  "service": "mysql.service",
-  "exec_path": "/usr/sbin/mysqld",
-  "owning_package": "mysql-server-core-8.0",
-  "linked_packages": [
-    "libc6",
-    "libgcc-s1",
-    "mysql-server-core-8.0"
-  ],
-  "criticality": "low",
-  "restart_required_on_patch": true
-}
-,{
-  "service": "packagekit.service",
-  "exec_path": "/usr/libexec/packagekitd",
-  "owning_package": "packagekit",
-  "linked_packages": [
-    "libc6",
-    "libcap2",
+    "libffi8",
+    "libgcrypt20",
+    "libglib2.0-0t64",
     "libgpg-error0",
-    "liblzma5",
-    "libpcre3",
+    "libmount1",
+    "libpam0g",
+    "libpcre2-8-0",
     "libselinux1",
-    "packagekit",
+    "libxau6",
+    "libxcb1",
+    "libxdmcp6",
+    "lightdm",
     "zlib1g"
   ],
   "criticality": "low",
   "restart_required_on_patch": true
 }
 ,{
+  "service": "NetworkManager.service",
+  "exec_path": "/usr/sbin/NetworkManager",
+  "owning_package": "network-manager",
+  "linked_packages": [
+    "libatomic1",
+    "libaudit1",
+    "libblkid1",
+    "libbrotli1",
+    "libc6",
+    "libcap-ng0",
+    "libcom-err2",
+    "libcurl3t64-gnutls",
+    "libffi8",
+    "libglib2.0-0t64",
+    "libgmp10",
+    "libgnutls30t64",
+    "libgssapi-krb5-2",
+    "libhogweed6t64",
+    "libidn2-0",
+    "libk5crypto3",
+    "libkeyutils1",
+    "libkrb5-3",
+    "libkrb5support0",
+    "libldap2",
+    "libmount1",
+    "libndp0",
+    "libnettle8t64",
+    "libnghttp2-14",
+    "libnghttp3-9",
+    "libngtcp2-16",
+    "libngtcp2-crypto-gnutls8",
+    "libp11-kit0",
+    "libpcre2-8-0",
+    "libpsl5t64",
+    "librtmp1",
+    "libsasl2-2",
+    "libselinux1",
+    "libssh2-1t64",
+    "libssl3t64",
+    "libsystemd0",
+    "libtasn1-6",
+    "libudev1",
+    "libunistring5",
+    "libzstd1",
+    "network-manager",
+    "zlib1g"
+  ],
+  "criticality": "low",
+  "restart_required_on_patch": true
+}
+,{
+  "service": "open-vm-tools.service",
+  "exec_path": "/usr/bin/vmtoolsd",
+  "owning_package": "open-vm-tools",
+  "linked_packages": [
+    "libatomic1",
+    "libc6",
+    "libcom-err2",
+    "libffi8",
+    "libgcc-s1",
+    "libglib2.0-0t64",
+    "libgssapi-krb5-2",
+    "libk5crypto3",
+    "libkeyutils1",
+    "libkrb5-3",
+    "libkrb5support0",
+    "libpcre2-8-0",
+    "libtirpc3t64",
+    "open-vm-tools"
+  ],
+  "criticality": "low",
+  "restart_required_on_patch": true
+}
+,{
   "service": "polkit.service",
-  "exec_path": "/usr/libexec/polkitd",
+  "exec_path": "/usr/lib/polkit-1/polkitd",
   "owning_package": "polkitd",
   "linked_packages": [
+    "libatomic1",
+    "libblkid1",
     "libc6",
-    "libcap2",
+    "libduktape207",
     "libexpat1",
-    "libgpg-error0",
-    "liblzma5",
-    "libpcre3",
+    "libffi8",
+    "libglib2.0-0t64",
+    "libmount1",
+    "libpcre2-8-0",
+    "libpolkit-gobject-1-0",
     "libselinux1",
+    "libsystemd0",
     "polkitd",
     "zlib1g"
   ],
@@ -126,9 +235,10 @@
   "owning_package": "rsyslog",
   "linked_packages": [
     "libc6",
-    "libcap2",
-    "libgpg-error0",
-    "liblzma5",
+    "libestr0",
+    "libfastjson4",
+    "libsystemd0",
+    "libuuid1",
     "rsyslog",
     "zlib1g"
   ],
@@ -136,11 +246,15 @@
   "restart_required_on_patch": true
 }
 ,{
-  "service": "snapd.service",
-  "exec_path": "/snap/snapd/27591/usr/lib/snapd/snapd",
-  "owning_package": "",
+  "service": "rtkit-daemon.service",
+  "exec_path": "/usr/libexec/rtkit-daemon",
+  "owning_package": "rtkit",
   "linked_packages": [
-    "libc6"
+    "libc6",
+    "libcap2",
+    "libdbus-1-3",
+    "libsystemd0",
+    "rtkit"
   ],
   "criticality": "low",
   "restart_required_on_patch": true
@@ -150,18 +264,11 @@
   "exec_path": "/usr/sbin/sshd",
   "owning_package": "openssh-server",
   "linked_packages": [
-    "libaudit1",
     "libc6",
-    "libcap2",
-    "libcap-ng0",
-    "libcom-err2",
-    "libcrypt1",
-    "libgpg-error0",
-    "libkeyutils1",
-    "liblzma5",
-    "libpam0g",
+    "libpcre2-8-0",
     "libselinux1",
-    "libtirpc3",
+    "libssl3t64",
+    "libzstd1",
     "openssh-server",
     "zlib1g"
   ],
@@ -171,37 +278,31 @@
 ,{
   "service": "systemd-journald.service",
   "exec_path": "/usr/lib/systemd/systemd-journald",
-  "owning_package": "",
+  "owning_package": "systemd",
   "linked_packages": [
-    "libaudit1",
     "libc6",
-    "libcap2",
-    "libcap-ng0",
     "libcrypt1",
-    "libgpg-error0",
-    "liblzma5",
-    "libpam0g",
-    "libselinux1",
-    "systemd"
+    "libssl3t64",
+    "libsystemd-shared",
+    "libzstd1",
+    "systemd",
+    "zlib1g"
   ],
   "criticality": "low",
   "restart_required_on_patch": true
 }
 ,{
-  "service": "systemd-networkd.service",
-  "exec_path": "/usr/lib/systemd/systemd-networkd",
-  "owning_package": "",
+  "service": "systemd-logind.service",
+  "exec_path": "/usr/lib/systemd/systemd-logind",
+  "owning_package": "systemd",
   "linked_packages": [
-    "libaudit1",
     "libc6",
-    "libcap2",
-    "libcap-ng0",
     "libcrypt1",
-    "libgpg-error0",
-    "liblzma5",
-    "libpam0g",
-    "libselinux1",
-    "systemd"
+    "libssl3t64",
+    "libsystemd-shared",
+    "libzstd1",
+    "systemd",
+    "zlib1g"
   ],
   "criticality": "low",
   "restart_required_on_patch": true
@@ -209,18 +310,15 @@
 ,{
   "service": "systemd-timesyncd.service",
   "exec_path": "/usr/lib/systemd/systemd-timesyncd",
-  "owning_package": "",
+  "owning_package": "systemd-timesyncd",
   "linked_packages": [
-    "libaudit1",
     "libc6",
-    "libcap2",
-    "libcap-ng0",
     "libcrypt1",
-    "libgpg-error0",
-    "liblzma5",
-    "libpam0g",
-    "libselinux1",
-    "systemd"
+    "libssl3t64",
+    "libsystemd-shared",
+    "libzstd1",
+    "systemd-timesyncd",
+    "zlib1g"
   ],
   "criticality": "low",
   "restart_required_on_patch": true
@@ -228,12 +326,121 @@
 ,{
   "service": "systemd-udevd.service",
   "exec_path": "/usr/bin/udevadm",
-  "owning_package": "",
+  "owning_package": "udev",
   "linked_packages": [
     "libc6",
-    "libcap2",
-    "liblzma5",
-    "libselinux1"
+    "libcrypt1",
+    "libssl3t64",
+    "libsystemd-shared",
+    "libzstd1",
+    "udev",
+    "zlib1g"
+  ],
+  "criticality": "low",
+  "restart_required_on_patch": true
+}
+,{
+  "service": "systemd-userdbd.service",
+  "exec_path": "/usr/lib/systemd/systemd-userdbd",
+  "owning_package": "systemd-userdbd",
+  "linked_packages": [
+    "libc6",
+    "libcrypt1",
+    "libssl3t64",
+    "libsystemd-shared",
+    "libzstd1",
+    "systemd-userdbd",
+    "zlib1g"
+  ],
+  "criticality": "low",
+  "restart_required_on_patch": true
+}
+,{
+  "service": "udisks2.service",
+  "exec_path": "/usr/libexec/udisks2/udisksd",
+  "owning_package": "udisks2",
+  "linked_packages": [
+    "libacl1",
+    "libatomic1",
+    "libblkid1",
+    "libblockdev3",
+    "libblockdev-utils3",
+    "libc6",
+    "libffi8",
+    "libglib2.0-0t64",
+    "libgudev-1.0-0",
+    "libkmod2",
+    "libmount1",
+    "libpcre2-8-0",
+    "libpolkit-gobject-1-0",
+    "libselinux1",
+    "libssl3t64",
+    "libsystemd0",
+    "libudev1",
+    "libudisks2-0",
+    "libuuid1",
+    "libzstd1",
+    "udisks2",
+    "zlib1g"
+  ],
+  "criticality": "low",
+  "restart_required_on_patch": true
+}
+,{
+  "service": "unattended-upgrades.service",
+  "exec_path": "/usr/bin/python3.13",
+  "owning_package": "python3.13-minimal",
+  "linked_packages": [
+    "libc6",
+    "libexpat1",
+    "python3.13-minimal",
+    "zlib1g"
+  ],
+  "criticality": "low",
+  "restart_required_on_patch": true
+}
+,{
+  "service": "upower.service",
+  "exec_path": "/usr/libexec/upowerd",
+  "owning_package": "upower",
+  "linked_packages": [
+    "libatomic1",
+    "libblkid1",
+    "libc6",
+    "libffi8",
+    "libglib2.0-0t64",
+    "libgudev-1.0-0",
+    "libimobiledevice-1.0-6",
+    "libimobiledevice-glue-1.0-0",
+    "libmount1",
+    "libpcre2-8-0",
+    "libplist-2.0-4",
+    "libpolkit-gobject-1-0",
+    "libselinux1",
+    "libssl3t64",
+    "libsystemd0",
+    "libudev1",
+    "libupower-glib3",
+    "libusbmuxd-2.0-7",
+    "libzstd1",
+    "upower",
+    "zlib1g"
+  ],
+  "criticality": "low",
+  "restart_required_on_patch": true
+}
+,{
+  "service": "user@1000.service",
+  "exec_path": "/usr/lib/systemd/systemd",
+  "owning_package": "systemd",
+  "linked_packages": [
+    "libc6",
+    "libcrypt1",
+    "libssl3t64",
+    "libsystemd-shared",
+    "libzstd1",
+    "systemd",
+    "zlib1g"
   ],
   "criticality": "low",
   "restart_required_on_patch": true
