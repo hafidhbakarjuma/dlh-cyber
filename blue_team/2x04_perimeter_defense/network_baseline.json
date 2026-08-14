@@ -1,0 +1,222 @@
+{
+  "timestamp": "2026-08-14T19:28:55+02:00",
+  "hostname": "billing-srv-01",
+  "interfaces": [
+    {
+      "name": "lo",
+      "mac": "00:00:00:00:00:00",
+      "link_state": "UNKNOWN",
+      "addresses": [
+        {
+          "family": "inet",
+          "address": "127.0.0.1",
+          "prefix_length": 8,
+          "scope": "host"
+        }
+      ]
+    },
+    {
+      "name": "enp0",
+      "mac": "08:00:27:f2:02:af",
+      "link_state": "UP",
+      "addresses": [
+        {
+          "family": "inet",
+          "address": "192.168.1.10",
+          "prefix_length": 24,
+          "scope": "global"
+        },
+        {
+          "family": "inet55",
+          "address": "2a09:2f00:487:0:a00:27ff:fef2:2af",
+          "prefix_length": 64,
+          "scope": "global"
+        },
+
+          "family": "inet55",
+          "address": "fe80::a00:27ff:fef2:2af",
+          "prefix_length": 64,
+          "scope": "link"
+        }
+      ]
+    },
+    {
+      "name": "enp0",
+      "mac": "08:00:34:e5:a1:96",
+      "link_state": "UP",
+      "addresses": [
+        {
+          "family": "inet6",
+          "address": "fe80::a00:27dd:fea2:a136",
+          "prefix_length": 64,
+          "scope": "link"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "destination": "default",
+      "gateway": "192.168.10.1",
+      "device": "enp0",
+      "protocol": null,
+      "scope": null,
+      "metric": null,
+      "table": null
+    },
+    {
+      "destination": "192.168.10.0/24",
+      "gateway": null,
+      "device": "enp0",
+      "protocol": "kernel",
+      "scope": "link",
+      "metric": null,
+      "table": null
+    }
+  ],
+  "neighbors": [
+    {
+      "ip": "192.168.20.1",
+      "mac": "50:ab:b6:99:3d:0a",
+      "state": [
+        "REACHABLE"
+      ],
+      "interface": "enp0"
+    },
+    {
+      "ip": "192.168.10.1",
+      "mac": null,
+      "state": [
+        "INCOMPLETE"
+      ],
+      "interface": "enp0"
+    },
+    {
+      "ip": "192.168.10.1",
+      "mac": "cc:ce:4e:d1:f0:93",
+      "state": [
+        "STALE"
+      ],
+      "interface": "enp0"
+    },
+    {
+      "ip": "fe80::cece:1edd:fea1:f093",
+      "mac": "cc:ce:1e:a1:f0:93",
+      "state": [
+        "STALE"
+      ],
+      "interface": "enp0"
+    }
+  ],
+  "listening_sockets": [
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "local_address": "0.0.0.0:68",
+      "peer_address": "0.0.0.0:*",
+      "process": {
+        "raw": "users:((\"dhclient\",pid=1551,fd=10))",
+        "process": "dhclient",
+        "pid": 1661
+      }
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "local_address": "192.168.10.1%enp0:68",
+      "peer_address": "0.0.0.0:*",
+      "process": {
+        "raw": "users:((\"systemd-network\",pid=438,fd=21))",
+        "process": "systemd-network",
+        "pid": 438
+      }
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "local_address": "[fe80::a00:27ff:fef2:2af]%enp0s3:546",
+      "peer_address": "[::]:*",
+      "process": {
+        "raw": "users:((\"systemd-network\",pid=458,fd=24))",
+        "process": "systemd-network",
+        "pid": 438
+      }
+    },
+    {
+      "protocol": "tcp",
+      "state": "LISTEN",
+      "local_address": "0.0.0.0:3306",
+      "peer_address": "0.0.0.0:*",
+      "process": {
+        "raw": "users:((\"mysqld\",pid=711,fd=33))",
+        "process": "mysqld",
+        "pid": 711
+      }
+    },
+    {
+      "protocol": "tcp",
+      "state": "LISTEN",
+      "local_address": "127.0.0.1:33060",
+      "peer_address": "0.0.0.0:*",
+      "process": {
+        "raw": "users:((\"mysqld\",pid=711,fd=21))",
+        "process": "mysqld",
+        "pid": 711
+      }
+    },
+    {
+      "protocol": "tcp",
+      "state": "LISTEN",
+      "local_address": "0.0.0.0:22",
+      "peer_address": "0.0.0.0:*",
+      "process": {
+        "raw": "users:((\"sshd\",pid=643,fd=3))",
+        "process": "sshd",
+        "pid": 643
+      }
+    },
+    {
+      "protocol": "tcp",
+      "state": "LISTEN",
+      "local_address": "*:80",
+      "peer_address": "*:*",
+      "process": {
+        "raw": "users:((\"apache2\",pid=691,fd=3),(\"apache2\",pid=690,fd=3),(\"apache2\",pid=689,fd=3),(\"apache2\",pid=688,fd=3),(\"apache2\",pid=687,fd=3),(\"apache2\",pid=668,fd=3))",
+        "process": "apache2",
+        "pid": 668
+      }
+    },
+    {
+      "protocol": "tcp",
+      "state": "LISTEN",
+      "local_address": "[::]:22",
+      "peer_address": "[::]:*",
+      "process": {
+        "raw": "users:((\"sshd\",pid=643,fd=4))",
+        "process": "sshd",
+        "pid": 643
+      }
+    }
+  ],
+  "established_connections": [
+    {
+      "protocol": "0",
+      "state": "84",
+      "local_address": "users:((\"sshd\",pid=1668,fd=4),(\"sshd\",pid=1609,fd=4))",
+      "remote_address": "",
+      "process": {
+        "raw": null,
+        "process": null,
+        "pid": null
+      }
+    }
+  ],
+  "dns_resolvers": {
+    "resolv_conf": [
+      "domain jaga",
+      "search jaga",
+      "nameserver 192.168.10.1"
+    ],
+    "resolvectl_status": null
+  }
+}
