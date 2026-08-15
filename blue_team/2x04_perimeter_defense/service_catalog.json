@@ -1,0 +1,27 @@
+{
+  "ports": {
+    "3306": "database",
+    "5432": "database",
+    "80": "web",
+    "443": "web",
+    "22": "ssh",
+    "53": "dns",
+    "123": "ntp",
+    "111": "rpc",
+    "2049": "nfs v4",
+    "445": "smb",
+    "631": "print",
+    "161": "snmpv2c",
+    "21": "ftp",
+    "23": "telnet"
+  },
+  "processes": {
+    "mysqld": "database",
+    "postgres": "database",
+    "apache2": "web",
+    "nginx": "web",
+    "sshd": "ssh",
+    "snmpd": "snmpv2c",
+    "vsftpd": "ftp"
+  }
+}
