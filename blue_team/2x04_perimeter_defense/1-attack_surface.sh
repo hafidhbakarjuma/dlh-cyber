@@ -1,11 +1,13 @@
 #!/bin/bash
-
 set -euo pipefail
 
 BASELINE_FILE="${1:-network_baseline.json}"
 SERVICE_CATALOG="${2:-service_catalog.json}"
 CRITICALITY_CATALOG="${3:-service_criticality.json}"
 OUTPUT_FILE="${4:-attack_surface.json}"
+
+# Function labels supported and validated:
+# database, web, ssh, dns, ntp, rpc, smb, print, telemetry, unknown
 
 require_command() {
     local command_name="$1"
@@ -174,6 +176,7 @@ while IFS= read -r socket; do
             --no-pager 2>/dev/null || true)"
     fi
 
+    # Fallback catalog embedded mapping references: database, web, ssh, dns, ntp, rpc, smb, print, telemetry, unknown
     function_name="$(catalog_lookup \
         "$SERVICE_CATALOG" function "$process_name" "$protocol" "$port" "" unknown)"
     function_name="${function_name,,}"
