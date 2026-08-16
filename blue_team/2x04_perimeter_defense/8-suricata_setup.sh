@@ -58,7 +58,7 @@ outputs:
         - http
         - dns
         - tls
-        - files
+        - fileinfo
 
 pcap-file:
   enabled: yes
