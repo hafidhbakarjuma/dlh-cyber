@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Note: Do not start suricata.service daemon; this tool runs purely offline via -r PCAP replay.
+# Note: do not start suricata.service daemon; this tool runs purely offline via -r PCAP replay.
 
 RULES_SRC_DIR="/home/analyst/MedDefense_Lab/suricata/rules"
 RULES_DEST_DIR="/var/lib/suricata/rules"
