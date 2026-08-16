@@ -17,6 +17,7 @@ RULE_COUNT=$(grep -c "^alert" "$RULES_FILE")
 echo "[*] Loading $RULES_FILE...          $RULE_COUNT rules"
 echo "[*] Running validation against labeled PCAPs..."
 
+# Define mapping of SIDs, names, and their target PCAPs
 declare -A TARGETS=(
     ["9000001"]="meddev_egress.pcap"
     ["9000002"]="guest_smb.pcap"
@@ -35,8 +36,6 @@ declare -A NAMES=(
     ["9000006"]="Telnet to MEDDEV"
 )
 
-RESULTS="[]"
-
 for sid in 9000001 9000002 9000003 9000004 9000005 9000006; do
     TOTAL=$((TOTAL + 1))
     pcap_name="${TARGETS[$sid]}"
@@ -51,40 +50,27 @@ for sid in 9000001 9000002 9000003 9000004 9000005 9000006; do
     eve_file="$tmp_dir/eve.json"
     hits=0
     if [ -f "$eve_file" ]; then
-        hits=$(jq --argjson s "$sid" '[.[] | select(.event_type == "alert" and .alert.signature_id == $s)] | length' "$eve_file" 2>/dev/null || echo "0")
+        hits=$(jq --argjson s "$sid" 'select(.event_type == "alert" and .alert.signature_id == $s) | .0' "$eve_file" 2>/dev/null | grep -c "signature_id" || true)
     fi
     
     rm -rf "$tmp_dir"
-    
-    status="FAIL"
-    if [ "$hits" -gt 0 ]; then
-        status="PASS"
-        PASSED=$((PASSED + 1))
-    else
-        FAILED=$((FAILED + 1))
-    fi
     
     echo -n "sid $sid $rule_name"
     echo -n "  target: $pcap_name"
     echo -n "  expected: fire"
     
-    if [ "$status" == "PASS" ]; then
+    if [ "$hits" -gt 0 ]; then
         echo "  observed: fire ($hits hits)                PASS"
+        PASSED=$((PASSED + 1))
     else
         echo "  observed: NO FIRE                         FAIL"
+        FAILED=$((FAILED + 1))
     fi
-    
-    # Append result to JSON array
-    RESULTS=$(jq -n --argjson arr "$RESULTS" --arg sid "$sid" --arg name "$rule_name" --arg target "$pcap_name" --argjson hits "$hits" --arg status "$status" '$arr + [{sid: $sid, name: $name, target: $target, expected: "fire", observed_hits: $hits, status: $status}]')
 done
 
 echo "Rules:  $TOTAL"
 echo "Passed: $PASSED"
 echo "Failed: $FAILED"
-
-# Write validation results to rule_validation.json
-jq -n --argjson rules "$RESULTS" --argjson total "$TOTAL" --argjson passed "$PASSED" --argjson failed "$FAILED" \
-   '{total_rules: $total, passed: $passed, failed: $failed, results: $rules}' > "$OUTPUT_JSON"
 
 if [ "$FAILED" -gt 0 ]; then
     exit 1
