@@ -100,7 +100,7 @@ table inet meddefense {
         ip saddr @meddev_ips ip dport @internal_ips tcp dport 4242 accept comment "DICOM imaging to PACS"
         ip saddr @meddev_ips ip dport @internal_ips tcp dport { 443, 80 } accept comment "EHR web integration for device display"
 
-        # ALL -> MGMT (DNS) - Corrected transport port syntax
+        # ALL -> MGMT (DNS)
         udp dport 53 accept comment "DNS resolution via MGMT resolver"
         tcp dport 53 accept comment "DNS resolution via MGMT resolver"
 
@@ -136,8 +136,8 @@ else
     exit 1
 fi
 
-echo "Verifying active ruleset..."
+echo "Verifying loaded ruleset and rule counts..."
 RULE_COUNT=$(nft list ruleset | grep -c "rule" || true)
-echo "Expected allow flows from segmentation rules: $EXPECTED_ALLOWS"
+echo "expected allow flows: $EXPECTED_ALLOWS"
 echo "Verification complete. Total rules loaded: $RULE_COUNT"
 nft list ruleset
