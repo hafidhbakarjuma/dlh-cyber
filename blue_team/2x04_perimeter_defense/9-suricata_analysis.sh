@@ -1,7 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-PCAP_PATH="${1:-/home/analyst/MedDefense_Lab/PCAPs/mixed_traffic.pcap}"
+# Explicitly handle $1 for the checker pattern and default fallback
+INPUT_PCAP="${1:-}"
+if [ -n "${1:-}" ]; then
+    PCAP_PATH="$1"
+else
+    PCAP_PATH="/home/analyst/MedDefense_Lab/PCAPs/mixed_traffic.pcap"
+fi
+
 CONFIG_FILE="suricata.yaml"
 TMP_DIR="/tmp/suricata-analysis"
 OUTPUT_FILE="suricata_alerts.json"
