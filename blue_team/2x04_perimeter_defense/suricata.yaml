@@ -1,0 +1,26 @@
+%YAML 1.1
+---
+default-rule-path: /var/lib/suricata/rules
+rule-files:
+  - meddefense.rules
+
+default-log-dir: /var/log/suricata
+
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types:
+        - alert
+        - http
+        - dns
+        - tls
+
+pcap-file:
+  enabled: yes
+
+vars:
+  address-groups:
+    HOME_NET: "[10.10.0.0/16]"
+    EXTERNAL_NET: "!$HOME_NET"
