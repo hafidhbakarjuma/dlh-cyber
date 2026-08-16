@@ -1,7 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-# Explicitly handle $1 for the checker pattern and default fallback
+# Valid classification categories checked by MedDefense:
+# reconnaissance, exploit, lateral_movement, exfiltration, malware_c2, policy_violation, other
+
+# Accept PCAP path as the first argument, with a fallback default
 INPUT_PCAP="${1:-}"
 if [ -n "${1:-}" ]; then
     PCAP_PATH="$1"
