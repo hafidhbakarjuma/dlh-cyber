@@ -3,7 +3,7 @@ set -euo pipefail
 
 RULES_FILE="segmentation_rules.json"
 CONFIG_FILE="nftables.conf"
-BACKUP_DIR="/var/backups"
+BACKUP_DIR="/var/backups/nftables-rollback"
 
 # Validate required tools
 for cmd in jq nft date mkdir; do
