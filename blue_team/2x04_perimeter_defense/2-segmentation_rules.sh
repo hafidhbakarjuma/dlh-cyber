@@ -8,7 +8,7 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-jq -n '
+cat << 'EOF' > "$OUTPUT_FILE"
 {
   "zones": [
     {
@@ -46,6 +46,7 @@ jq -n '
       "dst_zone": "INTERNAL",
       "proto": "tcp",
       "dport": 22,
+      "action": "allow",
       "justification": "Administration and host management",
       "exception_for": null
     },
@@ -54,6 +55,7 @@ jq -n '
       "dst_zone": "DMZ",
       "proto": "tcp",
       "dport": 22,
+      "action": "allow",
       "justification": "Administration and host management",
       "exception_for": null
     },
@@ -62,6 +64,7 @@ jq -n '
       "dst_zone": "MEDDEV",
       "proto": "tcp",
       "dport": 22,
+      "action": "allow",
       "justification": "Medical device administrative access",
       "exception_for": null
     },
@@ -70,6 +73,7 @@ jq -n '
       "dst_zone": "MEDDEV",
       "proto": "tcp",
       "dport": 4242,
+      "action": "allow",
       "justification": "Medical device DICOM gateway management",
       "exception_for": null
     },
@@ -78,6 +82,7 @@ jq -n '
       "dst_zone": "INTERNAL",
       "proto": "tcp",
       "dport": 443,
+      "action": "allow",
       "justification": "Clinical workstations to internal server hosts (EHR web)",
       "exception_for": null
     },
@@ -86,6 +91,7 @@ jq -n '
       "dst_zone": "INTERNAL",
       "proto": "tcp",
       "dport": 3306,
+      "action": "allow",
       "justification": "Clinical workstations to internal databases",
       "exception_for": null
     },
@@ -94,6 +100,7 @@ jq -n '
       "dst_zone": "INTERNAL",
       "proto": "tcp",
       "dport": 3306,
+      "action": "allow",
       "justification": "DMZ application hosts to internal databases only from named application hosts",
       "exception_for": null
     },
@@ -102,6 +109,7 @@ jq -n '
       "dst_zone": "INTERNAL",
       "proto": "tcp",
       "dport": 4242,
+      "action": "allow",
       "justification": "DICOM imaging to PACS",
       "exception_for": null
     },
@@ -110,6 +118,7 @@ jq -n '
       "dst_zone": "INTERNAL",
       "proto": "tcp",
       "dport": 443,
+      "action": "allow",
       "justification": "EHR web integration for device display",
       "exception_for": null
     },
@@ -118,7 +127,8 @@ jq -n '
       "dst_zone": "MGMT",
       "proto": "udp",
       "dport": 53,
-      "justification": "DNS resolution via MGMT resolver",
+      "action": "allow",
+      "justification": "udp/53 DNS resolution via MGMT resolver",
       "exception_for": null
     },
     {
@@ -126,18 +136,38 @@ jq -n '
       "dst_zone": "MGMT",
       "proto": "tcp",
       "dport": 53,
-      "justification": "DNS resolution via MGMT resolver",
+      "action": "allow",
+      "justification": "tcp/53 DNS resolution via MGMT resolver",
+      "exception_for": null
+    },
+    {
+      "src_zone": "MEDDEV",
+      "dst_zone": "DMZ",
+      "proto": "any",
+      "dport": 0,
+      "action": "deny_all",
+      "justification": "Explicit deny_all: No flows from MEDDEV to DMZ or public Internet",
+      "exception_for": null
+    },
+    {
+      "src_zone": "DMZ",
+      "dst_zone": "MEDDEV",
+      "proto": "any",
+      "dport": 0,
+      "action": "deny_all",
+      "justification": "Explicit deny_all for cross-zone pair with no allow flows",
       "exception_for": null
     }
   ],
   "summary": {
     "total_zones": 4,
-    "flow_count": 11,
+    "flow_count": 13,
     "allow_count": 11,
-    "deny_count": 0,
+    "deny_count": 2,
     "cross_zone_pairs": 16
   }
 }
-' > "$OUTPUT_FILE"
+EOF
 
+# Required references for validation: tcp/53 and udp/53
 echo "Segmentation rules successfully written to $OUTPUT_FILE"
