@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Note: do not start suricata.service daemon; this tool runs purely offline via -r PCAP replay.
+# Hint: do not start the suricata.service systemd unit. This project does not run the daemon.
 
 RULES_SRC_DIR="/home/analyst/MedDefense_Lab/suricata/rules"
 RULES_DEST_DIR="/var/lib/suricata/rules"
@@ -100,14 +100,19 @@ fi
 # Extract version correctly using -V and awk
 SURICATA_VERSION=$(suricata -V | awk '{print $3}')
 
+# Convert bash array of rule files to a JSON array for jq
+JSON_RULE_FILES=$(printf '%s\n' "${RULE_FILES_LOADED[@]}" | jq -R . | jq -s .)
+
 echo "[*] Emitting $VERIFICATION_FILE..."
 jq -n \
   --arg ver "$SURICATA_VERSION" \
+  --argjson r_files "$JSON_RULE_FILES" \
   --argjson r_count "$RULE_COUNT" \
   --argjson c_exit "$CONFIG_TEST_EXIT" \
   --argjson s_alerts "$SMOKE_ALERTS" \
   '{
     "installed_version": $ver,
+    "rule_files_loaded": $r_files,
     "rule_count": $r_count,
     "config_test_exit": $c_exit,
     "smoke_alerts": $s_alerts
