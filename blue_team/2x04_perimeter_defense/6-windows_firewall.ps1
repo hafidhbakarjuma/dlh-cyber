@@ -8,7 +8,7 @@
 $ErrorActionPreference = "Stop"
 
 $RulesFile = "segmentation_rules.json"
-$OutputFile = "windows_firewall_export.json"
+$OutputFile =  windows_firewall_rules.json"
 
 if (-not (Test-Path $RulesFile)) {
     Write-Error "Error: Missing segmentation rules file: $RulesFile"
