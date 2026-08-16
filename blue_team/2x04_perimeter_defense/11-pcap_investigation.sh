@@ -65,8 +65,8 @@ FILES_RAW=$(tshark -r "$PCAP_PATH" -Y "http.content_type or smb2.filename" -T fi
 FILES_COUNT=$(echo "$FILES_RAW" | grep -v '^$' | wc -l)
 echo "($FILES_COUNT)"
 
-# Protocol distribution via tshark -q -z io,phs
-echo -n "[*] Protocol distribution...             "
+# protocol distribution extraction via tshark -q -z io,phs
+echo -n "[*] protocol distribution...             "
 PROTO_DIST=$(tshark -r "$PCAP_PATH" -q -z io,phs 2>/dev/null || true)
 echo "(tcp 78%, udp 20%, icmp 1%, other 1%)"
 
