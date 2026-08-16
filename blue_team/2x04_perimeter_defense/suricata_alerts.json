@@ -1,0 +1,13 @@
+{
+  "pcap": "/home/analyst/MedDefense_Lab/PCAPs/mixed_traffic.pcap",
+  "started_at": "2026-08-16T10:50:13Z",
+  "finished_at": "2026-08-16T10:50:14Z",
+  "total_alerts": 0,
+  "unique_signatures": 0,
+  "severity_distribution": {},
+  "by_category": {},
+  "top_sources": {},
+  "top_destinations": {},
+  "by_signature": {},
+  "alerts": []
+}
