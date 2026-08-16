@@ -1,9 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 OUTPUT_FILE="segmentation_rules.json"
 
-# Ensure jq is installed
 if ! command -v jq &> /dev/null; then
     echo "Error: Required command 'jq' is not installed." >&2
     exit 1
@@ -115,7 +114,7 @@ jq -n '
       "exception_for": null
     },
     {
-      "src_zone": "DMZ",
+      "src_zone": "ALL",
       "dst_zone": "MGMT",
       "proto": "udp",
       "dport": 53,
@@ -123,55 +122,7 @@ jq -n '
       "exception_for": null
     },
     {
-      "src_zone": "DMZ",
-      "dst_zone": "MGMT",
-      "proto": "tcp",
-      "dport": 53,
-      "justification": "DNS resolution via MGMT resolver",
-      "exception_for": null
-    },
-    {
-      "src_zone": "INTERNAL",
-      "dst_zone": "MGMT",
-      "proto": "udp",
-      "dport": 53,
-      "justification": "DNS resolution via MGMT resolver",
-      "exception_for": null
-    },
-    {
-      "src_zone": "INTERNAL",
-      "dst_zone": "MGMT",
-      "proto": "tcp",
-      "dport": 53,
-      "justification": "DNS resolution via MGMT resolver",
-      "exception_for": null
-    },
-    {
-      "src_zone": "MEDDEV",
-      "dst_zone": "MGMT",
-      "proto": "udp",
-      "dport": 53,
-      "justification": "DNS resolution via MGMT resolver",
-      "exception_for": null
-    },
-    {
-      "src_zone": "MEDDEV",
-      "dst_zone": "MGMT",
-      "proto": "tcp",
-      "dport": 53,
-      "justification": "DNS resolution via MGMT resolver",
-      "exception_for": null
-    },
-    {
-      "src_zone": "MGMT",
-      "dst_zone": "MGMT",
-      "proto": "udp",
-      "dport": 53,
-      "justification": "DNS resolution via MGMT resolver",
-      "exception_for": null
-    },
-    {
-      "src_zone": "MGMT",
+      "src_zone": "ALL",
       "dst_zone": "MGMT",
       "proto": "tcp",
       "dport": 53,
@@ -181,8 +132,8 @@ jq -n '
   ],
   "summary": {
     "total_zones": 4,
-    "flow_count": 17,
-    "allow_count": 17,
+    "flow_count": 11,
+    "allow_count": 11,
     "deny_count": 0,
     "cross_zone_pairs": 16
   }
