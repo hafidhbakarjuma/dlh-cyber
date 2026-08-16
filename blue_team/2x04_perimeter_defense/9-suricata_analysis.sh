@@ -23,104 +23,59 @@ if [ ! -f "$EVE_JSON" ]; then
     exit 1
 fi
 
-python3 - <<EOF
-import json
-import os
-from collections import Counter
+# Ensure signature_categories.json exists for jq slurp
+if [ ! -f "$CAT_FILE" ]; then
+    echo "{}" > "$CAT_FILE"
+fi
 
-pcap_path = "$PCAP_PATH"
-started_at = "$STARTED_AT"
-finished_at = "$FINISHED_AT"
-eve_file = "$EVE_JSON"
-cat_file = "$CAT_FILE"
-output_file = "$OUTPUT_FILE"
+# Parse eve.json using jq and generate suricata_alerts.json
+jq -s \
+  --arg pcap "$PCAP_PATH" \
+  --arg started "$STARTED_AT" \
+  --arg finished "$FINISHED_AT" \
+  --slurpfile cats "$CAT_FILE" \
+  '
+  # $cats[0] is the signature categories mapping dictionary
+  (. [0] // {}) as $cat_map |
+  
+  [ .[] | select(.event_type == "alert") ] as $all_alerts |
+  
+  ($all_alerts | map(.alert.signature_id | tostring) | unique | length) as $unique_sigs |
+  
+  ($all_alerts | group_by(.alert.severity) | map({key: (. [0].alert.severity | tostring), value: length}) | from_entries) as $sev_dist |
+  
+  ($all_alerts | group_by(.src_ip) | map({key: (.[0].src_ip // "unknown"), value: length}) | from_entries) as $src_counts |
+  
+  ($all_alerts | group_by(.dst_ip) | map({key: (.[0].dst_ip // "unknown"), value: length}) | from_entries) as $dst_counts |
+  
+  ($all_alerts | map({
+    timestamp: .timestamp,
+    src_ip: .src_ip,
+    src_port: .src_port,
+    dst_ip: .dst_ip,
+    dst_port: .dst_port,
+    proto: .proto,
+    signature: .alert.signature,
+    signature_id: .alert.signature_id,
+    category: .alert.category,
+    severity: .alert.severity,
+    mapped_category: ($cat_map[(.alert.signature_id | tostring)] // $cat_map[.alert.signature] // "other")
+  })) as $formatted_alerts |
+  
+  ($formatted_alerts | group_by(.mapped_category) | map({key: .[0].mapped_category, value: length}) | from_entries) as $by_cat |
+  
+  {
+    pcap: $pcap,
+    started_at: $started,
+    finished_at: $finished,
+    total_alerts: ($all_alerts | length),
+    unique_signatures: $unique_sigs,
+    severity_distribution: $sev_dist,
+    by_category: $by_cat,
+    top_sources: $src_counts,
+    top_destinations: $dst_counts,
+    alerts: $formatted_alerts
+  }
+  ' "$EVE_JSON" > "$OUTPUT_FILE"
 
-sig_categories = {}
-if os.path.exists(cat_file):
-    try:
-        with open(cat_file, 'r') as f:
-            sig_categories = json.load(f)
-    except Exception:
-        pass
-
-alerts = []
-total_alerts = 0
-severity_dist = Counter()
-by_category = Counter()
-src_counts = Counter()
-dst_counts = Counter()
-sig_counts = Counter()
-
-if os.path.exists(eve_file):
-    with open(eve_file, 'r') as f:
-        for line in f:
-            if not line.strip():
-                continue
-            try:
-                record = json.loads(line)
-                if record.get("event_type") == "alert":
-                    total_alerts += 1
-                    alert_info = record.get("alert", {})
-                    
-                    timestamp = record.get("timestamp")
-                    src_ip = record.get("src_ip")
-                    src_port = record.get("src_port")
-                    dst_ip = record.get("dst_ip")
-                    dst_port = record.get("dst_port")
-                    proto = record.get("proto")
-                    
-                    sig = alert_info.get("signature")
-                    sig_id = alert_info.get("signature_id")
-                    category = alert_info.get("category")
-                    severity = alert_info.get("severity")
-                    
-                    mapped_category = sig_categories.get(str(sig_id), sig_categories.get(sig, "other"))
-                    if not mapped_category:
-                        mapped_category = "other"
-                        
-                    severity_dist[str(severity)] += 1
-                    by_category[mapped_category] += 1
-                    if src_ip:
-                        src_counts[src_ip] += 1
-                    if dst_ip:
-                        dst_counts[dst_ip] += 1
-                    if sig:
-                        sig_counts[sig] += 1
-                        
-                    alerts.append({
-                        "timestamp": timestamp,
-                        "src_ip": src_ip,
-                        "src_port": src_port,
-                        "dst_ip": dst_ip,
-                        "dst_port": dst_port,
-                        "proto": proto,
-                        "signature": sig,
-                        "signature_id": sig_id,
-                        "category": category,
-                        "severity": severity,
-                        "mapped_category": mapped_category
-                    })
-            except json.JSONDecodeError:
-                continue
-
-unique_signatures = len(sig_counts)
-
-output_data = {
-    "pcap": pcap_path,
-    "started_at": started_at,
-    "finished_at": finished_at,
-    "total_alerts": total_alerts,
-    "unique_signatures": unique_signatures,
-    "severity_distribution": dict(severity_dist),
-    "by_category": dict(by_category),
-    "top_sources": dict(src_counts.most_common(10)),
-    "top_destinations": dict(dst_counts.most_common(10)),
-    "by_signature": dict(sig_counts),
-    "alerts": alerts
-}
-
-with open(output_file, 'w') as f:
-    json.dump(output_data, f, indent=2)
-
-print(f"[*] Analysis complete. Saved output to {output_file}. Total alerts: {total_alerts}")
-EOF
+echo "[*] Analysis complete. Saved output to $OUTPUT_FILE."
