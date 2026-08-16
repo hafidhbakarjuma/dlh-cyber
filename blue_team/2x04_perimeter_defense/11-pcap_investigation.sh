@@ -31,13 +31,17 @@ DURATION=$(awk -v start="$START_TIME" -v end="$END_TIME" 'BEGIN {if (end > start
 
 echo "[*] Duration: $DURATION s     Packets: $PACKET_COUNT"
 
+# Extract TCP conversation statistics and parse top 10 conversations
 echo -n "[*] Extracting TCP conversations...      "
 TCP_CONVS_RAW=$(tshark -r "$PCAP_PATH" -q -z conv,tcp 2>/dev/null | grep -E '^\s*[0-9]+(\.[0-9]+)?\s*<->' || true)
+TCP_TOP10=$(echo "$TCP_CONVS_RAW" | head -n 10 || true)
 TCP_COUNT=$(echo "$TCP_CONVS_RAW" | grep -v '^$' | wc -l)
 echo "($TCP_COUNT)"
 
+# Extract UDP conversation statistics and parse top 10 conversations
 echo -n "[*] Extracting UDP conversations...      "
 UDP_CONVS_RAW=$(tshark -r "$PCAP_PATH" -q -z conv,udp 2>/dev/null | grep -E '^\s*[0-9]+(\.[0-9]+)?\s*<->' || true)
+UDP_TOP10=$(echo "$UDP_CONVS_RAW" | head -n 10 || true)
 UDP_COUNT=$(echo "$UDP_CONVS_RAW" | grep -v '^$' | wc -l)
 echo "($UDP_COUNT)"
 
@@ -85,7 +89,7 @@ TLS_JSON="[]"
 if [ -n "$TLS_RAW" ]; then
     while IFS=$'\t' read -s -r epoch src dst sni; do
         [ -z "$sni" ] && continue
-        TLS_JSON=$(jq -n --argjson arr "$TLS_JSON" --arg epoch "$epoch" --arg src="$src" --arg dst="$dst" --arg sni "$sni" \
+        TLS_JSON=$(jq -n --argjson arr "$TLS_JSON" --arg epoch "$epoch" --arg src "$src" --arg dst "$dst" --arg sni "$sni" \
             '$arr + [{timestamp: $epoch, src_ip: $src, dst_ip: $dst, sni: $sni}]')
     done <<< "$TLS_RAW"
 fi
@@ -93,7 +97,7 @@ fi
 FILES_JSON="[]"
 if [ -n "$FILES_RAW" ]; then
     while IFS=$'\t' read -s -r epoch src dst fdata fname; do
-        FILES_JSON=$(jq -n --argjson arr "$FILES_JSON" --arg epoch "$epoch" --arg src="$src" --arg dst="$dst" --arg fdata "$fdata" --arg fname "$fname" \
+        FILES_JSON=$(jq -n --argjson arr "$FILES_JSON" --arg epoch "$epoch" --arg src "$src" --arg dst "$dst" --arg fdata "$fdata" --arg fname "$fname" \
             '$arr + [{timestamp: $epoch, src_ip: $src, dst_ip: $dst, file_data: $fdata, filename: $fname}]')
     done <<< "$FILES_RAW"
 fi
