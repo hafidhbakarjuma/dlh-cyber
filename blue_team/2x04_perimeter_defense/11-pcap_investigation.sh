@@ -8,7 +8,7 @@ else
     PCAP_PATH="/home/analyst/MedDefense_Lab/PCAPs/suspicious_session.pcap"
 fi
 
-OUTPUT_JSON="pcap_findings.json"
+OUTPUT_JSON="pcap_investigation.json"
 
 if [ ! -f "$PCAP_PATH" ]; then
     echo "Error: PCAP file not found at $PCAP_PATH"
