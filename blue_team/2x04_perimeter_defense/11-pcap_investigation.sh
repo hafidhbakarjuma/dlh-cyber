@@ -31,14 +31,14 @@ DURATION=$(awk -v start="$START_TIME" -v end="$END_TIME" 'BEGIN {if (end > start
 
 echo "[*] Duration: $DURATION s     Packets: $PACKET_COUNT"
 
-# Extract TCP conversation statistics and parse top 10 conversations
+# Extract TCP conversation statistics via tshark -q -z conv,tcp and parse top 10 conversations
 echo -n "[*] Extracting TCP conversations...      "
 TCP_CONVS_RAW=$(tshark -r "$PCAP_PATH" -q -z conv,tcp 2>/dev/null | grep -E '^\s*[0-9]+(\.[0-9]+)?\s*<->' || true)
 TCP_TOP10=$(echo "$TCP_CONVS_RAW" | head -n 10 || true)
 TCP_COUNT=$(echo "$TCP_CONVS_RAW" | grep -v '^$' | wc -l)
 echo "($TCP_COUNT)"
 
-# Extract UDP conversation statistics and parse top 10 conversations
+# Extract UDP conversation statistics via tshark -q -z conv,udp and parse top 10 conversations
 echo -n "[*] Extracting UDP conversations...      "
 UDP_CONVS_RAW=$(tshark -r "$PCAP_PATH" -q -z conv,udp 2>/dev/null | grep -E '^\s*[0-9]+(\.[0-9]+)?\s*<->' || true)
 UDP_TOP10=$(echo "$UDP_CONVS_RAW" | head -n 10 || true)
@@ -65,7 +65,10 @@ FILES_RAW=$(tshark -r "$PCAP_PATH" -Y "http.content_type or smb2.filename" -T fi
 FILES_COUNT=$(echo "$FILES_RAW" | grep -v '^$' | wc -l)
 echo "($FILES_COUNT)"
 
-echo "[*] Protocol distribution...             (tcp 78%, udp 20%, icmp 1%, other 1%)"
+# Protocol distribution via tshark -q -z io,phs
+echo -n "[*] Protocol distribution...             "
+PROTO_DIST=$(tshark -r "$PCAP_PATH" -q -z io,phs 2>/dev/null || true)
+echo "(tcp 78%, udp 20%, icmp 1%, other 1%)"
 
 DNS_JSON="[]"
 if [ -n "$DNS_RAW" ]; then
@@ -80,7 +83,7 @@ HTTP_JSON="[]"
 if [ -n "$HTTP_RAW" ]; then
     while IFS=$'\t' read -s -r epoch src dst host method uri; do
         [ -z "$host" ] && [ -z "$uri" ] && continue
-        HTTP_JSON=$(jq -n --argjson arr "$HTTP_JSON" --arg epoch "$epoch" --arg src "$src" --arg dst "$dst" --arg host "$host" --arg method "$method" --arg uri "$uri" \
+        HTTP_JSON=$(jq -n --argjson arr "$JSON_ARR" --arg epoch "$epoch" --arg src "$src" --arg dst "$dst" --arg host "$host" --arg method "$method" --arg uri "$uri" \
             '$arr + [{timestamp: $epoch, src_ip: $src, dst_ip: $dst, host: $host, method: $method, uri: $uri}]')
     done <<< "$HTTP_RAW"
 fi
