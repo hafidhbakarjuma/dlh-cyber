@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 # name: 6-windows_firewall.ps1
-# purpose: Aligns Windows Firewall rules with the MedDefense segmentation contract
+# purpose: Aligns Windows firewall_rules.json with the MedDefense segmentation contract
 # author: Hafidh Juma
 #>
 
