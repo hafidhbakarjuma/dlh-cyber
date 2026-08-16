@@ -1,6 +1,8 @@
 <#
 .SYNOPSIS
-    Aligns Windows Firewall rules with the MedDefense segmentation contract.
+# name: 6-windows_firewall.ps1
+# purpose: Aligns Windows Firewall rules with the MedDefense segmentation contract
+# author: Hafidh Juma
 #>
 
 $ErrorActionPreference = "Stop"
