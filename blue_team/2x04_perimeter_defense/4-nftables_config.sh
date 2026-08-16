@@ -19,6 +19,7 @@ if [ ! -f "$RULES_FILE" ]; then
 fi
 
 echo "Reading segmentation rules from $RULES_FILE..."
+EXPECTED_ALLOWS=$(jq '.summary.allow_count' "$RULES_FILE")
 
 # Generate nftables.conf dynamically using jq and zone data
 cat << 'EOF' > "$CONFIG_FILE"
@@ -97,7 +98,7 @@ table inet meddefense {
 
         # MEDDEV -> INTERNAL
         ip saddr @meddev_ips ip dport @internal_ips tcp dport 4242 accept comment "DICOM imaging to PACS"
-        ip saddr @meddev_ips ip dport @internal_ips tcp dport 443,80 accept comment "EHR web integration for device display"
+        ip saddr @meddev_ips ip dport @internal_ips tcp dport { 443, 80 } accept comment "EHR web integration for device display"
 
         # ALL -> MGMT (DNS)
         ip dport 53 udp accept comment "DNS resolution via MGMT resolver"
@@ -109,9 +110,6 @@ table inet meddefense {
 
     chain output {
         type filter hook output priority filter; policy accept;
-
-        # Explicit drops for zones that must not receive outbound traffic from this host
-        # (e.g., preventing unauthorized leakage from isolated zones if applicable)
     }
 }
 EOF
@@ -140,5 +138,6 @@ fi
 
 echo "Verifying active ruleset..."
 RULE_COUNT=$(nft list ruleset | grep -c "rule" || true)
+echo "Expected allow flows from segmentation rules: $EXPECTED_ALLOWS"
 echo "Verification complete. Total rules loaded: $RULE_COUNT"
 nft list ruleset
