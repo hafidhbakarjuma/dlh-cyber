@@ -1,0 +1,9 @@
+{
+  "pcap": "/home/analyst/MedDefense_Lab/PCAPs/suspicious_session.pcap",
+  "duration_seconds": 0,
+  "packet_count": 0,
+  "dns_queries": [],
+  "http_requests": [],
+  "tls_sni": [],
+  "file_transfers": []
+}
