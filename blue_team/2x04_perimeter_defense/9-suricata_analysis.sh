@@ -20,7 +20,7 @@ STARTED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
-suricata -c "$CONFIG_FILE" -r "$PCAP_PATH" -l "$TMP_DIR"
+suricata -c ./suricata.yaml -r "$PCAP_PATH" -l "$TMP_DIR"
 
 FINISHED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 EVE_JSON="$TMP_DIR/eve.json"
