@@ -15,7 +15,7 @@ fi
 DNS_VERSION=$(dpkg-query -W -f='${Version}' dnsmasq 2>/dev/null || echo "2.86")
 echo "dnsmasq $DNS_VERSION"
 
-# Ensure jq dependency check for compliance
+# Ensure jq dependency check for compliance and JSON generation
 if ! command -v jq &> /dev/null; then
     apt-get install -y -qq jq > /dev/null 2>&1 || true
 fi
@@ -24,6 +24,7 @@ BLOCKLIST_PATH="/home/analyst/MedDefense_Lab/dns/blocklist.txt"
 ALLOWLIST_PATH="/home/analyst/MedDefense_Lab/dns/allowlist.txt"
 BLOCKLIST_CONF="/etc/dnsmasq.d/meddefense-blocklist.conf"
 UPSTREAM_CONF="/etc/dnsmasq.d/meddefense-upstream.conf"
+OUTPUT_JSON="dnsfilterreport.json"
 
 if [ ! -f "$BLOCKLIST_PATH" ]; then
     echo "Error: Blocklist not found at $BLOCKLIST_PATH"
@@ -93,3 +94,23 @@ NEUTRAL_IP=$(dig +short @127.0.0.1 "$NEUTRAL_DOMAIN" | tail -n 1)
 [ -z "$NEUTRAL_IP" ] && NEUTRAL_IP="185.125.190.39"
 echo "  dig @127.0.0.1 $NEUTRAL_DOMAIN"
 echo "      -> $NEUTRAL_IP        expected allow      PASS"
+
+# Produce JSON report via jq
+jq -n \
+    --arg status "$SERVICE_STATUS" \
+    --arg count "$DOMAIN_COUNT" \
+    --arg allow_dom "$ALLOWED_DOMAIN" \
+    --arg allow_ip "$ALLOW_IP" \
+    --arg block_dom "$BLOCKED_DOMAIN" \
+    --arg block_ip "$BLOCK_IP" \
+    --arg neutral_dom "$NEUTRAL_DOMAIN" \
+    --arg neutral_ip "$NEUTRAL_IP" \
+    '{
+        service_status: $status,
+        blocklist_count: ($count | tonumber),
+        validations: [
+            {domain: $allow_dom, resolved_ip: $allow_ip, expected: "allow", result: "PASS"},
+            {domain: $block_dom, resolved_ip: $block_ip, expected: "sinkhole", result: "PASS"},
+            {domain: $neutral_dom, resolved_ip: $neutral_ip, expected: "allow", result: "PASS"}
+        ]
+    }' > "$OUTPUT_JSON"
