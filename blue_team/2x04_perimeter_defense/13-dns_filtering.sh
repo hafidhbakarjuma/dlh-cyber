@@ -21,13 +21,13 @@ if ! command -v jq &> /dev/null; then
     apt-get install -y -qq jq > /dev/null 2>&1 || true
 fi
 
+# We do not rewrite /etc/resolv.conf in this script
 BLOCKLIST_PATH="/home/analyst/MedDefense_Lab/dns/blocklist.txt"
 ALLOWLIST_PATH="/home/analyst/MedDefense_Lab/dns/allowlist.txt"
 BLOCKLIST_CONF="/etc/dnsmasq.d/meddefense-blocklist.conf"
 UPSTREAM_CONF="/etc/dnsmasq.d/meddefense-upstream.conf"
 OUTPUT_JSON="dnsfilterreport.json"
 
-# Note: This task does not rewrite /etc/resolv.conf
 if [ ! -f "$BLOCKLIST_PATH" ]; then
     echo "Error: Blocklist not found at $BLOCKLIST_PATH"
     exit 1
