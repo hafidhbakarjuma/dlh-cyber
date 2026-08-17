@@ -26,7 +26,7 @@ BLOCKLIST_PATH="/home/analyst/MedDefense_Lab/dns/blocklist.txt"
 ALLOWLIST_PATH="/home/analyst/MedDefense_Lab/dns/allowlist.txt"
 BLOCKLIST_CONF="/etc/dnsmasq.d/meddefense-blocklist.conf"
 UPSTREAM_CONF="/etc/dnsmasq.d/meddefense-upstream.conf"
-OUTPUT_JSON="dnsfilterreport.json"
+OUTPUT_JSON="dns_filter_report.json"
 
 if [ ! -f "$BLOCKLIST_PATH" ]; then
     echo "Error: Blocklist not found at $BLOCKLIST_PATH"
