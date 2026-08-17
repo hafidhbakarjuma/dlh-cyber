@@ -8,8 +8,9 @@ fi
 
 export PATH=$PATH:/usr/sbin:/sbin
 
+# Ensure dnsmasq installation is idempotent and only installs if missing
 echo -n "[*] Ensuring dnsmasq is installed...     "
-if ! dpkg -l | grep -q dnsmasq; then
+if ! dpkg -l | grep -q dnsmasq || ! command -v dnsmasq &> /dev/null; then
     apt-get update -qq && apt-get install -y -qq dnsmasq > /dev/null 2>&1
 fi
 DNS_VERSION=$(dpkg-query -W -f='${Version}' dnsmasq 2>/dev/null || echo "2.86")
