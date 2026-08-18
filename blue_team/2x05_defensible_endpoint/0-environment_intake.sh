@@ -29,12 +29,26 @@ SYSMON_PRESENT=$(systemctl is-active sysmonlinux 2>/dev/null || echo "not_instal
 SSHD_CONFIG_JSON="{}"
 if [[ -f /etc/ssh/sshd_config ]]; then
     SSHD_CONFIG_JSON=$(grep -E '^\s*[a-zA-Z0-9]+' /etc/ssh/sshd_config | awk '{print "\"" $1 "\": \"" $2 "\""}' | jq -s 'from_entries' 2>/dev/null || echo "{}")
+else
+    echo "[-] Warning: /etc/ssh/sshd_config not found." >&2
+    exit 1
 fi
 
-# Capture current sysctl security parameters as a key-value record
+# Capture current sysctl security parameters including net.ipv4.ip_forward explicitly
 SYSCTL_JSON="{}"
 if command -v sysctl &> /dev/null; then
-    SYSCTL_JSON=$(sysctl -a 2>/dev/null | sed 's/[[:space:]]*=[[:space:]]*/:/' | awk -F: '{print "\"" $1 "\": \"" $2 "\""}' | jq -s 'from_entries' 2>/dev/null || echo "{}")
+    # Ensure net.ipv4.ip_forward is explicitly queried and included even if restricted
+    IP_FORWARD=$(sysctl -n net.ipv4.ip_forward 2>/dev/null || echo "0")
+    SYSCTL_JSON=$(sysctl -a 2>/dev/null | sed 's/[[:space:]]*=[[:space:]]*/:/' | awk -F: '{print "\"" $1 "\": \"" $2 "\""}' | jq -s --arg ipf "$IP_FORWARD" 'from_entries + {"net.ipv4.ip_forward": $ipf}' 2>/dev/null || echo "{}")
+else
+    echo "[-] Error: sysctl command not found." >&2
+    exit 1
+fi
+
+# Explicit validation check to ensure config extraction succeeded and return exit 1 on check failure
+if [[ "$SSHD_CONFIG_JSON" == "{}" ]] || [[ "$SYSCTL_JSON" == "{}" ]]; then
+    echo "[-] Check failed: Failed to parse sshd_config or sysctl parameters." >&2
+    exit 1
 fi
 
 cat <<EOF > "$OUTPUT_FILE"
@@ -61,4 +75,3 @@ EOF
 
 echo "[+] Linux intake record successfully written to $OUTPUT_FILE"
 exit 0
-exit 1
