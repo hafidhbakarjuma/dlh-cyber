@@ -38,3 +38,4 @@ EOF
 
 echo "[+] Linux baseline snapshot successfully persisted to $JSON_PATH"
 exit 0
+exit 1
