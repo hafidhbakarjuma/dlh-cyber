@@ -1,4 +1,5 @@
 # Exit codes: 0 = success, 1 = check failed, 2 = environment error
+# Capstone Windows environment intake script for administrative endpoint (hawthorne-adm-01)
 $ErrorActionPreference = "Stop"
 
 $OutputPath = "C:\ProgramData\MedDefense\windows_intake.json"
@@ -33,7 +34,7 @@ try {
     $SysmonStatus = if ($SysmonService) { $SysmonService.Status } else { "Not Installed" }
     $SysmonLogSize = 0
     try {
-        $LogProp = Get-WinList -ListLog "Microsoft-Windows-Sysmon/Operational" -ErrorAction SilentlyContinue
+        $LogProp = Get-WinEvent -ListLog "Microsoft-Windows-Sysmon/Operational" -ErrorAction SilentlyContinue
         if ($LogProp) { $SysmonLogSize = $LogProp.MaximumSize }
     } catch {
         $SysmonLogSize = 0
@@ -53,6 +54,8 @@ try {
     $NetAccountsOutput = & net accounts
 
     $IntakeData = [PSCustomObject]@{
+        capstone_project         = "meddefense_hawthorne_endpoint"
+        intake_type              = "windows_administrative_endpoint"
         Timestamp                = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
         Hostname                 = $Hostname
         OSBuild                  = $OS.BuildNumber
@@ -73,9 +76,9 @@ try {
     }
 
     $IntakeData | ConvertTo-Json -Depth 5 | Set-Content -Path $OutputPath
-    Write-Host "[+] Windows intake record successfully written to $OutputPath"
+    Write-Host "[+] Windows capstone intake record successfully written to $OutputPath"
     exit 0
 } catch {
-    Write-Error "[-] Environment error during Windows intake: $_"
+    Write-Error "[-] Environment error during Windows capstone intake: $_"
     exit 2
 }
