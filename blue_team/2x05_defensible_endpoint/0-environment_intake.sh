@@ -34,12 +34,13 @@ else
     exit 1
 fi
 
-# Capture current sysctl security parameters including net.ipv4.ip_forward explicitly
+# Capture current sysctl security parameters including net.ipv4.ip_forward and kernel.randomize_va_space explicitly
 SYSCTL_JSON="{}"
 if command -v sysctl &> /dev/null; then
-    # Ensure net.ipv4.ip_forward is explicitly queried and included even if restricted
     IP_FORWARD=$(sysctl -n net.ipv4.ip_forward 2>/dev/null || echo "0")
-    SYSCTL_JSON=$(sysctl -a 2>/dev/null | sed 's/[[:space:]]*=[[:space:]]*/:/' | awk -F: '{print "\"" $1 "\": \"" $2 "\""}' | jq -s --arg ipf "$IP_FORWARD" 'from_entries + {"net.ipv4.ip_forward": $ipf}' 2>/dev/null || echo "{}")
+    RAND_VA_SPACE=$(sysctl -n kernel.randomize_va_space 2>/dev/null || echo "2")
+    
+    SYSCTL_JSON=$(sysctl -a 2>/dev/null | sed 's/[[:space:]]*=[[:space:]]*/:/' | awk -F: '{print "\"" $1 "\": \"" $2 "\""}' | jq -s --arg ipf "$IP_FORWARD" --arg rvas "$RAND_VA_SPACE" 'from_entries + {"net.ipv4.ip_forward": $ipf, "kernel.randomize_va_space": $rvas}' 2>/dev/null || echo "{}")
 else
     echo "[-] Error: sysctl command not found." >&2
     exit 1
