@@ -9,7 +9,7 @@ if [[ $EUID -ne 0 ]]; then
     exit 2
 fi
 
-# Capture system attributes
+# Capture core system attributes
 HOSTNAME=$(hostname)
 KERNEL=$(uname -r)
 DISTRO=$(cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '"')
@@ -25,13 +25,13 @@ AUDITD_RUNNING=$(systemctl is-active auditd 2>/dev/null || echo "inactive")
 RSYSLOG_RUNNING=$(systemctl is-active rsyslog 2>/dev/null || echo "inactive")
 SYSMON_PRESENT=$(systemctl is-active sysmonlinux 2>/dev/null || echo "not_installed")
 
-# Format sshd_config as key-value JSON entries (ignoring comments/blanks)
+# Capture current sshd_config as a key-value record safely
 SSHD_CONFIG_JSON="{}"
 if [[ -f /etc/ssh/sshd_config ]]; then
-    SSHD_CONFIG_JSON=$(grep -E '^\s*[a-zA-Z0-9]+' /etc/ssh/sshd_config | awk '{print "\"" $1 "\": \"" $2 "\""}' | jq -s '.' 2>/dev/null || echo "{}")
+    SSHD_CONFIG_JSON=$(grep -E '^\s*[a-zA-Z0-9]+' /etc/ssh/sshd_config | awk '{print "\"" $1 "\": \"" $2 "\""}' | jq -s 'from_entries' 2>/dev/null || echo "{}")
 fi
 
-# Format sysctl parameters as key-value JSON entries
+# Capture current sysctl security parameters as a key-value record
 SYSCTL_JSON="{}"
 if command -v sysctl &> /dev/null; then
     SYSCTL_JSON=$(sysctl -a 2>/dev/null | sed 's/[[:space:]]*=[[:space:]]*/:/' | awk -F: '{print "\"" $1 "\": \"" $2 "\""}' | jq -s 'from_entries' 2>/dev/null || echo "{}")
@@ -61,4 +61,3 @@ EOF
 
 echo "[+] Linux intake record successfully written to $OUTPUT_FILE"
 exit 0
-exit 1
