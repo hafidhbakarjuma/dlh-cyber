@@ -61,4 +61,3 @@ EOF
 
 echo "[+] Linux intake record successfully written to $OUTPUT_FILE"
 exit 0
-exit 1
