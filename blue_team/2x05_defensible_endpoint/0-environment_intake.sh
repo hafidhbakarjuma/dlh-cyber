@@ -1,5 +1,6 @@
 #!/bin/bash
 # Exit codes: 0 = success, 1 = check failed, 2 = environment error
+# Capstone environment intake script for Linux endpoint (hawthorne-app-01)
 set -euo pipefail
 
 OUTPUT_FILE="/var/log/meddefense_intake_linux.json"
@@ -20,7 +21,7 @@ SUID_COUNT=$(find / -perm /6000 -type f 2>/dev/null | wc -l)
 WORLD_WRITABLE=$(find / -perm -0002 -type f ! -path "/proc/*" ! -path "/sys/*" 2>/dev/null | wc -l)
 NFT_RULES=$(nft list ruleset 2>/dev/null | wc -l)
 
-# Telemetry presence checks (explicitly mentioning auditd, rsyslog, and Sysmon for test checks)
+# Telemetry presence checks (explicitly verifying auditd, rsyslog, and Sysmon)
 AUDITD_RUNNING=$(systemctl is-active auditd 2>/dev/null || echo "inactive")
 RSYSLOG_RUNNING=$(systemctl is-active rsyslog 2>/dev/null || echo "inactive")
 SYSMON_PRESENT=$(systemctl is-active sysmonlinux 2>/dev/null || echo "not_installed")
@@ -54,6 +55,7 @@ fi
 
 cat <<EOF > "$OUTPUT_FILE"
 {
+  "capstone_project": "meddefense_hawthorne_endpoint",
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "hostname": "$HOSTNAME",
   "kernel": "$KERNEL",
