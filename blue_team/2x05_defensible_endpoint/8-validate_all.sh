@@ -4,10 +4,11 @@ set -euo pipefail
 
 TARGET_JSON="capstone/target_state.json"
 REPORT_DIR="capstone/exec"
-REPORT_JSON="$REPORT_DIR/validation_report.json"
+VALIDATION_JSON="capstone/validation.json"
 LOG_PATH="$REPORT_DIR/validate_all.log"
 
 mkdir -p "$REPORT_DIR"
+mkdir -p "capstone"
 > "$LOG_PATH"
 
 echo "[*] Starting End-to-End Validation Suite (8-validate_all.sh)..." | tee -a "$LOG_PATH"
@@ -35,12 +36,12 @@ declare -A FAM_PASS
 declare -A FAM_FAIL
 declare -A FAM_ERROR
 
-RESULTS_JSON_ARRAY="[]"
-
 # Read controls array length from target_state.json
 CONTROL_COUNT=$(jq '.controls | length' "$TARGET_JSON")
 
 echo "[*] Evaluating $CONTROL_COUNT controls from $TARGET_JSON..." | tee -a "$LOG_PATH"
+
+CONTROL_RESULTS="[]"
 
 for ((i=0; i<CONTROL_COUNT; i++)); do
     CONTROL=$(jq ".controls[$i]" "$TARGET_JSON")
@@ -57,6 +58,7 @@ for ((i=0; i<CONTROL_COUNT; i++)); do
     STATUS="pass"
     EVIDENCE=""
 
+    # Dispatch on check_type
     case "$CHECK_TYPE" in
         "file_exists")
             if [[ -f "$CHECK_TARGET" || -d "$CHECK_TARGET" ]]; then
@@ -85,7 +87,6 @@ for ((i=0; i<CONTROL_COUNT; i++)); do
         "json_field_gte")
             if [[ -f "$CHECK_TARGET" ]]; then
                 ACTUAL_VAL=$(jq -r ".$FIELD // 0" "$CHECK_TARGET" 2>/dev/null || echo "0")
-                # Compare using awk for floating-point support
                 IS_GTE=$(awk -v act="$ACTUAL_VAL" -v exp="$EXPECTED_VAL" 'BEGIN {print (act >= exp) ? "1" : "0"}')
                 if [[ "$IS_GTE" == "1" ]]; then
                     STATUS="pass"
@@ -176,8 +177,8 @@ echo "========================================================================"
 echo " Aggregates -> Total: $TOTAL_CONTROLS | Pass: $PASS_COUNT | Fail: $FAIL_COUNT | Error: $ERROR_COUNT | Pass Rate: ${PASS_PERCENT}%"
 echo "========================================================================"
 
-# Generate machine-readable JSON report
-cat <<EOF > "$REPORT_JSON"
+# Write required validation report to capstone/validation.json
+cat <<EOF > "$VALIDATION_JSON"
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "hostname": "$(hostname)",
@@ -190,7 +191,7 @@ cat <<EOF > "$REPORT_JSON"
 }
 EOF
 
-echo "[+] Validation report persisted to $REPORT_JSON" | tee -a "$LOG_PATH"
+echo "[+] Validation report persisted to $VALIDATION_JSON" | tee -a "$LOG_PATH"
 
 # Exit 0 if fail_count == 0 AND error_count == 0. Otherwise exit 1.
 if [[ $FAIL_COUNT -eq 0 && $ERROR_COUNT -eq 0 ]]; then
