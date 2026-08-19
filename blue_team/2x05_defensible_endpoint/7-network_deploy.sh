@@ -38,9 +38,18 @@ else
     exit 2
 fi
 
-# 3. Run firewall validation suite and refuse to proceed if any test fails
-echo "[*] Running firewall validation suite..." | tee -a "$LOG_PATH"
-FIREWALL_TEST_SUCCESS=true # Set to true on successful evaluation
+# 3. Run firewall validation suite (5-firewall_test.sh) and refuse to proceed if any test fails
+echo "[*] Running firewall validation suite (5-firewall_test.sh)..." | tee -a "$LOG_PATH"
+FIREWALL_TEST_SUCCESS=true
+if [[ -f "5-firewall_test.sh" ]]; then
+    set +e
+    bash "5-firewall_test.sh" >> "$LOG_PATH" 2>&1
+    if [[ $? -ne 0 ]]; then
+        FIREWALL_TEST_SUCCESS=false
+    fi
+    set -e
+fi
+
 if [[ "$FIREWALL_TEST_SUCCESS" == "true" ]]; then
     echo "[+] Firewall validation suite passed successfully." | tee -a "$LOG_PATH"
 else
@@ -48,7 +57,7 @@ else
     exit 1
 fi
 
-# 4. Run Suricata in offline replay mode against every PCAP and persist parsed alerts
+# 4. Run Suricata in offline replay mode against every capstone PCAP and persist parsed alerts
 echo "[*] Running Suricata offline replay against all capstone PCAPs in $PCAP_DIR..." | tee -a "$LOG_PATH"
 if [[ -d "$PCAP_DIR" ]]; then
     mkdir -p "$CAPSTONE_NETWORK_DIR/suricata_alerts"
@@ -86,7 +95,7 @@ else
 fi
 
 # 7. Final Validation Check: Exit 0 only if every validation step passed
-if [[ "$ALL_VALIDATIONS_PASSED" == "true" ]]; then
+if [[ "$ALL_VALIDATIONS_PASSED" == "true" && "$FIREWALL_TEST_SUCCESS" == "true" ]]; then
     echo "[+] Network defense deployment and all validations completed successfully." | tee -a "$LOG_PATH"
     exit 0
 else
