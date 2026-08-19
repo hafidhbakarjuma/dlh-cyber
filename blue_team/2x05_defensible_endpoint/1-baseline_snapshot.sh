@@ -14,17 +14,20 @@ if ! command -v lynis &> /dev/null; then
 fi
 
 echo "[*] Running Lynis baseline audit..."
-lynis audit system --quick --no-colors > capstone/baseline/lynis_baseline.log 2>&1 || true
+lynis audit system --quick --no-colors > "$LOG_PATH" 2>&1 || true
 
-# Parse metrics from the generated lynis log
-LYNIS_VERSION=$(grep -i "lynis version" capstone/baseline/lynis_baseline.log | awk '{print $3}' || echo "Unknown")
-HARDENING_INDEX=$(grep -i "Hardening index" capstone/baseline/lynis_baseline.log | head -n 1 | awk -F':' '{print $2}' | tr -d '[:space:]%' || echo "0")
-WARNINGS_COUNT=$(grep -i "Warning:" capstone/baseline/lynis_baseline.log | wc -l || echo "0")
-SUGGESTIONS_COUNT=$(grep -i "Suggestion:" capstone/baseline/lynis_baseline.log | wc -l || echo "0")
+# Parse the Hardening Index from the Lynis output
+LYNIS_VERSION=$(grep -i "lynis version" "$LOG_PATH" | awk '{print $3}' || echo "Unknown")
+HARDENING_INDEX=$(grep -i "Hardening Index" "$LOG_PATH" | head -n 1 | awk -F':' '{print $2}' | tr -d '[:space:]%' || echo "")
+if [ -z "$HARDENING_INDEX" ]; then
+    HARDENING_INDEX=$(grep -i "Hardening index" "$LOG_PATH" | head -n 1 | awk -F':' '{print $2}' | tr -d '[:space:]%' || echo "0")
+fi
+WARNINGS_COUNT=$(grep -i "Warning:" "$LOG_PATH" | wc -l || echo "0")
+SUGGESTIONS_COUNT=$(grep -i "Suggestion:" "$LOG_PATH" | wc -l || echo "0")
 HOSTNAME_VAL=$(hostname)
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-cat <<EOF > capstone/baseline/baseline_linux.json
+cat <<EOF > "$JSON_PATH"
 {
   "timestamp": "$TIMESTAMP",
   "hostname": "$HOSTNAME_VAL",
@@ -32,10 +35,10 @@ cat <<EOF > capstone/baseline/baseline_linux.json
   "hardening_index": ${HARDENING_INDEX:-0},
   "warnings_count": $WARNINGS_COUNT,
   "suggestions_count": $SUGGESTIONS_COUNT,
-  "log_path": "capstone/baseline/lynis_baseline.log"
+  "log_path": "$LOG_PATH"
 }
 EOF
 
-echo "[+] Linux baseline snapshot successfully persisted to capstone/baseline/baseline_linux.json"
+echo "[+] Linux baseline snapshot successfully persisted to $JSON_PATH"
 exit 0
 exit 1
