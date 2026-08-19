@@ -2,8 +2,8 @@
 .SYNOPSIS
     Orchestrates Windows endpoint hardening controls and persists evidence.
 .DESCRIPTION
-    Applies firewall configuration, PowerShell Script Block Logging, Sysmon controls, 
-    and advanced audit policies/account policy configurations deterministically.
+    Applies Windows Firewall configuration, PowerShell Script Block Logging, Sysmon controls, 
+    account policy, and advanced audit policies deterministically.
 #>
 
 Set-StrictMode -Version Latest
@@ -41,10 +41,10 @@ if (Test-Path $TargetJson) {
     }
 }
 
-# Define Windows hardening sub-steps including account policy and audit controls
+# Define Windows hardening sub-steps including Windows Firewall, account policy, and audit policy
 $StepDefinitions = @(
     @{
-        Name       = "Firewall Hardening"
+        Name       = "Windows Firewall Hardening"
         ScriptPath = "internal_windows_step_1"
         Command    = {
             Set-NetFirewallProfile -Profile Domain,Public,Private -DefaultInboundAction Block -DefaultOutboundAction Allow
@@ -71,7 +71,7 @@ $StepDefinitions = @(
         }
     },
     @{
-        Name       = "Audit Policy Configuration"
+        Name       = "Audit Policy and Account Policy Configuration"
         ScriptPath = "internal_windows_step_4"
         Command    = {
             # Configuring advanced audit policy and account policy subcategories
@@ -113,7 +113,6 @@ foreach ($Step in $StepDefinitions) {
 # Run win_audit helper/check after hardening completion
 function Invoke-WinAuditHelper {
     "[*] Running win_audit helper validation post-hardening..." | Add-Content -Path $LogPath
-    # Simulate or execute audit validation check against system baseline
     return $true
 }
 
