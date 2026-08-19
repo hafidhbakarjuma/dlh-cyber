@@ -1,4 +1,4 @@
-t#!/bin/bash
+#!/bin/bash
 # Exit codes: 0 = success, 1 = check failed, 2 = environment error
 set -euo pipefail
 
@@ -24,7 +24,6 @@ LYNIS_BEFORE=${LYNIS_BEFORE:-0}
 # Read target minimum hardening index from target_state.json if available, default to 80
 TARGET_MIN_INDEX=80
 if [[ -f "$TARGET_JSON" ]]; then
-    # Look for expected_value for LNX-BAS-01 or general index threshold
     PARSED_TARGET=$(grep -A 5 "LNX-BAS-01" "$TARGET_JSON" | grep -o '"expected_value":[[:space:]]*[0-9]*' | awk -F':' '{print $2}' | tr -d '[:space:]' || echo "")
     if [[ -n "$PARSED_TARGET" ]]; then
         TARGET_MIN_INDEX="$PARSED_TARGET"
@@ -33,10 +32,9 @@ fi
 
 echo "[*] Starting Linux Hardening Orchestration on $HOSTNAME_VAL..." | tee -a "$LOG_PATH"
 
-STEPS_JSON_ARRAY="[]"
 ALL_SUCCESS=true
 
-# Define sub-steps (name and command/script path)
+# Define sub-steps including explicit permission sweep step
 declare -a STEP_NAMES=(
     "SSH Hardening"
     "Sysctl Hardening"
@@ -75,7 +73,7 @@ for i in "${!STEP_NAMES[@]}"; do
     
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
-    CHANGED="true" # Assuming hardening actions modify state idempotently
+    CHANGED="true"
 
     if [[ $EXIT_CODE -ne 0 ]]; then
         ALL_SUCCESS=false
@@ -116,7 +114,7 @@ CONTROLS_TOUCHED='[
   "LNX-AUD-01"
 ]'
 
-# Persist JSON report
+# Persist JSON execution report
 cat <<EOF > "$JSON_PATH"
 {
   "timestamp": "$TIMESTAMP",
@@ -133,7 +131,7 @@ EOF
 
 echo "[+] Linux hardening execution report saved to $JSON_PATH" | tee -a "$LOG_PATH"
 
-# Final validation check
+# Final validation check against target state and step execution success
 if [[ "$ALL_SUCCESS" == "true" ]] && [[ "$LYNIS_AFTER" -ge "$TARGET_MIN_INDEX" ]]; then
     echo "[+] Linux hardening validation PASSED (Lynis After: $LYNIS_AFTER >= Target Min: $TARGET_MIN_INDEX)" | tee -a "$LOG_PATH"
     exit 0
@@ -141,5 +139,4 @@ else
     echo "[-] Error: Linux hardening validation FAILED. All success: $ALL_SUCCESS, Lynis After: $LYNIS_AFTER, Target Min: $TARGET_MIN_INDEX" | tee -a "$LOG_PATH"
     exit 1
     exit 2
-
 fi
