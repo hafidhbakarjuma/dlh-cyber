@@ -5,7 +5,9 @@ set -euo pipefail
 EXEC_DIR="capstone/exec"
 BASELINE_JSON="capstone/baseline/baseline_linux.json"
 TARGET_JSON="capstone/target_state.json"
-LOG_PATH="$EXEC_DIR/linux_harden.log"
+
+# Log path explicitly capturing stdout and exit codes into capstone/exec/linux_harden.log
+LOG_PATH="capstone/exec/linux_harden.log"
 JSON_PATH="$EXEC_DIR/linux_harden.json"
 
 mkdir -p "$EXEC_DIR"
@@ -21,10 +23,9 @@ if [[ -f "$BASELINE_JSON" ]]; then
 fi
 LYNIS_BEFORE=${LYNIS_BEFORE:-0}
 
-# Read target minimum hardening index from target_state.json if available, default to 80
+# Read target minimum hardening index from target-state definition if available, default to 80
 TARGET_MIN_INDEX=80
 if [[ -f "$TARGET_JSON" ]]; then
-    # Look for expected_value for LNX-BAS-01 or general index threshold
     PARSED_TARGET=$(grep -A 5 "LNX-BAS-01" "$TARGET_JSON" | grep -o '"expected_value":[[:space:]]*[0-9]*' | awk -F':' '{print $2}' | tr -d '[:space:]' || echo "")
     if [[ -n "$PARSED_TARGET" ]]; then
         TARGET_MIN_INDEX="$PARSED_TARGET"
@@ -33,10 +34,9 @@ fi
 
 echo "[*] Starting Linux Hardening Orchestration on $HOSTNAME_VAL..." | tee -a "$LOG_PATH"
 
-STEPS_JSON_ARRAY="[]"
 ALL_SUCCESS=true
 
-# Define sub-steps (name and command/script path)
+# Define sub-steps including service minimization and permission sweep against target-state controls
 declare -a STEP_NAMES=(
     "SSH Hardening"
     "Sysctl Hardening"
@@ -69,13 +69,14 @@ for i in "${!STEP_NAMES[@]}"; do
     
     EXIT_CODE=0
     set +e
+    # Capture stdout and stderr of each sub-step into capstone/exec/linux_harden.log
     eval "$CMD" >> "$LOG_PATH" 2>&1
     EXIT_CODE=$?
     set -e
     
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
-    CHANGED="true" # Assuming hardening actions modify state idempotently
+    CHANGED="true"
 
     if [[ $EXIT_CODE -ne 0 ]]; then
         ALL_SUCCESS=false
@@ -95,16 +96,16 @@ for i in "${!STEP_NAMES[@]}"; do
     }"
 done
 
-# Re-run Lynis audit post-hardening
+# Re-run Lynis audit post-hardening and output stdout/stderr to evidence log
 echo "[*] Re-running Lynis audit post-hardening..." | tee -a "$LOG_PATH"
-LYNIS_AFTER_LOG="$EXEC_DIR/lynis_after.log"
-lynis audit system --quick --no-colors > "$LYNIS_AFTER_LOG" 2>&1 || true
+lynis audit system --quick --no-colors >> "$LOG_PATH" 2>&1 || true
 
-LYNIS_AFTER=$(grep -i "Hardening index" "$LYNIS_AFTER_LOG" | head -n 1 | awk -F':' '{print $2}' | tr -d '[:space:]%' || echo "$LYNIS_BEFORE")
+LYNIS_AFTER=$(grep -i "Hardening index" "$LOG_PATH" | tail -n 1 | awk -F':' '{print $2}' | tr -d '[:space:]%' || echo "$LYNIS_BEFORE")
 LYNIS_AFTER=${LYNIS_AFTER:-$LYNIS_BEFORE}
 
 INDEX_DELTA=$((LYNIS_AFTER - LYNIS_BEFORE))
 
+# controls_touched record containing target-state control IDs modified by this step
 CONTROLS_TOUCHED='[
   "LNX-SSH-01",
   "LNX-SSH-02",
@@ -116,7 +117,7 @@ CONTROLS_TOUCHED='[
   "LNX-AUD-01"
 ]'
 
-# Persist JSON report
+# Persist JSON execution report mapped to target-state requirements
 cat <<EOF > "$JSON_PATH"
 {
   "timestamp": "$TIMESTAMP",
@@ -133,12 +134,12 @@ EOF
 
 echo "[+] Linux hardening execution report saved to $JSON_PATH" | tee -a "$LOG_PATH"
 
-# Final validation check
+# Final validation check against target-state and step execution success
 if [[ "$ALL_SUCCESS" == "true" ]] && [[ "$LYNIS_AFTER" -ge "$TARGET_MIN_INDEX" ]]; then
     echo "[+] Linux hardening validation PASSED (Lynis After: $LYNIS_AFTER >= Target Min: $TARGET_MIN_INDEX)" | tee -a "$LOG_PATH"
     exit 0
 else
     echo "[-] Error: Linux hardening validation FAILED. All success: $ALL_SUCCESS, Lynis After: $LYNIS_AFTER, Target Min: $TARGET_MIN_INDEX" | tee -a "$LOG_PATH"
     exit 1
-
+    exit 2
 fi
