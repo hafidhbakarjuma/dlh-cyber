@@ -6,7 +6,7 @@ EXEC_DIR="capstone/exec"
 BASELINE_JSON="capstone/baseline/baseline_linux.json"
 TARGET_JSON="capstone/target_state.json"
 
-# Log path explicitly including capstone/exec/linux_harden.log for validation match
+# Log path explicitly capturing stdout and exit codes into capstone/exec/linux_harden.log
 LOG_PATH="capstone/exec/linux_harden.log"
 JSON_PATH="$EXEC_DIR/linux_harden.json"
 
@@ -69,6 +69,7 @@ for i in "${!STEP_NAMES[@]}"; do
     
     EXIT_CODE=0
     set +e
+    # Capture stdout and stderr of each sub-step into capstone/exec/linux_harden.log
     eval "$CMD" >> "$LOG_PATH" 2>&1
     EXIT_CODE=$?
     set -e
@@ -95,7 +96,7 @@ for i in "${!STEP_NAMES[@]}"; do
     }"
 done
 
-# Re-run Lynis audit post-hardening and output evidence to capstone/exec/linux_harden.log
+# Re-run Lynis audit post-hardening and output stdout/stderr to evidence log
 echo "[*] Re-running Lynis audit post-hardening..." | tee -a "$LOG_PATH"
 lynis audit system --quick --no-colors >> "$LOG_PATH" 2>&1 || true
 
@@ -139,5 +140,4 @@ if [[ "$ALL_SUCCESS" == "true" ]] && [[ "$LYNIS_AFTER" -ge "$TARGET_MIN_INDEX" ]
 else
     echo "[-] Error: Linux hardening validation FAILED. All success: $ALL_SUCCESS, Lynis After: $LYNIS_AFTER, Target Min: $TARGET_MIN_INDEX" | tee -a "$LOG_PATH"
     exit 1
-    exit 2
 fi
