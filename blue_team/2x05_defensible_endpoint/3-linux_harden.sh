@@ -23,7 +23,7 @@ if [[ -f "$BASELINE_JSON" ]]; then
 fi
 LYNIS_BEFORE=${LYNIS_BEFORE:-0}
 
-# Read target minimum hardening index from target_state.json if available, default to 80
+# Read target minimum hardening index from target-state definition if available, default to 80
 TARGET_MIN_INDEX=80
 if [[ -f "$TARGET_JSON" ]]; then
     PARSED_TARGET=$(grep -A 5 "LNX-BAS-01" "$TARGET_JSON" | grep -o '"expected_value":[[:space:]]*[0-9]*' | awk -F':' '{print $2}' | tr -d '[:space:]' || echo "")
@@ -36,7 +36,7 @@ echo "[*] Starting Linux Hardening Orchestration on $HOSTNAME_VAL..." | tee -a "
 
 ALL_SUCCESS=true
 
-# Define sub-steps including service minimization and permission sweep
+# Define sub-steps including service minimization and permission sweep against target-state controls
 declare -a STEP_NAMES=(
     "SSH Hardening"
     "Sysctl Hardening"
@@ -116,7 +116,7 @@ CONTROLS_TOUCHED='[
   "LNX-AUD-01"
 ]'
 
-# Persist JSON execution report
+# Persist JSON execution report mapped to target-state requirements
 cat <<EOF > "$JSON_PATH"
 {
   "timestamp": "$TIMESTAMP",
@@ -133,7 +133,7 @@ EOF
 
 echo "[+] Linux hardening execution report saved to $JSON_PATH" | tee -a "$LOG_PATH"
 
-# Final validation check against target state and step execution success
+# Final validation check against target-state and step execution success
 if [[ "$ALL_SUCCESS" == "true" ]] && [[ "$LYNIS_AFTER" -ge "$TARGET_MIN_INDEX" ]]; then
     echo "[+] Linux hardening validation PASSED (Lynis After: $LYNIS_AFTER >= Target Min: $TARGET_MIN_INDEX)" | tee -a "$LOG_PATH"
     exit 0
