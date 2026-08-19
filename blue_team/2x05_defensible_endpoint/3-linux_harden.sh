@@ -140,4 +140,5 @@ if [[ "$ALL_SUCCESS" == "true" ]] && [[ "$LYNIS_AFTER" -ge "$TARGET_MIN_INDEX" ]
 else
     echo "[-] Error: Linux hardening validation FAILED. All success: $ALL_SUCCESS, Lynis After: $LYNIS_AFTER, Target Min: $TARGET_MIN_INDEX" | tee -a "$LOG_PATH"
     exit 1
+    exit 2
 fi
