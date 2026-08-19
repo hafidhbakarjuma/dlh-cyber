@@ -4,7 +4,7 @@
 .DESCRIPTION
     Verifies Sysmon installation and configuration, verifies Script Block Logging active state,
     executes controlled test sequences including scheduled task creation/execution, queries event channels 
-    using Get-WinEvent, and exports structured JSON evidence.
+    within the last 10 minutes using Get-WinEvent, and exports structured JSON evidence.
 #>
 
 Set-StrictMode -Version Latest
@@ -46,7 +46,7 @@ if (Test-Path $Path) {
 }
 $ScriptBlockActive = $true
 
-# Function to execute test actions and verify event trace using Get-WinEvent
+# Function to execute test actions and verify event trace within the last 10 minutes using Get-WinEvent
 function Test-ActionVerification {
     param(
         [string]$ActionName,
@@ -65,7 +65,7 @@ function Test-ActionVerification {
         script:AllSuccess = $false
     }
 
-    # Query event channel using Get-WinEvent to verify trace existence
+    # Query event channel using Get-WinEvent to verify expected event is present within the last 10 minutes
     try {
         $StartTime = (Get-Date).AddMinutes(-10)
         if ($EventId -gt 0) {
@@ -74,7 +74,7 @@ function Test-ActionVerification {
             $Events = Get-WinEvent -FilterHashtable @{ LogName = $EventChannel; StartTime = $StartTime } -ErrorAction SilentlyContinue
         }
         if (-not $Events) {
-            "[*] Notice: No recent events retrieved from $EventChannel for $ActionName, verifying baseline coverage." | Add-Content -Path $LogPath
+            "[*] Notice: No recent events retrieved from $EventChannel for $ActionName within the last 10 minutes, verifying baseline coverage." | Add-Content -Path $LogPath
         }
     } catch {
         # Fallback tolerance for restricted lab/sandbox environments
@@ -116,7 +116,7 @@ $EventsData = [PSCustomObject]@{
     source             = "windows_telemetry_events"
     time_range_minutes = 30
     status             = "success"
-    summary            = "Exported recent Sysmon Operational, PowerShell Operational (ScriptBlockLogging), and Security events using Get-WinEvent."
+    summary            = "Exported recent Sysmon Operational, PowerShell Operational (ScriptBlockLogging), and Security events."
 }
 $EventsData | ConvertTo-Json -Depth 5 | Out-File -FilePath $EventsJson -Encoding utf8
 "[*] Exported event logs to $EventsJson" | Add-Content -Path $LogPath
