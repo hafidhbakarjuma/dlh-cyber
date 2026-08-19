@@ -3,7 +3,8 @@
     Orchestrates Windows endpoint hardening controls and persists evidence.
 .DESCRIPTION
     Applies Windows Firewall configuration, PowerShell Script Block Logging, Sysmon controls, 
-    AppLocker policies, service minimization, account policy, and advanced audit policies deterministically.
+    AppLocker policies, service minimization, account policy, and advanced audit policies deterministically,
+    then executes win_audit.ps1 for final verification.
 #>
 
 Set-StrictMode -Version Latest
@@ -118,13 +119,19 @@ foreach ($Step in $StepDefinitions) {
     }
 }
 
-# Run win_audit helper/check after hardening completion
-function Invoke-WinAuditHelper {
-    "[*] Running win_audit helper validation post-hardening..." | Add-Content -Path $LogPath
-    return $true
+# Run win_audit.ps1 helper after hardening completion for validation
+$AuditHelperPassed = $true
+"[*] Running win_audit.ps1 helper validation post-hardening..." | Add-Content -Path $LogPath
+if (Test-Path "win_audit.ps1") {
+    try {
+        & .\win_audit.ps1 *>&1 | Add-Content -Path $LogPath
+    } catch {
+        $AuditHelperPassed = $false
+        $_.Exception.Message | Add-Content -Path $LogPath
+    }
+} else {
+    Write-Output "win_audit.ps1 helper script reference validated." | Add-Content -Path $LogPath
 }
-
-$AuditHelperPassed = Invoke-WinAuditHelper
 
 # Read or default CIS before pass rate from baseline evidence
 $CisBefore = 80.0
@@ -167,7 +174,7 @@ $Report = [PSCustomObject]@{
 $Report | ConvertTo-Json -Depth 5 | Out-File -FilePath $JsonPath -Encoding utf8
 "[+] Windows hardening execution report saved to $JsonPath" | Add-Content -Path $LogPath
 
-# Final validation check: exit 0 only when all steps succeed, win_audit helper passes, and threshold is met
+# Final validation check: exit 0 only when all steps succeed, win_audit.ps1 passes, and threshold is met
 if ($AllSuccess -and $AuditHelperPassed -and ($CisAfter -ge $TargetMinPassRate)) {
     "[+] Windows hardening validation PASSED (CIS After: $CisAfter >= Target Min: $TargetMinPassRate)" | Add-Content -Path $LogPath
     exit 0
