@@ -6,6 +6,7 @@
     and advanced audit policies deterministically.
 #>
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $ExecDir = "capstone\exec"
@@ -47,7 +48,6 @@ $StepDefinitions = @(
         Name       = "Sysmon Deployment"
         ScriptPath = "internal_windows_step_3"
         Command    = {
-            # Ensure Sysmon service check/configuration
             if (Get-Service -Name "Sysmon64" -ErrorAction SilentlyContinue) {
                 Write-Output "Sysmon64 service is installed and running."
             } else {
@@ -86,11 +86,11 @@ foreach ($Step in $StepDefinitions) {
     $Duration = [int](($EndTime - $StartTime).TotalSeconds)
 
     $StepsData += [PSCustomObject]@{
-        name             = $Name
-        script_path      = $ScriptPath
-        exit_code        = $ExitCode
-        duration_seconds = $Duration
-        changed          = $Changed
+        name             = [string]$Name
+        script_path      = [string]$ScriptPath
+        exit_code        = [int]$ExitCode
+        duration_seconds = [int]$Duration
+        changed          = [bool]$Changed
     }
 }
 
@@ -123,12 +123,12 @@ $ControlsTouched = @(
 
 # Construct JSON execution report
 $Report = [PSCustomObject]@{
-    timestamp        = $Timestamp
-    hostname         = $env:COMPUTERNAME
+    timestamp        = [string]$Timestamp
+    hostname         = [string]$env:COMPUTERNAME
     steps            = $StepsData
-    cis_before       = $CisBefore
-    cis_after        = $CisAfter
-    index_delta      = $IndexDelta
+    cis_before       = [double]$CisBefore
+    cis_after        = [double]$CisAfter
+    index_delta      = [double]$IndexDelta
     controls_touched = $ControlsTouched
 }
 
