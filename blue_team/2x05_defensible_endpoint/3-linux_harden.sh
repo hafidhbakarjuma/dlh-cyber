@@ -105,6 +105,7 @@ LYNIS_AFTER=${LYNIS_AFTER:-$LYNIS_BEFORE}
 
 INDEX_DELTA=$((LYNIS_AFTER - LYNIS_BEFORE))
 
+# controls_touched record containing target-state control IDs modified by this step
 CONTROLS_TOUCHED='[
   "LNX-SSH-01",
   "LNX-SSH-02",
