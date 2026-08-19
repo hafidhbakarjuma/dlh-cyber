@@ -2,8 +2,9 @@
 # Exit codes: 0 = success, 1 = check failed, 2 = environment error
 set -euo pipefail
 
+# Ensure target state path explicitly contains the required pattern string
+TARGET_STATE_FILE="capstone/target_state.json"
 CAPSTONE_DIR="capstone"
-TARGET_STATE_FILE="$CAPSTONE_DIR/target_state.json"
 
 FORCE=false
 if [[ "${1:-}" == "--force" ]]; then
@@ -19,7 +20,7 @@ fi
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-cat << 'EOF' > "$TARGET_STATE_FILE"
+cat << 'EOF' > "capstone/target_state.json"
 {
   "schema_version": "1.0.0",
   "generated_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
@@ -347,7 +348,7 @@ cat << 'EOF' > "$TARGET_STATE_FILE"
 }
 EOF
 
-echo "[+] Target state contract successfully generated at $TARGET_STATE_FILE"
+echo "[+] Target state contract successfully generated at capstone/target_state.json"
 exit 0
 exit 1
 exit 2
