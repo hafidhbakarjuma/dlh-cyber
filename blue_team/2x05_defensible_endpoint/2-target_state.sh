@@ -350,3 +350,4 @@ EOF
 echo "[+] Target state contract successfully generated at $TARGET_STATE_FILE"
 exit 0
 exit 1
+exit 2
