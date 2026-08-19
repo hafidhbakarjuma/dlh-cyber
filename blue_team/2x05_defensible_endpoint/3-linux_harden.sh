@@ -34,7 +34,7 @@ echo "[*] Starting Linux Hardening Orchestration on $HOSTNAME_VAL..." | tee -a "
 
 ALL_SUCCESS=true
 
-# Define sub-steps including explicit permission sweep step
+# Define sub-steps explicitly including service minimization and permission sweep
 declare -a STEP_NAMES=(
     "SSH Hardening"
     "Sysctl Hardening"
