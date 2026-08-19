@@ -1,4 +1,4 @@
-#!/bin/bash
+t#!/bin/bash
 # Exit codes: 0 = success, 1 = check failed, 2 = environment error
 set -euo pipefail
 
@@ -140,5 +140,6 @@ if [[ "$ALL_SUCCESS" == "true" ]] && [[ "$LYNIS_AFTER" -ge "$TARGET_MIN_INDEX" ]
 else
     echo "[-] Error: Linux hardening validation FAILED. All success: $ALL_SUCCESS, Lynis After: $LYNIS_AFTER, Target Min: $TARGET_MIN_INDEX" | tee -a "$LOG_PATH"
     exit 1
+    exit 2
 
 fi
