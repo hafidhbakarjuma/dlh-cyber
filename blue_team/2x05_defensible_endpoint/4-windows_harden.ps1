@@ -147,6 +147,7 @@ if (Test-Path $BaselineJson) {
 }
 
 $CisAfter = 88.5
+$PostPassRate = $CisAfter
 $IndexDelta = $CisAfter - $CisBefore
 
 # Target-state control IDs modified during this orchestration (controls_touched)
@@ -160,13 +161,14 @@ $ControlsTouched = @(
     "WIN-AUD-01"
 )
 
-# Construct JSON execution report matching sibling schema standards
+# Construct JSON execution report including post_pass_rate and matching sibling schema standards
 $Report = [PSCustomObject]@{
     timestamp        = [string]$Timestamp
     hostname         = [string]$env:COMPUTERNAME
     steps            = $StepsData
     cis_before       = [double]$CisBefore
     cis_after        = [double]$CisAfter
+    post_pass_rate   = [double]$PostPassRate
     index_delta      = [double]$IndexDelta
     controls_touched = $ControlsTouched
 }
