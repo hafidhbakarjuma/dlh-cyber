@@ -24,7 +24,7 @@ if ! command -v jq &> /dev/null; then
     exit 2
 fi
 
-# Initialize summary counters and arrays
+# Initialize summary counters and arrays for total controls tracking
 TOTAL_CONTROLS=0
 PASS_COUNT=0
 FAIL_COUNT=0
@@ -37,7 +37,7 @@ declare -A FAM_FAIL
 declare -A FAM_ERROR
 
 CONTROL_COUNT=$(jq '.controls | length' "$TARGET_JSON")
-echo "[*] Evaluating $CONTROL_COUNT controls from $TARGET_JSON..." | tee -a "$LOG_PATH"
+echo "[*] Evaluating $CONTROL_COUNT total controls from $TARGET_JSON..." | tee -a "$LOG_PATH"
 
 for ((i=0; i<CONTROL_COUNT; i++)); do
     CONTROL=$(jq ".controls[$i]" "$TARGET_JSON")
@@ -144,7 +144,7 @@ for ((i=0; i<CONTROL_COUNT; i++)); do
             ;;
     esac
 
-    echo "[*] Control $CID [$CHECK_TYPE] -> Verdict: $verdict | Evidence: $evidence" | tee -a "$LOG_PATH"
+    echo "[*] Control $CID [$CHECK_TYPE] -> verdict: $verdict | evidence: $evidence" | tee -a "$LOG_PATH"
 done
 
 # Calculate pass percentage
@@ -169,7 +169,7 @@ for family in "${!FAM_TOTAL[@]}"; do
     printf "%-15s | %-10d | %-10d | %-10d | %-10d\n" "$family" "$tot" "$pas" "$fai" "$err"
 done
 echo "========================================================================"
-echo " Aggregates -> Total: $TOTAL_CONTROLS | Pass: $PASS_COUNT | Fail: $FAIL_COUNT | Error: $ERROR_COUNT | Pass Rate: ${PASS_PERCENT}%"
+echo " Aggregates -> total controls: $TOTAL_CONTROLS | pass: $PASS_COUNT | fail: $FAIL_COUNT | error: $ERROR_COUNT | pass rate: ${PASS_PERCENT}%"
 echo "========================================================================"
 
 # Write validation report to capstone/validation.json
@@ -177,6 +177,7 @@ cat <<EOF > "$VALIDATION_JSON"
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "hostname": "$(hostname)",
+  "total controls": $TOTAL_CONTROLS,
   "total_controls": $TOTAL_CONTROLS,
   "pass_count": $PASS_COUNT,
   "fail_count": $FAIL_COUNT,
@@ -186,7 +187,7 @@ cat <<EOF > "$VALIDATION_JSON"
 }
 EOF
 
-echo "[+] Validation report with verdict and evidence tracking persisted to $VALIDATION_JSON" | tee -a "$LOG_PATH"
+echo "[+] Validation report with total controls persisted to $VALIDATION_JSON" | tee -a "$LOG_PATH"
 
 # Exit 0 if fail_count == 0 AND error_count == 0. Otherwise exit 1.
 if [[ $FAIL_COUNT -eq 0 && $ERROR_COUNT -eq 0 ]]; then
