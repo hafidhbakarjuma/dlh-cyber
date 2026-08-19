@@ -36,12 +36,8 @@ declare -A FAM_PASS
 declare -A FAM_FAIL
 declare -A FAM_ERROR
 
-# Read controls array length from target_state.json
 CONTROL_COUNT=$(jq '.controls | length' "$TARGET_JSON")
-
 echo "[*] Evaluating $CONTROL_COUNT controls from $TARGET_JSON..." | tee -a "$LOG_PATH"
-
-CONTROL_RESULTS="[]"
 
 for ((i=0; i<CONTROL_COUNT; i++)); do
     CONTROL=$(jq ".controls[$i]" "$TARGET_JSON")
@@ -55,33 +51,32 @@ for ((i=0; i<CONTROL_COUNT; i++)); do
     TOTAL_CONTROLS=$((TOTAL_CONTROLS + 1))
     FAM_TOTAL["$FAMILY"]=$(( ${FAM_TOTAL["$FAMILY"]:-0} + 1 ))
 
-    STATUS="pass"
-    EVIDENCE=""
+    verdict="pass"
+    evidence=""
 
-    # Dispatch on check_type
     case "$CHECK_TYPE" in
         "file_exists")
             if [[ -f "$CHECK_TARGET" || -d "$CHECK_TARGET" ]]; then
-                STATUS="pass"
-                EVIDENCE="Path exists: $CHECK_TARGET"
+                verdict="pass"
+                evidence="Path exists: $CHECK_TARGET"
             else
-                STATUS="fail"
-                EVIDENCE="Path missing: $CHECK_TARGET"
+                verdict="fail"
+                evidence="Path missing: $CHECK_TARGET"
             fi
             ;;
         "json_field_equals")
             if [[ -f "$CHECK_TARGET" ]]; then
                 ACTUAL_VAL=$(jq -r ".$FIELD // empty" "$CHECK_TARGET" 2>/dev/null || echo "")
                 if [[ "$ACTUAL_VAL" == "$EXPECTED_VAL" ]]; then
-                    STATUS="pass"
-                    EVIDENCE="JSON field .$FIELD equals '$EXPECTED_VAL'"
+                    verdict="pass"
+                    evidence="JSON field .$FIELD equals '$EXPECTED_VAL'"
                 else
-                    STATUS="fail"
-                    EVIDENCE="JSON field .$FIELD value '$ACTUAL_VAL' does not match expected '$EXPECTED_VAL'"
+                    verdict="fail"
+                    evidence="JSON field .$FIELD value '$ACTUAL_VAL' does not match expected '$EXPECTED_VAL'"
                 fi
             else
-                STATUS="error"
-                EVIDENCE="Target JSON file not found: $CHECK_TARGET"
+                verdict="error"
+                evidence="Target JSON file not found: $CHECK_TARGET"
             fi
             ;;
         "json_field_gte")
@@ -89,15 +84,15 @@ for ((i=0; i<CONTROL_COUNT; i++)); do
                 ACTUAL_VAL=$(jq -r ".$FIELD // 0" "$CHECK_TARGET" 2>/dev/null || echo "0")
                 IS_GTE=$(awk -v act="$ACTUAL_VAL" -v exp="$EXPECTED_VAL" 'BEGIN {print (act >= exp) ? "1" : "0"}')
                 if [[ "$IS_GTE" == "1" ]]; then
-                    STATUS="pass"
-                    EVIDENCE="JSON field .$FIELD ($ACTUAL_VAL) >= expected ($EXPECTED_VAL)"
+                    verdict="pass"
+                    evidence="JSON field .$FIELD ($ACTUAL_VAL) >= expected ($EXPECTED_VAL)"
                 else
-                    STATUS="fail"
-                    EVIDENCE="JSON field .$FIELD ($ACTUAL_VAL) < expected ($EXPECTED_VAL)"
+                    verdict="fail"
+                    evidence="JSON field .$FIELD ($ACTUAL_VAL) < expected ($EXPECTED_VAL)"
                 fi
             else
-                STATUS="error"
-                EVIDENCE="Target JSON file not found: $CHECK_TARGET"
+                verdict="error"
+                evidence="Target JSON file not found: $CHECK_TARGET"
             fi
             ;;
         "command_exit_zero")
@@ -106,35 +101,35 @@ for ((i=0; i<CONTROL_COUNT; i++)); do
             CMD_EXIT=$?
             set -e
             if [[ $CMD_EXIT -eq 0 ]]; then
-                STATUS="pass"
-                EVIDENCE="Command exited 0: $CHECK_TARGET"
+                verdict="pass"
+                evidence="Command exited 0: $CHECK_TARGET"
             else
-                STATUS="fail"
-                EVIDENCE="Command exited non-zero ($CMD_EXIT): $CHECK_TARGET"
+                verdict="fail"
+                evidence="Command exited non-zero ($CMD_EXIT): $CHECK_TARGET"
             fi
             ;;
         "grep_match")
             if [[ -f "$CHECK_TARGET" ]]; then
                 if grep -q -E "$EXPECTED_VAL" "$CHECK_TARGET"; then
-                    STATUS="pass"
-                    EVIDENCE="Found regex match '$EXPECTED_VAL' in $CHECK_TARGET"
+                    verdict="pass"
+                    evidence="Found regex match '$EXPECTED_VAL' in $CHECK_TARGET"
                 else
-                    STATUS="fail"
-                    EVIDENCE="Regex match '$EXPECTED_VAL' not found in $CHECK_TARGET"
+                    verdict="fail"
+                    evidence="Regex match '$EXPECTED_VAL' not found in $CHECK_TARGET"
                 fi
             else
-                STATUS="error"
-                EVIDENCE="Target file for grep not found: $CHECK_TARGET"
+                verdict="error"
+                evidence="Target file for grep not found: $CHECK_TARGET"
             fi
             ;;
         *)
-            STATUS="error"
-            EVIDENCE="Unknown check_type: $CHECK_TYPE"
+            verdict="error"
+            evidence="Unknown check_type: $CHECK_TYPE"
             ;;
     esac
 
     # Update counters based on verdict
-    case "$STATUS" in
+    case "$verdict" in
         "pass")
             PASS_COUNT=$((PASS_COUNT + 1))
             FAM_PASS["$FAMILY"]=$(( ${FAM_PASS["$FAMILY"]:-0} + 1 ))
@@ -149,7 +144,7 @@ for ((i=0; i<CONTROL_COUNT; i++)); do
             ;;
     esac
 
-    echo "[*] Control $CID [$CHECK_TYPE] -> $STATUS ($EVIDENCE)" | tee -a "$LOG_PATH"
+    echo "[*] Control $CID [$CHECK_TYPE] -> Verdict: $verdict | Evidence: $evidence" | tee -a "$LOG_PATH"
 done
 
 # Calculate pass percentage
@@ -158,7 +153,7 @@ if [[ $TOTAL_CONTROLS -gt 0 ]]; then
     PASS_PERCENT=$(awk -v p="$PASS_COUNT" -v t="$TOTAL_CONTROLS" 'BEGIN {printf "%.2f", (p / t) * 100}')
 fi
 
-# Print clean table to stdout showing one row per control family with family totals
+# Print clean table to stdout grouped by control family
 echo ""
 echo "========================================================================"
 echo "                   END-TO-END VALIDATION FAMILY SUMMARY                 "
@@ -177,7 +172,7 @@ echo "========================================================================"
 echo " Aggregates -> Total: $TOTAL_CONTROLS | Pass: $PASS_COUNT | Fail: $FAIL_COUNT | Error: $ERROR_COUNT | Pass Rate: ${PASS_PERCENT}%"
 echo "========================================================================"
 
-# Write required validation report to capstone/validation.json
+# Write validation report to capstone/validation.json
 cat <<EOF > "$VALIDATION_JSON"
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
@@ -191,7 +186,7 @@ cat <<EOF > "$VALIDATION_JSON"
 }
 EOF
 
-echo "[+] Validation report persisted to $VALIDATION_JSON" | tee -a "$LOG_PATH"
+echo "[+] Validation report with verdict and evidence tracking persisted to $VALIDATION_JSON" | tee -a "$LOG_PATH"
 
 # Exit 0 if fail_count == 0 AND error_count == 0. Otherwise exit 1.
 if [[ $FAIL_COUNT -eq 0 && $ERROR_COUNT -eq 0 ]]; then
