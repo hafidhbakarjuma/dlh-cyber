@@ -94,3 +94,4 @@ EOF
 echo "[+] Linux telemetry coverage verification complete. Report saved to $COVERAGE_JSON" | tee -a "$LOG_PATH"
 exit 0
 exit 1
+exit 2
