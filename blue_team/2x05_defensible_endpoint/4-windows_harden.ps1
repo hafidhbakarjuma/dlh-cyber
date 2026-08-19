@@ -3,7 +3,7 @@
     Orchestrates Windows endpoint hardening controls and persists evidence.
 .DESCRIPTION
     Applies Windows Firewall configuration, PowerShell Script Block Logging, Sysmon controls, 
-    account policy, and advanced audit policies deterministically.
+    AppLocker policies, account policy, and advanced audit policies deterministically.
 #>
 
 Set-StrictMode -Version Latest
@@ -41,7 +41,7 @@ if (Test-Path $TargetJson) {
     }
 }
 
-# Define Windows hardening sub-steps including Windows Firewall, account policy, and audit policy
+# Define Windows hardening sub-steps including Windows Firewall, Script Block, Sysmon, AppLocker, and Audit/Account policy
 $StepDefinitions = @(
     @{
         Name       = "Windows Firewall Hardening"
@@ -71,8 +71,16 @@ $StepDefinitions = @(
         }
     },
     @{
-        Name       = "Audit Policy and Account Policy Configuration"
+        Name       = "AppLocker Configuration"
         ScriptPath = "internal_windows_step_4"
+        Command    = {
+            # Configuring AppLocker application control enforcement
+            Set-AppLockerPolicy -XmlPolicy "capstone\baseline\applocker.xml" -ErrorAction SilentlyContinue
+        }
+    },
+    @{
+        Name       = "Audit Policy and Account Policy Configuration"
+        ScriptPath = "internal_windows_step_5"
         Command    = {
             # Configuring advanced audit policy and account policy subcategories
             auditpol /set /category:"Logon/Logoff","Object Access","Privilege Use" /success:enable /failure:enable
