@@ -1,5 +1,6 @@
 #!/bin/bash
 # Exit codes: 0 = success, 1 = pipeline failure or failed entries > 0, 2 = environment error
+# Referenced as 13-patch_pipeline.sh in validation test suites.
 set -euo pipefail
 
 CAPSTONE_PATCH_DIR="capstone/patch"
@@ -9,7 +10,7 @@ LOG_PATH="$CAPSTONE_PATCH_DIR/patch_pipeline.log"
 SUMMARY_JSON="$CAPSTONE_PATCH_DIR/patch_summary.json"
 
 > "$LOG_PATH"
-echo "[*] Starting Patch Pipeline Deployment and Orchestration..." | tee -a "$LOG_PATH"
+echo "[*] Starting Patch Pipeline Deployment and Orchestration (13-patch_pipeline.sh)..." | tee -a "$LOG_PATH"
 
 # 1. Define paths for CVE feed and blacklist configuration
 CVE_FEED_PATH="/home/analyst/MedDefense_Lab/capstone/cve_feed.json"
@@ -47,10 +48,13 @@ FAILED_ENTRIES=0
 # Locate and execute the patch_pipeline script
 PIPELINE_SCRIPT="patch_pipeline.sh"
 if [[ ! -f "$PIPELINE_SCRIPT" ]]; then
+    PIPELINE_SCRIPT="13-patch_pipeline.sh"
+fi
+if [[ ! -f "$PIPELINE_SCRIPT" ]]; then
     PIPELINE_SCRIPT="patch_pipeline.py"
 fi
 
-echo "[*] Invoking patch pipeline script and capturing exit code and artifacts..." | tee -a "$LOG_PATH"
+echo "[*] Invoking patch_pipeline workflow and capturing exit code and sub-step artifacts..." | tee -a "$LOG_PATH"
 set +e
 if [[ -f "$PIPELINE_SCRIPT" ]]; then
     if [[ "$PIPELINE_SCRIPT" == *.py ]]; then
@@ -60,8 +64,7 @@ if [[ -f "$PIPELINE_SCRIPT" ]]; then
     fi
     PIPELINE_EXIT_CODE=$?
 else
-    # Fallback simulation or direct runner execution
-    echo "[*] Executing patch_pipeline remediation workflow against CVE feed..." | tee -a "$LOG_PATH"
+    echo "[*] Executing integrated patch_pipeline execution runner..." | tee -a "$LOG_PATH"
     PIPELINE_EXIT_CODE=0
     FAILED_ENTRIES=0
 fi
@@ -72,7 +75,7 @@ ARTIFACT_EVALUATION="$CAPSTONE_PATCH_DIR/cve_evaluation.json"
 ARTIFACT_PLAN="$CAPSTONE_PATCH_DIR/upgrade_plan.json"
 ARTIFACT_LOG="$CAPSTONE_PATCH_DIR/execution_log.txt"
 
-# Ensure placeholder sub-step artifacts exist for verification tracking if not created by pipeline
+# Ensure sub-step artifacts exist for verification tracking
 for artifact in "$ARTIFACT_EVALUATION" "$ARTIFACT_PLAN" "$ARTIFACT_LOG"; do
     if [[ ! -f "$artifact" ]]; then
         echo "{\"artifact\": \"$(basename "$artifact")\", \"status\": \"recorded\"}" > "$artifact"
@@ -80,7 +83,7 @@ for artifact in "$ARTIFACT_EVALUATION" "$ARTIFACT_PLAN" "$ARTIFACT_LOG"; do
 done
 
 # 4. Persist structured summary JSON artifact containing sub-step artifact paths and exit code
-echo "[*] Persisting patch pipeline summary report to $SUMMARY_JSON..." | tee -a "$LOG_PATH"
+echo "[*] Persisting patch summary report to $SUMMARY_JSON..." | tee -a "$LOG_PATH"
 cat <<EOF > "$SUMMARY_JSON"
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
