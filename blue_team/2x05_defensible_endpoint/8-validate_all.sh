@@ -30,7 +30,7 @@ PASS_COUNT=0
 FAIL_COUNT=0
 ERROR_COUNT=0
 
-# Associative arrays for family aggregations
+# Associative arrays for family aggregations and totals
 declare -A FAM_TOTAL
 declare -A FAM_PASS
 declare -A FAM_FAIL
@@ -153,10 +153,10 @@ if [[ $TOTAL_CONTROLS -gt 0 ]]; then
     PASS_PERCENT=$(awk -v p="$PASS_COUNT" -v t="$TOTAL_CONTROLS" 'BEGIN {printf "%.2f", (p / t) * 100}')
 fi
 
-# Print clean table to stdout grouped by control family
+# Print clean table to stdout grouped by control family with family totals
 echo ""
 echo "========================================================================"
-echo "                   END-TO-END VALIDATION FAMILY SUMMARY                 "
+echo "          END-TO-END VALIDATION FAMILY SUMMARY AND TOTALS               "
 echo "========================================================================"
 printf "%-15s | %-10s | %-10s | %-10s | %-10s\n" "Family" "Total" "Passed" "Failed" "Errors"
 echo "------------------------------------------------------------------------"
@@ -187,7 +187,7 @@ cat <<EOF > "$VALIDATION_JSON"
 }
 EOF
 
-echo "[+] Validation report with total controls persisted to $VALIDATION_JSON" | tee -a "$LOG_PATH"
+echo "[+] Validation report with control family totals persisted to $VALIDATION_JSON" | tee -a "$LOG_PATH"
 
 # Exit 0 if fail_count == 0 AND error_count == 0. Otherwise exit 1.
 if [[ $FAIL_COUNT -eq 0 && $ERROR_COUNT -eq 0 ]]; then
