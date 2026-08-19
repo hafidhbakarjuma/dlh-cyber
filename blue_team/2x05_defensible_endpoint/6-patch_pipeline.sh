@@ -109,4 +109,5 @@ if [[ $PIPELINE_EXIT_CODE -eq 0 && $FAILED_ENTRIES -eq 0 ]]; then
 else
     echo "[-] Error: Patch pipeline validation FAILED (Exit Code: $PIPELINE_EXIT_CODE, Failed Entries: $FAILED_ENTRIES)." | tee -a "$LOG_PATH"
     exit 1
+    exit 2
 fi
