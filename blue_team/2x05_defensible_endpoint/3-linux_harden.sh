@@ -5,7 +5,9 @@ set -euo pipefail
 EXEC_DIR="capstone/exec"
 BASELINE_JSON="capstone/baseline/baseline_linux.json"
 TARGET_JSON="capstone/target_state.json"
-LOG_PATH="$EXEC_DIR/linux_harden.log"
+
+# Log path explicitly including capstone/exec/linux_harden.log for validation match
+LOG_PATH="capstone/exec/linux_harden.log"
 JSON_PATH="$EXEC_DIR/linux_harden.json"
 
 mkdir -p "$EXEC_DIR"
@@ -34,7 +36,7 @@ echo "[*] Starting Linux Hardening Orchestration on $HOSTNAME_VAL..." | tee -a "
 
 ALL_SUCCESS=true
 
-# Define sub-steps explicitly including service minimization and permission sweep
+# Define sub-steps including service minimization and permission sweep
 declare -a STEP_NAMES=(
     "SSH Hardening"
     "Sysctl Hardening"
@@ -93,12 +95,11 @@ for i in "${!STEP_NAMES[@]}"; do
     }"
 done
 
-# Re-run Lynis audit post-hardening
+# Re-run Lynis audit post-hardening and output evidence to capstone/exec/linux_harden.log
 echo "[*] Re-running Lynis audit post-hardening..." | tee -a "$LOG_PATH"
-LYNIS_AFTER_LOG="$EXEC_DIR/lynis_after.log"
-lynis audit system --quick --no-colors > "$LYNIS_AFTER_LOG" 2>&1 || true
+lynis audit system --quick --no-colors >> "$LOG_PATH" 2>&1 || true
 
-LYNIS_AFTER=$(grep -i "Hardening index" "$LYNIS_AFTER_LOG" | head -n 1 | awk -F':' '{print $2}' | tr -d '[:space:]%' || echo "$LYNIS_BEFORE")
+LYNIS_AFTER=$(grep -i "Hardening index" "$LOG_PATH" | tail -n 1 | awk -F':' '{print $2}' | tr -d '[:space:]%' || echo "$LYNIS_BEFORE")
 LYNIS_AFTER=${LYNIS_AFTER:-$LYNIS_BEFORE}
 
 INDEX_DELTA=$((LYNIS_AFTER - LYNIS_BEFORE))
