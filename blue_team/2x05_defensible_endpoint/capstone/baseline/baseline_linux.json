@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-08-19T10:19:17Z",
+  "hostname": "kali",
+  "lynis_version": "Unknown",
+  "hardening_index": 70[##############],
+  "warnings_count": 0
+0,
+  "suggestions_count": 0
+0,
+  "log_path": "capstone/baseline/lynis_baseline.log"
+}

@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-19T15:16:01Z",
+  "hostname": "kali",
+  "source": "linux_telemetry_events",
+  "time_range_minutes": 30,
+  "audit_records": ["auditd_event_stream_active"],
+  "syslog_records": ["syslog_stream_active"],
+  "status": "success"
+}

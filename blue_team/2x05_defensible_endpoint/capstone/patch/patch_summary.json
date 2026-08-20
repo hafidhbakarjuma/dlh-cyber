@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-08-19T19:49:30Z",
+  "hostname": "kali",
+  "pipeline_exit_code": 0,
+  "failed_entries": 0,
+  "artifacts_dir": "capstone/patch",
+  "sub_step_artifacts": [
+    "capstone/patch/cve_evaluation.json",
+    "capstone/patch/upgrade_plan.json",
+    "capstone/patch/execution_log.txt"
+  ],
+  "status": "success"
+}

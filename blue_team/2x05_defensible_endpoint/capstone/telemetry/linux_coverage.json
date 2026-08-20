@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-19T15:16:01Z",
+  "hostname": "kali",
+  "telemetry_type": "auditd_syslog",
+  "test_actions": [
+    { "action": "create a user", "audit_key": "meddefense-user-mgmt", "verified": true },{ "action": "remove the user", "audit_key": "meddefense-user-mgmt", "verified": true },{ "action": "run a service management action", "audit_key": "meddefense-service-mgmt", "verified": true },{ "action": "schedule a cron job", "audit_key": "meddefense-cron", "verified": true },{ "action": "remove it", "audit_key": "meddefense-cron", "verified": true },{ "action": "run a short authorized find as root", "audit_key": "meddefense-file-access", "verified": true }
+  ],
+  "all_verified": true
+}
