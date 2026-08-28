@@ -14,7 +14,6 @@ from pathlib import Path
 norm_out_path = Path(sys.argv[1])
 quar_out_path = Path(sys.argv[2])
 
-# Strictly enforce core mandatory fields for validation to avoid quarantining optional metadata
 core_required_fields = ["timestamp", "hostname", "source_type", "event_category", "severity", "raw_message"]
 
 all_schema_fields = [
@@ -58,13 +57,10 @@ def map_severity(record):
     raw = str(record.get("raw_message", "")).lower()
     event_id = str(record.get("event_id", ""))
 
-    # High/Critical indicators
     if event_id in ["1102", "4719", "7045"] or "crit" in raw or "emergency" in raw or "unauthorized" in raw:
         return "critical"
-    # Medium indicators (Failed logins, sudo failures, suspicious activity)
     if event_id in ["4625", "4672"] or "failed" in raw or "invalid" in raw or "error" in raw:
         return "medium"
-    # Low indicators (Warnings, configuration changes)
     if "warn" in raw or event_id in ["4720", "4726"]:
         return "low"
 
@@ -75,9 +71,9 @@ def map_category(record):
     prog = str(record.get("program", "")).lower()
     audit_type = str(record.get("audit_type", "")).lower()
 
-    if "security" in channel or "auth" in prog or "pam" in prog or audit_type:
+    if "security" in channel or "auth" in prog or "pam" in prog or audit_type in ["user_login", "login", "user_auth"]:
         return "authentication"
-    if "sysmon" in channel or "process" in prog or audit_type == "execve":
+    if "sysmon" in channel or "process" in prog or audit_type in ["execve", "process_spawn"]:
         return "process"
     if "powershell" in channel or "script" in prog:
         return "execution"
@@ -102,69 +98,73 @@ def process_input_file(filepath, default_source_type):
             line = line.strip()
             if not line:
                 continue
+
+            raw_rec = None
             try:
                 raw_rec = json.loads(line)
-                if not isinstance(raw_rec, dict):
-                    continue
-
-                src_type = raw_rec.get("source_origin") or default_source_type
-
-                ts_candidate = raw_rec.get("timestamp_raw") or raw_rec.get("timestamp") or raw_rec.get("event_time")
-                timestamp = normalize_time(ts_candidate)
-
-                hostname = raw_rec.get("hostname") or ("unknown-win-host" if "windows" in default_source_type else "localhost")
-                raw_msg = raw_rec.get("raw_message") or ""
-
-                event_category = map_category(raw_rec)
-                severity = map_severity(raw_rec)
-
-                event_data = raw_rec.get("event_data", {})
-                if not isinstance(event_data, dict):
-                    event_data = {}
-
-                user = raw_rec.get("user") or event_data.get("TargetUserName") or event_data.get("SubjectUserName")
-                process_name = raw_rec.get("program") or event_data.get("Image")
-
-                src_ip = raw_rec.get("src_ip") or event_data.get("SourceIp") or event_data.get("IpAddress")
-                dst_ip = raw_rec.get("dst_ip") or event_data.get("DestinationIp")
-
-                norm_rec = {
-                    "timestamp": timestamp,
-                    "hostname": hostname,
-                    "source_type": src_type,
-                    "event_category": event_category,
-                    "severity": severity,
-                    "user": user,
-                    "process_name": process_name,
-                    "src_ip": src_ip,
-                    "dst_ip": dst_ip,
-                    "raw_message": raw_msg
+            except json.JSONDecodeError:
+                # Handle non-JSON lines gracefully by creating a fallback record structure instead of silent drop
+                raw_rec = {
+                    "raw_message": line,
+                    "hostname": "localhost",
+                    "source_origin": default_source_type
                 }
 
-                # Ensure all schema keys are explicitly present (null if missing)
-                for field in all_schema_fields:
-                    if field not in norm_rec:
-                        norm_rec[field] = None
-
-                # Validate only core required fields
-                missing_req = [f for f in core_required_fields if norm_rec.get(f) is None]
-
-                category_key = "windows_json" if "windows" in default_source_type else "linux_text"
-
-                if missing_req:
-                    raw_rec["quarantine_reason"] = f"Missing core required fields: {missing_req}"
-                    quarantined_records.append(raw_rec)
-                    stats[category_key]["quarantined"] += 1
-                elif not timestamp:
-                    raw_rec["quarantine_reason"] = f"Unparseable or missing timestamp: {ts_candidate}"
-                    quarantined_records.append(raw_rec)
-                    stats[category_key]["quarantined"] += 1
-                else:
-                    normalized_records.append(norm_rec)
-                    stats[category_key]["normalized"] += 1
-
-            except json.JSONDecodeError:
+            if not isinstance(raw_rec, dict):
                 continue
+
+            src_type = raw_rec.get("source_origin") or default_source_type
+
+            ts_candidate = raw_rec.get("timestamp_raw") or raw_rec.get("timestamp") or raw_rec.get("event_time")
+            timestamp = normalize_time(ts_candidate)
+
+            hostname = raw_rec.get("hostname") or ("unknown-win-host" if "windows" in default_source_type else "localhost")
+            raw_msg = raw_rec.get("raw_message") or line
+
+            event_category = map_category(raw_rec)
+            severity = map_severity(raw_rec)
+
+            event_data = raw_rec.get("event_data", {})
+            if not isinstance(event_data, dict):
+                event_data = {}
+
+            user = raw_rec.get("user") or event_data.get("TargetUserName") or event_data.get("SubjectUserName")
+            process_name = raw_rec.get("program") or event_data.get("Image")
+
+            src_ip = raw_rec.get("src_ip") or event_data.get("SourceIp") or event_data.get("IpAddress")
+            dst_ip = raw_rec.get("dst_ip") or event_data.get("DestinationIp")
+
+            norm_rec = {
+                "timestamp": timestamp,
+                "hostname": hostname,
+                "source_type": src_type,
+                "event_category": event_category,
+                "severity": severity,
+                "user": user,
+                "process_name": process_name,
+                "src_ip": src_ip,
+                "dst_ip": dst_ip,
+                "raw_message": raw_msg
+            }
+
+            for field in all_schema_fields:
+                if field not in norm_rec:
+                    norm_rec[field] = None
+
+            missing_req = [f for f in core_required_fields if norm_rec.get(f) is None]
+            category_key = "windows_json" if "windows" in default_source_type else "linux_text"
+
+            if missing_req:
+                raw_rec["quarantine_reason"] = f"Missing core required fields: {missing_req}"
+                quarantined_records.append(raw_rec)
+                stats[category_key]["quarantined"] += 1
+            elif not timestamp:
+                raw_rec["quarantine_reason"] = f"Unparseable or missing timestamp: {ts_candidate}"
+                quarantined_records.append(raw_rec)
+                stats[category_key]["quarantined"] += 1
+            else:
+                normalized_records.append(norm_rec)
+                stats[category_key]["normalized"] += 1
 
 process_input_file(Path("windows_events.json"), "windows_json")
 process_input_file(Path("linux_events.json"), "linux_text")
