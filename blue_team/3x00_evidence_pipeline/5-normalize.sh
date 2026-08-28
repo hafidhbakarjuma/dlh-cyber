@@ -14,7 +14,7 @@ from pathlib import Path
 norm_out_path = Path(sys.argv[1])
 quar_out_path = Path(sys.argv[2])
 
-# Load schema to know required fields
+# Load schema to know required fields dynamically
 schema_path = Path("event_schema.json")
 required_fields = ["timestamp", "hostname", "source_type", "event_category", "severity", "raw_message"]
 if schema_path.is_file():
@@ -54,7 +54,7 @@ def normalize_time(value):
     except ValueError:
         pass
 
-    # PCAP / standard log format: 03/20/2026 11:16:56 PM or similar
+    # PCAP / standard log format
     try:
         dt = datetime.strptime(value, "%m/%d/%Y %I:%M:%S %p")
         dt = dt.replace(tzinfo=timezone.utc)
@@ -63,11 +63,8 @@ def normalize_time(value):
         return None
 
 def map_severity(record):
-    # Heuristic derivation for severity
-    channel = str(record.get("channel", "")).lower()
-    event_id = str(record.get("event_id", ""))
     raw = str(record.get("raw_message", "")).lower()
-
+    event_id = str(record.get("event_id", ""))
     if "fail" in raw or "error" in raw or event_id in ["4625", "1102"]:
         return "medium"
     if "crit" in raw or "emergency" in raw:
@@ -78,7 +75,6 @@ def map_category(record):
     channel = str(record.get("channel", "")).lower()
     prog = str(record.get("program", "")).lower()
     audit_type = str(record.get("audit_type", "")).lower()
-
     if "security" in channel or "auth" in prog or "pam" in prog or audit_type:
         return "authentication"
     if "sysmon" in channel or "process" in prog:
@@ -111,18 +107,16 @@ def process_input_file(filepath, default_source_type):
 
                 src_type = raw_rec.get("source_origin") or default_source_type
 
-                # Extract/Map fields
-                ts_raw = raw_rec.get("timestamp_raw")
-                timestamp = normalize_time(ts_raw)
+                # Robust timestamp extraction (checks timestamp_raw, timestamp, or event_time)
+                ts_candidate = raw_rec.get("timestamp_raw") or raw_rec.get("timestamp") or raw_rec.get("event_time")
+                timestamp = normalize_time(ts_candidate)
 
                 hostname = raw_rec.get("hostname") or ("unknown-win-host" if "windows" in default_source_type else "localhost")
                 raw_msg = raw_rec.get("raw_message") or ""
 
-                # Event category & severity mapping
                 event_category = map_category(raw_rec)
                 severity = map_severity(raw_rec)
 
-                # User and Process extraction
                 event_data = raw_rec.get("event_data", {})
                 if not isinstance(event_data, dict):
                     event_data = {}
@@ -130,7 +124,6 @@ def process_input_file(filepath, default_source_type):
                 user = raw_rec.get("user") or event_data.get("TargetUserName") or event_data.get("SubjectUserName")
                 process_name = raw_rec.get("program") or event_data.get("Image")
 
-                # IP addresses
                 src_ip = raw_rec.get("src_ip") or event_data.get("SourceIp") or event_data.get("IpAddress")
                 dst_ip = raw_rec.get("dst_ip") or event_data.get("DestinationIp")
 
@@ -147,12 +140,12 @@ def process_input_file(filepath, default_source_type):
                     "raw_message": raw_msg
                 }
 
-                # Ensure all schema keys are explicitly present (null if missing)
+                # Ensure all schema keys are explicitly present
                 for field in all_schema_fields:
                     if field not in norm_rec:
                         norm_rec[field] = None
 
-                # Validation check for required fields and valid timestamp
+                # Validate required fields *after* initialization
                 missing_req = [f for f in required_fields if norm_rec.get(f) is None]
 
                 category_key = "windows_json" if "windows" in default_source_type else "linux_text"
@@ -162,7 +155,7 @@ def process_input_file(filepath, default_source_type):
                     quarantined_records.append(raw_rec)
                     stats[category_key]["quarantined"] += 1
                 elif not timestamp:
-                    raw_rec["quarantine_reason"] = f"Unparseable or missing timestamp: {ts_raw}"
+                    raw_rec["quarantine_reason"] = f"Unparseable or missing timestamp: {ts_candidate}"
                     quarantined_records.append(raw_rec)
                     stats[category_key]["quarantined"] += 1
                 else:
@@ -172,11 +165,9 @@ def process_input_file(filepath, default_source_type):
             except json.JSONDecodeError:
                 continue
 
-# Process Windows and Linux intermediate files
 process_input_file(Path("windows_events.json"), "windows_json")
 process_input_file(Path("linux_events.json"), "linux_text")
 
-# Write outputs
 with norm_out_path.open("w", encoding="utf-8") as f:
     for rec in normalized_records:
         f.write(json.dumps(rec) + "\n")
@@ -185,7 +176,6 @@ with quar_out_path.open("w", encoding="utf-8") as f:
     for rec in quarantined_records:
         f.write(json.dumps(rec) + "\n")
 
-# Print summary in exact expected layout
 tot_norm = stats["windows_json"]["normalized"] + stats["linux_text"]["normalized"]
 tot_quar = stats["windows_json"]["quarantined"] + stats["linux_text"]["quarantined"]
 
