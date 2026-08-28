@@ -1,4 +1,4 @@
-#!/usr/bin/
+#!/bin/bash
 import os
 import sys
 import json
