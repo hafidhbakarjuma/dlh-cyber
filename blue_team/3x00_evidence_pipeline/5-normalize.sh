@@ -1,188 +1,172 @@
 #!/bin/bash
 set -euo pipefail
 
-OUT_NORMALIZED="normalized_events.json"
-OUT_QUARANTINE="quarantine.json"
-
-python3 - "$OUT_NORMALIZED" "$OUT_QUARANTINE" << 'PY'
-import sys
+python3 << 'PY'
 import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-norm_out_path = Path(sys.argv[1])
-quar_out_path = Path(sys.argv[2])
+normal = []
+quarantine = []
 
-core_required_fields = ["timestamp", "hostname", "source_type", "event_category", "severity", "raw_message"]
-
-all_schema_fields = [
-    "timestamp", "hostname", "source_type", "event_category", 
-    "severity", "user", "process_name", "src_ip", "dst_ip", "raw_message"
-]
-
-def normalize_time(value):
-    if value is None:
-        return None
-    value = str(value).strip()
+def get_timestamp(value):
     if not value:
         return None
 
-    # Unix epoch
-    if re.fullmatch(r"\d+(?:\.\d+)?", value):
-        try:
-            return datetime.fromtimestamp(float(value), timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        except (ValueError, OverflowError):
-            return None
+    text = str(value).strip()
 
-    # ISO 8601
     try:
-        iso = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", value.replace("Z", "+00:00"))
-        dt = datetime.fromisoformat(iso)
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
     except ValueError:
         pass
 
-    # Standard log formats
-    try:
-        dt = datetime.strptime(value, "%m/%d/%Y %I:%M:%S %p")
-        dt = dt.replace(tzinfo=timezone.utc)
-        return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-    except ValueError:
-        return None
+    match = re.match(r"^(\d+(?:\.\d+)?)$", text)
+    if match:
+        try:
+            dt = datetime.fromtimestamp(float(match.group(1)), timezone.utc)
+            return dt.isoformat().replace("+00:00", "Z")
+        except (ValueError, OverflowError):
+            pass
 
-def map_severity(record):
-    raw = str(record.get("raw_message", "")).lower()
-    event_id = str(record.get("event_id", ""))
+    match = re.match(r"^(\d+(?:\.\d+)?):", text)
+    if match:
+        try:
+            dt = datetime.fromtimestamp(float(match.group(1)), timezone.utc)
+            return dt.isoformat().replace("+00:00", "Z")
+        except (ValueError, OverflowError):
+            pass
 
-    if event_id in ["1102", "4719", "7045"] or "crit" in raw or "emergency" in raw or "unauthorized" in raw:
-        return "critical"
-    if event_id in ["4625", "4672"] or "failed" in raw or "invalid" in raw or "error" in raw:
-        return "medium"
-    if "warn" in raw or event_id in ["4720", "4726"]:
-        return "low"
+    match = re.match(
+        r"^([A-Z][a-z]{2})\s+(\d{1,2})\s+"
+        r"(\d{2}):(\d{2}):(\d{2})$",
+        text
+    )
+    if match:
+        try:
+            year = datetime.now(timezone.utc).year
+            dt = datetime.strptime(
+                f"{year} {match.group(1)} {int(match.group(2)):02d} "
+                f"{match.group(3)}:{match.group(4)}:{match.group(5)}",
+                "%Y %b %d %H:%M:%S"
+            ).replace(tzinfo=timezone.utc)
+            return dt.isoformat().replace("+00:00", "Z")
+        except ValueError:
+            pass
 
-    return "info"
+    return None
 
-def map_category(record):
-    channel = str(record.get("channel", "")).lower()
-    prog = str(record.get("program", "")).lower()
-    audit_type = str(record.get("audit_type", "")).lower()
+def process(filename, source):
+    good = 0
+    bad = 0
+    path = Path(filename)
+    
+    if not path.is_file():
+        print(f"{source:<17}: normalized 0 quarantined 0")
+        return good, bad
 
-    if "security" in channel or "auth" in prog or "pam" in prog or audit_type in ["user_login", "login", "user_auth"]:
-        return "authentication"
-    if "sysmon" in channel or "process" in prog or audit_type in ["execve", "process_spawn"]:
-        return "process"
-    if "powershell" in channel or "script" in prog:
-        return "execution"
-    if "network" in channel or "pcap" in channel:
-        return "network"
-    return "system"
-
-stats = {
-    "windows_json": {"normalized": 0, "quarantined": 0},
-    "linux_text": {"normalized": 0, "quarantined": 0}
-}
-
-normalized_records = []
-quarantined_records = []
-
-def process_input_file(filepath, default_source_type):
-    if not filepath.is_file():
-        return
-
-    with filepath.open("r", encoding="utf-8", errors="replace") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
+    with path.open("r", encoding="utf-8", errors="replace") as f:
+        for line_no, line in enumerate(f, 1):
+            line_str = line.strip()
+            if not line_str:
                 continue
-
-            raw_rec = None
+            
+            r = None
             try:
-                raw_rec = json.loads(line)
-            except json.JSONDecodeError:
-                # Handle non-JSON lines gracefully by creating a fallback record structure instead of silent drop
-                raw_rec = {
-                    "raw_message": line,
-                    "hostname": "localhost",
-                    "source_origin": default_source_type
-                }
+                r = json.loads(line_str)
 
-            if not isinstance(raw_rec, dict):
-                continue
+                if not isinstance(r, dict):
+                    raise ValueError("record is not an object")
 
-            src_type = raw_rec.get("source_origin") or default_source_type
+                ts = get_timestamp(r.get("timestamp_raw") or r.get("timestamp"))
 
-            ts_candidate = raw_rec.get("timestamp_raw") or raw_rec.get("timestamp") or raw_rec.get("event_time")
-            timestamp = normalize_time(ts_candidate)
+                if not ts:
+                    raise ValueError("unparseable timestamp")
 
-            hostname = raw_rec.get("hostname") or ("unknown-win-host" if "windows" in default_source_type else "localhost")
-            raw_msg = raw_rec.get("raw_message") or line
+                hostname = r.get("hostname")
+                if not hostname:
+                    hostname = "unknown"
 
-            event_category = map_category(raw_rec)
-            severity = map_severity(raw_rec)
+                raw = r.get("raw_message")
+                if raw is None:
+                    raise ValueError("missing required raw_message")
 
-            event_data = raw_rec.get("event_data", {})
-            if not isinstance(event_data, dict):
-                event_data = {}
+                parsed = r.get("parsed_fields", {})
+                event_data = r.get("event_data", {})
 
-            user = raw_rec.get("user") or event_data.get("TargetUserName") or event_data.get("SubjectUserName")
-            process_name = raw_rec.get("program") or event_data.get("Image")
+                if not isinstance(parsed, dict):
+                    parsed = {}
 
-            src_ip = raw_rec.get("src_ip") or event_data.get("SourceIp") or event_data.get("IpAddress")
-            dst_ip = raw_rec.get("dst_ip") or event_data.get("DestinationIp")
+                if not isinstance(event_data, dict):
+                    event_data = {}
 
-            norm_rec = {
-                "timestamp": timestamp,
-                "hostname": hostname,
-                "source_type": src_type,
-                "event_category": event_category,
-                "severity": severity,
-                "user": user,
-                "process_name": process_name,
-                "src_ip": src_ip,
-                "dst_ip": dst_ip,
-                "raw_message": raw_msg
-            }
+                if source == "windows_json":
+                    category = r.get("channel") or "unknown"
+                    user = r.get("user") or event_data.get("SubjectUserName") or event_data.get("TargetUserName")
+                    process_name = r.get("process_name") or event_data.get("Image")
+                    provider = r.get("provider")
+                    data = event_data
+                else:
+                    category = r.get("audit_type") or r.get("program") or "unknown"
+                    user = r.get("user") or parsed.get("user") or parsed.get("acct")
+                    process_name = r.get("program")
+                    provider = r.get("program") or r.get("audit_type")
+                    data = parsed
 
-            for field in all_schema_fields:
-                if field not in norm_rec:
-                    norm_rec[field] = None
+                event_id = r.get("event_id")
 
-            missing_req = [f for f in core_required_fields if norm_rec.get(f) is None]
-            category_key = "windows_json" if "windows" in default_source_type else "linux_text"
+                normal.append({
+                    "timestamp": ts,
+                    "hostname": hostname,
+                    "source_type": source,
+                    "event_category": category,
+                    "severity": r.get("severity"),
+                    "user": user,
+                    "process_name": process_name,
+                    "process_id": r.get("process_id", r.get("pid")),
+                    "src_ip": r.get("src_ip"),
+                    "src_port": r.get("src_port"),
+                    "dst_ip": r.get("dst_ip"),
+                    "dst_port": r.get("dst_port"),
+                    "protocol": r.get("protocol"),
+                    "event_id": str(event_id) if event_id is not None else None,
+                    "provider": provider,
+                    "raw_message": raw,
+                    "event_data": data,
+                    "source_origin": r.get("source_origin", "evidence_pack")
+                })
+                good += 1
 
-            if missing_req:
-                raw_rec["quarantine_reason"] = f"Missing core required fields: {missing_req}"
-                quarantined_records.append(raw_rec)
-                stats[category_key]["quarantined"] += 1
-            elif not timestamp:
-                raw_rec["quarantine_reason"] = f"Unparseable or missing timestamp: {ts_candidate}"
-                quarantined_records.append(raw_rec)
-                stats[category_key]["quarantined"] += 1
-            else:
-                normalized_records.append(norm_rec)
-                stats[category_key]["normalized"] += 1
+            except Exception as e:
+                quarantine.append({
+                    "quarantine_reason": str(e),
+                    "source_file": filename,
+                    "source_line": line_no,
+                    "original_record": r if r is not None else line_str
+                })
+                bad += 1
 
-process_input_file(Path("windows_events.json"), "windows_json")
-process_input_file(Path("linux_events.json"), "linux_text")
+    print(f"{source:<17}: normalized {good} quarantined {bad}")
+    return good, bad
 
-with norm_out_path.open("w", encoding="utf-8") as f:
-    for rec in normalized_records:
-        f.write(json.dumps(rec) + "\n")
+w_good, w_bad = process("windows_events.json", "windows_json")
+l_good, l_bad = process("linux_events.json", "linux_text")
 
-with quar_out_path.open("w", encoding="utf-8") as f:
-    for rec in quarantined_records:
-        f.write(json.dumps(rec) + "\n")
+tot_norm = w_good + l_good
+tot_quar = w_bad + l_bad
 
-tot_norm = stats["windows_json"]["normalized"] + stats["linux_text"]["normalized"]
-tot_quar = stats["windows_json"]["quarantined"] + stats["linux_text"]["quarantined"]
+with open("normalized_events.json", "w", encoding="utf-8") as f:
+    for record in normal:
+        f.write(json.dumps(record, separators=(",", ":")) + "\n")
 
-print(f"windows_json     : normalized {stats['windows_json']['normalized']:5} quarantined {stats['windows_json']['quarantined']}")
-print(f"linux_text       : normalized {stats['linux_text']['normalized']:5} quarantined {stats['linux_text']['quarantined']}")
-print(f"total            : normalized {tot_norm:5} quarantined {tot_quar}")
+with open("quarantine.json", "w", encoding="utf-8") as f:
+    for record in quarantine:
+        f.write(json.dumps(record, separators=(",", ":")) + "\n")
+
+print(f"total            : normalized {tot_norm} quarantined {tot_quar}")
 print("normalized_events.json written")
 print("quarantine.json  written")
 PY
