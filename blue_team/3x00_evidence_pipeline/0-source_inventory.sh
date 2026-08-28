@@ -11,7 +11,6 @@ fi
 
 echo "Scanning evidence pack at: $EVIDENCE_ROOT"
 
-# Use Python to safely scan, parse, and generate a fully valid JSON manifest
 python3 - "$EVIDENCE_ROOT" "$MANIFEST_FILE" << 'PY_SCRIPT'
 import os
 import sys
@@ -34,13 +33,12 @@ for root, dirs, files in os.walk(evidence_root):
             
         rel_path = os.path.relpath(full_path, evidence_root)
         
-        # Skip top-level non-evidence documentation files
-        if "/" not in rel_path:
+        # Skip technical manifest/hash files if present, but include other files
+        if file in ["MANIFEST.sha256", "source_inventory.json"]:
             continue
 
         size_bytes = os.path.getsize(full_path)
         
-        # Calculate SHA256
         sha256_hash = hashlib.sha256()
         try:
             with open(full_path, "rb") as f:
@@ -50,32 +48,39 @@ for root, dirs, files in os.walk(evidence_root):
         except Exception:
             sha256 = ""
 
-        # Count lines safely
         line_count = 0
+        record_count = 0
         parse_status = "ok"
+        
         try:
             with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
-                for _ in f:
+                for line in f:
                     line_count += 1
+                    stripped = line.strip()
+                    if stripped.startswith("{") or "," in stripped:
+                        record_count += 1
+            if record_count == 0:
+                record_count = line_count
         except Exception:
             parse_status = "error"
 
-        # Determine source type
-        top_dir = rel_path.split("/")[0]
-        if top_dir == "linux":
+        # Determine source type based on path or extension
+        if "linux" in rel_path:
             source_type = "linux_text"
-        elif top_dir == "windows":
+        elif "windows" in rel_path or "student_telemetry" in rel_path:
             source_type = "windows_json"
-        elif top_dir == "network":
+        elif "network" in rel_path:
             source_type = "network_csv" if file.endswith(".csv") else "network_json"
-        elif top_dir == "context":
+        elif "context" in rel_path:
             source_type = "context_json"
-        elif top_dir == "student_telemetry":
-            source_type = "windows_json"
         else:
-            source_type = "unknown"
+            if file.endswith(".json"):
+                source_type = "windows_json"
+            elif file.endswith(".csv"):
+                source_type = "network_csv"
+            else:
+                source_type = "linux_text"
 
-        # Extract timestamps
         first_ts, last_ts = None, None
         try:
             with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -109,7 +114,7 @@ for root, dirs, files in os.walk(evidence_root):
         if source_type == "linux_text":
             entry["line_count"] = line_count
         else:
-            entry["record_count"] = line_count
+            entry["record_count"] = record_count if record_count > 0 else line_count
 
         entry["first_event_time"] = first_ts if first_ts else None
         entry["last_event_time"] = last_ts if last_ts else None
@@ -117,7 +122,6 @@ for root, dirs, files in os.walk(evidence_root):
 
         sources.append(entry)
 
-# Sort sources consistently by path
 sources.sort(key=lambda x: x["path"])
 
 manifest = {
