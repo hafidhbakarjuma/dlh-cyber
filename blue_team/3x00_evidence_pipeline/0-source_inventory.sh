@@ -1,111 +1,133 @@
 #!/bin/bash
-import os
-import sys
-import json
-import hashlib
-import datetime
-import re
+set -euo pipefail
 
-evidence_root = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser("~/evidence_pack_primary")
-manifest_file = "source_inventory.json"
+EVIDENCE_ROOT="${1:-$HOME/evidence_pack_primary}"
+MANIFEST_FILE="source_inventory.json"
 
-if not os.path.isdir(evidence_root):
-    print(f"Error: Evidence root directory {evidence_root} does not exist.", file=sys.stderr)
-    sys.exit(1)
+if [ ! -d "$EVIDENCE_ROOT" ]; then
+    echo "Error: Evidence root directory $EVIDENCE_ROOT does not exist." >&2
+    exit 1
+fi
 
-print(f"Scanning evidence pack at: {evidence_root}")
+echo "Scanning evidence pack at: $EVIDENCE_ROOT"
 
-sources = []
+cat << EOF > "$MANIFEST_FILE"
+{
+  "scanned_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "evidence_root": "$EVIDENCE_ROOT",
+  "sources": [
+EOF
+
+first_entry=true
+
+# Find all files recursively in the evidence pack
+while IFS= read -r file; do
+    [ -f "$file" ] || continue
+    rel_path="${file#$EVIDENCE_ROOT/}"
+    
+    # Skip non-evidence root files like MANIFEST.sha256 or README.txt if needed, 
+    # but ensure standard subfolders are fully scanned.
+    top_dir=$(echo "$rel_path" | cut -d'/' -f1)
+
+    size_bytes=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
+    sha256=$(sha256sum "$file" | awk '{print $1}')
+    line_count=$(wc -l < "$file" 2>/dev/null || echo 0)
+
+    # Determine source_type and whether it uses line_count or record_count
+    source_type="unknown"
+    is_text_log=false
+
+    if [[ "$top_dir" == "linux" ]]; then
+        source_type="linux_text"
+        is_text_log=true
+    elif [[ "$top_dir" == "windows" ]]; then
+        source_type="windows_json"
+    elif [[ "$top_dir" == "network" ]]; then
+        if [[ "$file" == *.csv ]]; then
+            source_type="network_csv"
+        else
+            source_type="network_json"
+        fi
+    elif [[ "$top_dir" == "context" ]]; then
+        source_type="context_json"
+    elif [[ "$top_dir" == "student_telemetry" ]]; then
+        source_type="windows_json"
+    fi
+
+    # Extract timestamps using a robust python helper, formatting as JSON null if missing
+    timestamps=$(python3 -c '
+import sys, re, json
+filepath = sys.argv[1]
+first_ts, last_ts = None, None
 iso_regex = re.compile(r"\b\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\b")
+try:
+    with open(filepath, "r", errors="ignore") as f:
+        for line in f:
+            if line.strip().startswith("{"):
+                try:
+                    data = json.loads(line)
+                    for k in ["@timestamp", "Timestamp", "time", "event_time", "datetime", "timestamp"]:
+                        if k in data and isinstance(data[k], str):
+                            if not first_ts: first_ts = data[k]
+                            last_ts = data[k]
+                            break
+                except:
+                    pass
+            matches = iso_regex.findall(line)
+            if matches:
+                if not first_ts: first_ts = matches[0]
+                last_ts = matches[-1]
+except:
+    pass
 
-for root, dirs, files in os.walk(evidence_root):
-    for file in files:
-        full_path = os.path.join(root, file)
-        if not os.path.isfile(full_path):
-            continue
+f_out = f"\"{first_ts}\"" if first_ts else "null"
+l_out = f"\"{last_ts}\"" if last_ts else "null"
+print(f"{f_out}|{l_out}")
+' "$file" 2>/dev/null || echo "null|null")
 
-        rel_path = os.path.relpath(full_path, evidence_root)
+    f_time=$(echo "$timestamps" | cut -d'|' -f1)
+    l_time=$(echo "$timestamps" | cut -d'|' -f2)
+    parse_status="ok"
 
-        # Skip root-level files like README.txt or MANIFEST.sha256
-        if "/" not in rel_path:
-            continue
+    if [ "$first_entry" = true ]; then
+        first_entry=false
+    else
+        echo "," >> "$MANIFEST_FILE"
+    fi
 
-        size_bytes = os.path.getsize(full_path)
+    # Write JSON object matching precise keys and types
+    if [ "$is_text_log" = true ]; then
+        cat << EOF >> "$MANIFEST_FILE"
+    {
+      "path": "$rel_path",
+      "source_type": "$source_type",
+      "size_bytes": $size_bytes,
+      "sha256": "$sha256",
+      "line_count": $line_count,
+      "first_event_time": $f_time,
+      "last_event_time": $l_time,
+      "parse_status": "$parse_status"
+    }
+EOF
+    else
+        cat << EOF >> "$MANIFEST_FILE"
+    {
+      "path": "$rel_path",
+      "source_type": "$source_type",
+      "size_bytes": $size_bytes,
+      "sha256": "$sha256",
+      "record_count": $line_count,
+      "first_event_time": $f_time,
+      "last_event_time": $l_time,
+      "parse_status": "$parse_status"
+    }
+EOF
+    fi
 
-        sha256_hash = hashlib.sha256()
-        with open(full_path, "rb") as f:
-            for byte_block in iter(lambda: f.read(4096), b""):
-                sha256_hash.update(byte_block)
-        sha256 = sha256_hash.hexdigest()
+done < <(find "$EVIDENCE_ROOT" -type f ! -name "MANIFEST.sha256" ! -name "README.txt" | sort)
 
-        line_count = 0
-        try:
-            with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
-                for _ in f:
-                    line_count += 1
-        except Exception:
-            pass
+echo "" >> "$MANIFEST_FILE"
+echo "  ]" >> "$MANIFEST_FILE"
+echo "}" >> "$MANIFEST_FILE"
 
-        top_dir = rel_path.split("/")[0]
-        if top_dir == "windows" or ("student_telemetry" in rel_path and file.endswith(".json")):
-            source_type = "windows_json"
-        elif top_dir == "linux":
-            source_type = "linux_text"
-        elif top_dir == "network":
-            source_type = "network_csv" if file.endswith(".csv") else "network_json"
-        else:
-            source_type = "context_json"
-
-        first_ts, last_ts = None, None
-        try:
-            with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
-                for line in f:
-                    if line.strip().startswith("{"):
-                        try:
-                            data = json.loads(line)
-                            for k in ["@timestamp", "Timestamp", "time", "event_time", "datetime", "timestamp", "ot"]:
-                                if k in data and isinstance(data[k], str):
-                                    if not first_ts: 
-                                        first_ts = data[k]
-                                    last_ts = data[k]
-                                    break
-                        except Exception:
-                            pass
-                    matches = iso_regex.findall(line)
-                    if matches:
-                        if not first_ts: 
-                            first_ts = matches[0]
-                        last_ts = matches[-1]
-        except Exception:
-            pass
-
-        entry = {
-            "path": rel_path,
-            "source_type": source_type,
-            "size_bytes": size_bytes,
-            "sha256": sha256,
-            "parse_status": "ok"
-        }
-
-        if source_type == "linux_text":
-            entry["line_count"] = line_count
-        else:
-            entry["record_count"] = line_count
-
-        entry["first_event_time"] = first_ts if first_ts else "null"
-        entry["last_event_time"] = last_ts if last_ts else "null"
-
-        sources.append(entry)
-
-sources.sort(key=lambda x: x["path"])
-
-manifest = {
-    "scanned_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "evidence_root": evidence_root,
-    "sources": sources
-}
-
-with open(manifest_file, "w", encoding="utf-8") as f:
-    json.dump(manifest, f, indent=2)
-
-print(f"manifest written to {manifest_file}")
+echo "manifest written to $MANIFEST_FILE"
