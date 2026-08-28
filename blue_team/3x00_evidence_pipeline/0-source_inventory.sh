@@ -1,4 +1,4 @@
-#!/usr3/bin/env python3
+#!/usr/bin/env python3
 import os
 import sys
 import json
@@ -6,7 +6,6 @@ import hashlib
 import datetime
 import re
 
-# Determine evidence root from arguments or default
 evidence_root = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser("~/evidence_pack_primary")
 manifest_file = "source_inventory.json"
 
@@ -24,23 +23,21 @@ for root, dirs, files in os.walk(evidence_root):
         full_path = os.path.join(root, file)
         if not os.path.isfile(full_path):
             continue
-            
+
         rel_path = os.path.relpath(full_path, evidence_root)
-        
+
         # Skip root-level files like README.txt or MANIFEST.sha256
         if "/" not in rel_path:
             continue
 
         size_bytes = os.path.getsize(full_path)
-        
-        # Calculate SHA256 hash
+
         sha256_hash = hashlib.sha256()
         with open(full_path, "rb") as f:
             for byte_block in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(byte_block)
         sha256 = sha256_hash.hexdigest()
 
-        # Count lines/records
         line_count = 0
         try:
             with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -49,7 +46,6 @@ for root, dirs, files in os.walk(evidence_root):
         except Exception:
             pass
 
-        # Determine source type
         top_dir = rel_path.split("/")[0]
         if top_dir == "windows" or ("student_telemetry" in rel_path and file.endswith(".json")):
             source_type = "windows_json"
@@ -60,7 +56,6 @@ for root, dirs, files in os.walk(evidence_root):
         else:
             source_type = "context_json"
 
-        # Extract first and last timestamps
         first_ts, last_ts = None, None
         try:
             with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -102,7 +97,6 @@ for root, dirs, files in os.walk(evidence_root):
 
         sources.append(entry)
 
-# Sort sources by path for consistent ordering
 sources.sort(key=lambda x: x["path"])
 
 manifest = {
