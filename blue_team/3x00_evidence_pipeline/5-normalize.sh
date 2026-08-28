@@ -14,16 +14,8 @@ from pathlib import Path
 norm_out_path = Path(sys.argv[1])
 quar_out_path = Path(sys.argv[2])
 
-# Load schema to know required fields dynamically
-schema_path = Path("event_schema.json")
-required_fields = ["timestamp", "hostname", "source_type", "event_category", "severity", "raw_message"]
-if schema_path.is_file():
-    try:
-        with schema_path.open("r", encoding="utf-8") as f:
-            schema_data = json.load(f)
-            required_fields = [field["name"] for field in schema_data.get("fields", []) if field.get("required")]
-    except Exception:
-        pass
+# Strictly enforce core mandatory fields for validation to avoid quarantining optional metadata
+core_required_fields = ["timestamp", "hostname", "source_type", "event_category", "severity", "raw_message"]
 
 all_schema_fields = [
     "timestamp", "hostname", "source_type", "event_category", 
@@ -54,7 +46,7 @@ def normalize_time(value):
     except ValueError:
         pass
 
-    # PCAP / standard log format
+    # Standard log formats
     try:
         dt = datetime.strptime(value, "%m/%d/%Y %I:%M:%S %p")
         dt = dt.replace(tzinfo=timezone.utc)
@@ -65,22 +57,32 @@ def normalize_time(value):
 def map_severity(record):
     raw = str(record.get("raw_message", "")).lower()
     event_id = str(record.get("event_id", ""))
-    if "fail" in raw or "error" in raw or event_id in ["4625", "1102"]:
-        return "medium"
-    if "crit" in raw or "emergency" in raw:
+
+    # High/Critical indicators
+    if event_id in ["1102", "4719", "7045"] or "crit" in raw or "emergency" in raw or "unauthorized" in raw:
         return "critical"
+    # Medium indicators (Failed logins, sudo failures, suspicious activity)
+    if event_id in ["4625", "4672"] or "failed" in raw or "invalid" in raw or "error" in raw:
+        return "medium"
+    # Low indicators (Warnings, configuration changes)
+    if "warn" in raw or event_id in ["4720", "4726"]:
+        return "low"
+
     return "info"
 
 def map_category(record):
     channel = str(record.get("channel", "")).lower()
     prog = str(record.get("program", "")).lower()
     audit_type = str(record.get("audit_type", "")).lower()
+
     if "security" in channel or "auth" in prog or "pam" in prog or audit_type:
         return "authentication"
-    if "sysmon" in channel or "process" in prog:
+    if "sysmon" in channel or "process" in prog or audit_type == "execve":
         return "process"
-    if "powershell" in channel:
+    if "powershell" in channel or "script" in prog:
         return "execution"
+    if "network" in channel or "pcap" in channel:
+        return "network"
     return "system"
 
 stats = {
@@ -107,7 +109,6 @@ def process_input_file(filepath, default_source_type):
 
                 src_type = raw_rec.get("source_origin") or default_source_type
 
-                # Robust timestamp extraction (checks timestamp_raw, timestamp, or event_time)
                 ts_candidate = raw_rec.get("timestamp_raw") or raw_rec.get("timestamp") or raw_rec.get("event_time")
                 timestamp = normalize_time(ts_candidate)
 
@@ -140,18 +141,18 @@ def process_input_file(filepath, default_source_type):
                     "raw_message": raw_msg
                 }
 
-                # Ensure all schema keys are explicitly present
+                # Ensure all schema keys are explicitly present (null if missing)
                 for field in all_schema_fields:
                     if field not in norm_rec:
                         norm_rec[field] = None
 
-                # Validate required fields *after* initialization
-                missing_req = [f for f in required_fields if norm_rec.get(f) is None]
+                # Validate only core required fields
+                missing_req = [f for f in core_required_fields if norm_rec.get(f) is None]
 
                 category_key = "windows_json" if "windows" in default_source_type else "linux_text"
 
                 if missing_req:
-                    raw_rec["quarantine_reason"] = f"Missing required fields: {missing_req}"
+                    raw_rec["quarantine_reason"] = f"Missing core required fields: {missing_req}"
                     quarantined_records.append(raw_rec)
                     stats[category_key]["quarantined"] += 1
                 elif not timestamp:
