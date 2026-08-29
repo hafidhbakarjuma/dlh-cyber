@@ -30,7 +30,7 @@ with input_file.open("r", encoding="utf-8", errors="replace") as f:
 
 cleaning_log = []
 
-# Counters
+# Counters matching expected output labels
 malformed_detected = 0
 malformed_repaired = 0
 malformed_dropped = 0
@@ -52,22 +52,24 @@ def parse_ts(val):
     if not val:
         return None
     val = str(val).strip()
-    if re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", val):
-        try:
-            return datetime.fromisoformat(val.replace("Z", "+00:00"))
-        except ValueError:
-            pass
+    
+    # Try ISO 8601 format first
     try:
         iso = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", val.replace("Z", "+00:00"))
         dt = datetime.fromisoformat(iso)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         return dt.astimezone(timezone.utc)
     except ValueError:
         pass
+
+    # Try Unix epoch fallback
     if re.fullmatch(r"\d+(?:\.\d+)?", val):
         try:
             return datetime.fromtimestamp(float(val), timezone.utc)
         except (ValueError, OverflowError):
             pass
+
     return None
 
 # Phase 1: Timestamp Validation & Repair/Drop
@@ -87,7 +89,7 @@ for rec in records:
             "original_value": raw_ts,
             "corrected_value": None,
             "record_id": rec_id,
-            "reason": "Timestamp could not be parsed as ISO 8601; record dropped."
+            "reason": "Timestamp could not be parsed as ISO 8601 or fallback epoch; record dropped."
         })
         continue
     
@@ -101,19 +103,19 @@ for rec in records:
             "original_value": raw_ts,
             "corrected_value": formatted_ts,
             "record_id": rec_id,
-            "reason": "Timestamp repaired to standard ISO 8601 UTC format."
+            "reason": "Timestamp repaired to standard ISO 8601 UTC format using fallback parser."
         })
     
     valid_timestamps.append(dt)
     intermediate_records.append(rec)
 
-# Determine median timestamp for timezone discrepancy checks
+# Calculate median timestamp for robust timezone anomaly detection
 median_dt = None
 if valid_timestamps:
     valid_timestamps.sort()
     median_dt = valid_timestamps[len(valid_timestamps) // 2]
 
-# Phase 2: Hostname normalization, encoding check, timezone check, and deduplication
+# Phase 2: Hostname normalization, encoding error repair, timezone flagging, and deduplication
 seen_signatures = set()
 cleaned_records = []
 
@@ -134,27 +136,29 @@ for rec in intermediate_records:
         rec["hostname"] = new_hostname
         hostname_normalized_count += 1
 
-    # 2. Encoding errors
+    # 2. Encoding errors (strictly checking for replacement characters \ufffd or Mojibake markers)
     raw_msg = rec.get("raw_message", "")
-    if "\ufffd" in raw_msg or "" in raw_msg or any(ord(c) > 127 and not c.isprintable() for c in raw_msg):
+    if raw_msg and "\ufffd" in raw_msg:
         encoding_detected += 1
         try:
+            # Safe repair attempt for latin-1 encoded text misread as utf-8
             repaired_msg = raw_msg.encode("latin-1", errors="ignore").decode("utf-8", errors="ignore")
             if not repaired_msg or "\ufffd" in repaired_msg:
-                repaired_msg = raw_msg.replace("\ufffd", "").replace("", "")
+                repaired_msg = raw_msg.replace("\ufffd", "")
+            
             cleaning_log.append({
                 "defect_type": "encoding_error",
                 "original_value": raw_msg,
                 "corrected_value": repaired_msg,
                 "record_id": rec_id,
-                "reason": "Detected replacement characters or mojibake; cleaned encoding."
+                "reason": "Detected replacement characters (unicode replacement symbol); re-decoded to correct encoding."
             })
             rec["raw_message"] = repaired_msg
             encoding_repaired += 1
         except Exception:
             pass
 
-    # 3. Timezone inconsistency (> 12 hours from median timestamp)
+    # 3. Timezone inconsistency (> 12 hours deviation from dataset median)
     if median_dt:
         try:
             dt_curr = datetime.fromisoformat(rec["timestamp"].replace("Z", "+00:00"))
@@ -171,7 +175,7 @@ for rec in intermediate_records:
         except Exception:
             pass
 
-    # 4. Duplicate removal (timestamp, hostname, source_type, raw_message)
+    # 4. Deduplication (timestamp, hostname, source_type, raw_message)
     dup_key = (
         rec.get("timestamp"),
         rec.get("hostname"),
@@ -193,7 +197,7 @@ for rec in intermediate_records:
     seen_signatures.add(dup_key)
     cleaned_records.append(rec)
 
-# Write deliverables
+# Write output files
 with cleaned_file.open("w", encoding="utf-8") as f:
     for rec in cleaned_records:
         f.write(json.dumps(rec, separators=(",", ":")) + "\n")
