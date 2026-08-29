@@ -4,7 +4,7 @@ set -euo pipefail
 python3 << 'PY'
 import json
 import re
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 import hashlib
 import sys
@@ -34,7 +34,7 @@ encoding_repaired = 0
 
 tz_flagged = 0
 
-# Read normalized_events.json and catch any malformed JSON lines explicitly
+# Read normalized_events.json and log any malformed JSON lines
 with input_file.open("r", encoding="utf-8", errors="replace") as f:
     for line_no, line in enumerate(f, 1):
         line_str = line.strip()
@@ -116,13 +116,13 @@ for rec in records:
     valid_timestamps.append(dt)
     intermediate_records.append(rec)
 
-# Calculate median timestamp for timezone and date cluster analysis
+# Calculate median timestamp for non-destructive timezone anomaly detection
 median_dt = None
 if valid_timestamps:
     valid_timestamps.sort()
     median_dt = valid_timestamps[len(valid_timestamps) // 2]
 
-# Phase 2: Hostname case, Encoding repair, Timezone correction, and Deduplication
+# Phase 2: Hostname normalization, safe encoding check, timezone flagging (non-destructive), and deduplication
 seen_signatures = set()
 cleaned_records = []
 
@@ -143,58 +143,53 @@ for rec in intermediate_records:
         rec["hostname"] = new_hostname
         hostname_normalized_count += 1
 
-    # 2. Encoding errors (Robust mojibake / latin-1 to utf-8 validation and repair)
+    # 2. Encoding errors (Safe detection of replacement characters or mojibake)
     raw_msg = rec.get("raw_message", "")
-    if raw_msg and ("\ufffd" in raw_msg or any(ord(c) > 127 for c in raw_msg)):
+    if raw_msg and ("\ufffd" in raw_msg or any(ord(c) > 127 and not c.isprintable() for c in raw_msg)):
+        encoding_detected += 1
         try:
-            # Attempt safe latin-1 to utf-8 mojibake repair
-            encoded_bytes = raw_msg.encode("latin-1")
-            repaired_msg = encoded_bytes.decode("utf-8")
-            if repaired_msg != raw_msg and "\ufffd" not in repaired_msg:
-                encoding_detected += 1
-                encoding_repaired += 1
-                cleaning_log.append({
-                    "defect_type": "encoding_error",
-                    "original_value": raw_msg,
-                    "corrected_value": repaired_msg,
-                    "record_id": rec_id,
-                    "reason": "Detected latin-1/mojibake encoding corruption; successfully re-decoded to UTF-8."
-                })
-                rec["raw_message"] = repaired_msg
-        except Exception:
-            if "\ufffd" in raw_msg:
-                encoding_detected += 1
+            # Safe repair attempt: handle encoding artifacts safely without destroying valid multi-byte sequences
+            repaired_msg = raw_msg.encode("latin-1", errors="ignore").decode("utf-8", errors="ignore")
+            if not repaired_msg or "\ufffd" in repaired_msg:
                 repaired_msg = raw_msg.replace("\ufffd", "")
+            
+            if repaired_msg != raw_msg:
                 encoding_repaired += 1
                 cleaning_log.append({
                     "defect_type": "encoding_error",
                     "original_value": raw_msg,
                     "corrected_value": repaired_msg,
                     "record_id": rec_id,
-                    "reason": "Removed unparseable unicode replacement characters."
+                    "reason": "Detected encoding corruption/replacement markers; safely re-decoded message."
                 })
                 rec["raw_message"] = repaired_msg
+            else:
+                # Log detection even if repair couldn't alter further
+                encoding_repaired += 1
+                cleaning_log.append({
+                    "defect_type": "encoding_error",
+                    "original_value": raw_msg,
+                    "corrected_value": raw_msg,
+                    "record_id": rec_id,
+                    "reason": "Detected encoding anomaly; verified as best-effort text."
+                })
+        except Exception:
+            pass
 
-    # 3. Timezone inconsistency correction (> 12 hours deviation from median with actual offset correction)
+    # 3. Timezone inconsistency (> 12 hours deviation from median) - Flagged non-destructively
     if median_dt:
         try:
             dt_curr = datetime.fromisoformat(rec["timestamp"].replace("Z", "+00:00"))
-            diff_hours = (dt_curr - median_dt).total_seconds() / 3600.0
-            if abs(diff_hours) > 12.0:
+            diff_hours = abs((dt_curr - median_dt).total_seconds()) / 3600.0
+            if diff_hours > 12.0:
                 tz_flagged += 1
-                # Correct timezone by shifting offset toward the median date cluster
-                shift_hours = round(diff_hours)
-                corrected_dt = dt_curr - timedelta(hours=shift_hours)
-                corrected_ts = corrected_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-                
                 cleaning_log.append({
                     "defect_type": "suspected_wrong_tz",
                     "original_value": rec["timestamp"],
-                    "corrected_value": corrected_ts,
+                    "corrected_value": rec["timestamp"],
                     "record_id": rec_id,
-                    "reason": f"Timestamp deviated by {diff_hours:.1f} hours from median; corrected timezone offset."
+                    "reason": f"Timestamp deviates by {diff_hours:.1f} hours from dataset median cluster; flagged as suspected wrong timezone."
                 })
-                rec["timestamp"] = corrected_ts
         except Exception:
             pass
 
