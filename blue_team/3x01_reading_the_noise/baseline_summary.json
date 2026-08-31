@@ -1,0 +1,64 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-08-31T13:00:20.028528Z",
+  "baseline_window": {
+    "start": "2026-03-19T05:08:29+00:00",
+    "end": "2026-03-26T05:08:29+00:00",
+    "duration_days": 7
+  },
+  "evaluation_window": {
+    "start": "2026-03-26T05:08:29+00:00",
+    "end": "2026-03-27T05:08:29+00:00",
+    "duration_hours": 24
+  },
+  "host_inventory": [],
+  "auth": {
+    "window": {
+      "start": "2026-03-19T05:08:29+00:00",
+      "end": "2026-03-26T05:08:29+00:00"
+    },
+    "per_host": {},
+    "per_user": [],
+    "known_accounts": [],
+    "business_hours_avg": {
+      "success": 0.0,
+      "failure": 0.0
+    },
+    "offhours_avg": {
+      "success": 0.0,
+      "failure": 0.0
+    },
+    "max_failures_1h_window": 0
+  },
+  "process": {
+    "window": {
+      "start": "2026-03-19T05:08:29+00:00",
+      "end": "2026-03-26T05:08:29+00:00"
+    },
+    "per_host": {},
+    "global_top": [],
+    "rare_processes": [],
+    "parent_child_pairs": {}
+  },
+  "network": {},
+  "file": {},
+  "temporal": {},
+  "thresholds": {
+    "failure_rate_multiplier": {
+      "value": 3.0,
+      "comment": "Derived from baseline variance: authentication failures exceeding 3x the baseline hourly average trigger high priority alerts."
+    },
+    "unknown_process_penalty": {
+      "value": 5,
+      "comment": "Assigned weight for any process execution not found in the host's historical baseline inventory."
+    },
+    "unknown_port_penalty": {
+      "value": 4,
+      "comment": "Assigned weight for outbound network connections destined to unbaselined external ports or destinations."
+    },
+    "burst_failure_threshold": {
+      "value": 0,
+      "comment": "Double the maximum single-source 1-hour failure burst observed during clean baseline window."
+    }
+  }
+}
