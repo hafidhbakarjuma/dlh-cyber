@@ -153,4 +153,4 @@ case "$VERB" in
         print_help
         exit 1
         ;;
-es:
+esac
