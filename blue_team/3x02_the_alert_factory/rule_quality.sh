@@ -1,0 +1,46 @@
+[
+  {
+    "rule_id": "d9b43e8d-4f1a-4c8e-b812-3a5f7e6d2c10",
+    "rule_title": "SSH Repeated Authentication Failures from Single Source",
+    "level": "high",
+    "tp_count": 0,
+    "fp_count": 0,
+    "fn_count": 10,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  {
+    "rule_id": "e8a23f9c-5d1b-4f9e-a812-4c6e7f8d3b21",
+    "rule_title": "Windows Off-Hours Privileged Logon",
+    "level": "medium",
+    "tp_count": 0,
+    "fp_count": 0,
+    "fn_count": 10,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  {
+    "rule_id": "f9c34a1b-6e2f-4d8e-9c12-5d7e8f9a4b32",
+    "rule_title": "Suspicious Interpreter Abuse with Non-Standard Parent Process",
+    "level": "high",
+    "tp_count": 0,
+    "fp_count": 0,
+    "fn_count": 10,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  {
+    "rule_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+    "rule_title": "Unauthorized Discovery and Reconnaissance Tool Execution",
+    "level": "medium",
+    "tp_count": 0,
+    "fp_count": 65,
+    "fn_count": 10,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  }
+}
