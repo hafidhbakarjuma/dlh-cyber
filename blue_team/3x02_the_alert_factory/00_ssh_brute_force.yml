@@ -1,0 +1,25 @@
+title: SSH Repeated Authentication Failures from Single Source
+id: d9b43e8d-4f1a-4c8e-b812-3a5f7e6d2c10
+status: experimental
+description: Detects five or more failed SSH authentication attempts from the same source IP within 120 seconds on Linux authentication logs. Indicates potential brute-force or credential stuffing activity. Expected operational response is Tier 1 triage, source validation, and temporary perimeter block if malicious.
+references:
+    - Internal MedDefense Threat Catalog
+author: SOC Analyst - MedDefense Health Systems
+date: 2026/09/05
+modified: 2026/09/05
+logsource:
+    product: linux
+    service: auth
+detection:
+    selection:
+        canonical_label: login_failure
+        event_category: authentication
+    timeframe: 120s
+    condition: selection | count(src_ip) by src_ip > 5
+falsepositives:
+    - Automated administrative scripts, cron jobs, or health checks using stale service credentials.
+    - Legitimate clinical staff experiencing multiple consecutive password typos during shift changes.
+level: high
+tags:
+    - attack.credential_access
+    - attack.t1110.001
