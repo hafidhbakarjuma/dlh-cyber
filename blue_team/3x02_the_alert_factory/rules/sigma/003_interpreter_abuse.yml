@@ -1,0 +1,36 @@
+title: Suspicious Interpreter Abuse with Non-Standard Parent Process
+id: f9c34a1b-6e2f-4d8e-9c12-5d7e8f9a4b32
+status: experimental
+description: Detects execution of common command-line interpreters (powershell.exe, cmd.exe, wscript.exe, cscript.exe, mshta.exe) spawned by non-standard parent processes. In MedDefense healthcare environments, attackers frequently abuse interpreters for post-exploitation execution.
+references:
+    - MedDefense Threat Detection Catalog
+author: SOC Analyst - MedDefense Health Systems
+date: 2026/09/05
+modified: 2026/09/05
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        Image|endswith:
+            - '\powershell.exe'
+            - '\cmd.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+    filter:
+        ParentImage|endswith:
+            - '\explorer.exe'
+            - '\services.exe'
+            - '\wininit.exe'
+            - '\winlogon.exe'
+            - '\svchost.exe'
+    condition: selection and not filter
+falsepositives:
+    - Legitimate administrative scripts launched by automation or software deployment frameworks.
+    - User-initiated terminal windows or troubleshooting scripts.
+level: high
+tags:
+    - attack.execution
+    - attack.t1059.001
+    - attack.t1059.003
