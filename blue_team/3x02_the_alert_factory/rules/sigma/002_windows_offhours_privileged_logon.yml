@@ -1,0 +1,42 @@
+title: Windows Off-Hours Privileged Logon
+id: e8a23f9c-5d1b-4f9e-a812-4c6e7f8d3b21
+status: experimental
+description: Detects off-hours (18:00 to 05:59) privileged Windows network/remote interactive logons (Event IDs 4624/4672, LogonType 3 or 10). In a healthcare environment like MedDefense, critical clinical workstations and privileged accounts should see minimal remote administrative access outside standard business hours. Relies on the runner-computed custom field 'hour_of_day'.
+references:
+    - MedDefense Baseline Package Analysis
+author: SOC Analyst - MedDefense Health Systems
+date: 2026/09/05
+modified: 2026/09/05
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        event_id:
+            - 4624
+            - 4672
+        LogonType:
+            - '3'
+            - '10'
+        hour_of_day:
+            - 0
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+            - 18
+            - 19
+            - 20
+            - 21
+            - 22
+            - 23
+    condition: selection
+falsepositives:
+    - Authorized after-hours clinical IT support shifts performing emergency maintenance.
+    - Scheduled system administrative tasks or backups running overnight.
+level: medium
+tags:
+    - attack.initial_access
+    - attack.t1078
+EOF
