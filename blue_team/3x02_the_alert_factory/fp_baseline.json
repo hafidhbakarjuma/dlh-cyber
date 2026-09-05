@@ -1,0 +1,38 @@
+[
+  {
+    "rule_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+    "rule_title": "Unauthorized Discovery and Reconnaissance Tool Execution",
+    "level": "medium",
+    "fp_count": 65,
+    "baseline_window_start": "2026-03-18T00:00:00Z",
+    "baseline_window_end": "2026-03-24T23:59:59Z",
+    "fp_rate_per_day": 9.29
+  },
+  {
+    "rule_id": "d9b43e8d-4f1a-4c8e-b812-3a5f7e6d2c10",
+    "rule_title": "SSH Repeated Authentication Failures from Single Source",
+    "level": "high",
+    "fp_count": 0,
+    "baseline_window_start": "2026-03-18T00:00:00Z",
+    "baseline_window_end": "2026-03-24T23:59:59Z",
+    "fp_rate_per_day": 0.0
+  },
+  {
+    "rule_id": "e8a23f9c-5d1b-4f9e-a812-4c6e7f8d3b21",
+    "rule_title": "Windows Off-Hours Privileged Logon",
+    "level": "medium",
+    "fp_count": 0,
+    "baseline_window_start": "2026-03-18T00:00:00Z",
+    "baseline_window_end": "2026-03-24T23:59:59Z",
+    "fp_rate_per_day": 0.0
+  },
+  {
+    "rule_id": "f9c34a1b-6e2f-4d8e-9c12-5d7e8f9a4b32",
+    "rule_title": "Suspicious Interpreter Abuse with Non-Standard Parent Process",
+    "level": "high",
+    "fp_count": 0,
+    "baseline_window_start": "2026-03-18T00:00:00Z",
+    "baseline_window_end": "2026-03-24T23:59:59Z",
+    "fp_rate_per_day": 0.0
+  }
+]
