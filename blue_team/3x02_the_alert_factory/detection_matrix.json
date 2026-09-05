@@ -1,0 +1,40 @@
+[
+  {
+    "source_type": "linux_text",
+    "record_count": 21,
+    "stable_fields": [
+      "asset",
+      "dst_zone",
+      "event_category",
+      "hostname",
+      "raw_message",
+      "severity",
+      "source_type",
+      "src_zone",
+      "timestamp",
+      "user"
+    ],
+    "high_cardinality_fields": [
+      "timestamp"
+    ],
+    "supported_detection_types": [
+      "signature",
+      "anomaly",
+      "behavioral",
+      "correlation"
+    ],
+    "rationale": {
+      "signature": "stable_fields_support_exact_indicator_or_pattern_matching",
+      "anomaly": "baseline_supports_comparison_with_normal_frequency_or_values",
+      "behavioral": "event_fields_support_suspicious_activity_pattern_detection",
+      "correlation": "shared_time_and_entity_fields_support_cross_event_linking"
+    },
+    "recommended_attack_tactics": [
+      "TA0002",
+      "TA0003",
+      "TA0004",
+      "TA0005",
+      "TA0006"
+    ]
+  }
+]
