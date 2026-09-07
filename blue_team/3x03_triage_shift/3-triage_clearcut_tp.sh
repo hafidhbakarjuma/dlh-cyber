@@ -6,6 +6,7 @@ mkdir -p tickets
 python3 - << 'PY'
 import json
 import os
+import sys
 from datetime import datetime, timezone
 
 enriched_queue_path = "enriched_queue.json"
@@ -26,10 +27,11 @@ for alert in queue:
     has_malicious = any(hit.get("reputation") == "malicious" for hit in ioc_hits)
     baseline_profile = alert.get("baseline_host_profile", {})
     
-    # Predicates: priority_band == critical (or score >= 20), malicious IOC, and baseline profile/deviation present
+    # Predicates: priority_band == critical (or score >= 20), malicious IOC, and baseline profile present/violated
     is_critical = (priority_band == "critical" or score >= 20)
+    has_baseline_deviation = bool(baseline_profile)
     
-    if is_critical and has_malicious:
+    if is_critical and has_malicious and has_baseline_deviation:
         alert_id = alert.get("alert_id", "unknown")
         rule_id = alert.get("rule_id", "unknown")
         target_host = alert.get("target_host") or alert.get("hostname") or alert.get("asset", {}).get("hostname", "unknown")
@@ -49,7 +51,6 @@ for alert in queue:
         event_ref = alert.get("event_ref") or alert.get("event_id") or alert.get("event_summary", {}).get("event_id")
         evidence_refs = [event_ref] if event_ref else []
         
-        # Include any linked correlation primitives if present
         if "correlated_events" in alert:
             evidence_refs.extend(alert["correlated_events"])
         
@@ -58,7 +59,7 @@ for alert in queue:
             tags = alert.get("tags", alert.get("rule_tags", []))
             attack_techniques = [t for t in tags if t.startswith("T") and t[1:].isdigit()]
             if not attack_techniques:
-                attack_techniques = ["T1078"] # Default representative technique if unmapped
+                attack_techniques = ["T1078"]
                 
         ticket = {
             "ticket_id": f"TKT-{alert_id.upper()}" if not alert_id.startswith("TKT-") else alert_id,
@@ -66,7 +67,7 @@ for alert in queue:
             "classification": "true_positive",
             "justification": justification,
             "evidence_refs": evidence_refs,
-            "ioc_hits": [h for h in ioc_hits if h.get("reputation") == "malicious"],
+            "ioc_hits": [h for h in ioc_hits if h.get("reputation"] == "malicious"],
             "attack_techniques": attack_techniques,
             "recommended_action": "escalate_tier2",
             "analyst_time_seconds": 180,
@@ -83,7 +84,7 @@ with open(out_file, 'w', encoding='utf-8') as f:
 
 print("batch 1 clear-cut true positives")
 for row in table_rows:
-    print(f"  {row[0]:<12} {row[1]:<30} {row[15:15]+row[2]:<15} {row[3]:<10} {row[4]}")
+    print(f"  {row[0]:<12} {row[1]:<30} {row[2]:<15} {row[3]:<10} {row[4]}")
 print(f"batch size               : {len(batch1_tickets)}")
 print(f"tickets written          : {len(batch1_tickets)}")
 print(out_file)
