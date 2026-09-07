@@ -1,0 +1,27 @@
+{
+  "queue_size": 70,
+  "validation_errors": [],
+  "by_priority_band": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 70
+  },
+  "by_rule": {
+    "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d": 70
+  },
+  "by_hostname": {
+    "localhost": 70
+  },
+  "by_attack_tactic": {},
+  "time_span": {
+    "first": "2026-03-18T06:28:00Z",
+    "last": "2026-03-25T23:36:41Z"
+  },
+  "top_targets": [
+    {
+      "hostname": "localhost",
+      "priority_score": 0.0
+    }
+  ]
+}
