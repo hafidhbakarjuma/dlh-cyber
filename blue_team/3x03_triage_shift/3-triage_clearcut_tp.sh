@@ -27,9 +27,9 @@ for alert in queue:
     has_malicious = any(hit.get("reputation") == "malicious" for hit in ioc_hits)
     baseline_profile = alert.get("baseline_host_profile", {})
     
-    # Predicates: priority_band == critical (or score >= 20), malicious IOC, and baseline profile present/violated
+    # Predicates: priority_band == critical (or score >= 20), malicious IOC, and baseline deviation
     is_critical = (priority_band == "critical" or score >= 20)
-    has_baseline_deviation = bool(baseline_profile)
+    has_baseline_deviation = bool(baseline_profile) and len(baseline_profile) > 0
     
     if is_critical and has_malicious and has_baseline_deviation:
         alert_id = alert.get("alert_id", "unknown")
@@ -67,7 +67,7 @@ for alert in queue:
             "classification": "true_positive",
             "justification": justification,
             "evidence_refs": evidence_refs,
-            "ioc_hits": [h for h in ioc_hits if h.get("reputation"] == "malicious"],
+            "ioc_hits": [h for h in ioc_hits if h.get("reputation") == "malicious"],
             "attack_techniques": attack_techniques,
             "recommended_action": "escalate_tier2",
             "analyst_time_seconds": 180,
