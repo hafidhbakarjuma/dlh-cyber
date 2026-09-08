@@ -1,0 +1,32 @@
+[
+  {
+    "ticket_id": "incident_db-patient-01_2026-03-25T02:14:08Z",
+    "confidence": "high_confidence",
+    "recommended_action": "escalate_tier2",
+    "contributing_alerts": [
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  {
+    "ticket_id": "incident_clin-ws-07_2026-03-25T09:41:22Z",
+    "confidence": "high_confidence",
+    "recommended_action": "escalate_tier2",
+    "contributing_alerts": [
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "ticket_id": "incident_med-img-02_2026-03-25T17:08:39Z",
+    "confidence": "medium_confidence",
+    "recommended_action": "monitor",
+    "contributing_alerts": [
+      1,
+      2
+    ]
+  }
+]
