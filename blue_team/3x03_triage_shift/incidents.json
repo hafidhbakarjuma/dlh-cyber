@@ -1,0 +1,212 @@
+[
+  {
+    "incident_id": "INC-20260326-0001",
+    "summary": "Confirmed security incident on target host db-patient-01 triggered by rule credential_theft_chain requiring immediate containment.",
+    "timeline": [
+      {
+        "timestamp": "2026-03-26T02:14:08Z",
+        "hostname": "db-patient-01",
+        "event_category": "detection",
+        "description": "Rule credential_theft_chain triggered on asset db-patient-01 with high fidelity IOC and baseline violation."
+      }
+    ],
+    "affected_assets": [
+      {
+        "hostname": "db-patient-01",
+        "criticality": "critical",
+        "data_classification": "restricted",
+        "network_zone": "internal"
+      }
+    ],
+    "iocs": [
+      "192.168.100.50",
+      "malicious-c2.meddefense.internal",
+      "svc_admin"
+    ],
+    "attack_techniques": [
+      "T1078",
+      "T1059",
+      "T1041"
+    ],
+    "recommended_containment": "isolate_host",
+    "related_incidents": [
+      "INC-20260326-0002",
+      "INC-20260326-0003"
+    ]
+  },
+  {
+    "incident_id": "INC-20260326-0002",
+    "summary": "Confirmed security incident on target host clin-ws-07 triggered by rule interpreter_abuse requiring immediate containment.",
+    "timeline": [
+      {
+        "timestamp": "2026-03-26T02:14:08Z",
+        "hostname": "clin-ws-07",
+        "event_category": "detection",
+        "description": "Rule interpreter_abuse triggered on asset clin-ws-07 with high fidelity IOC and baseline violation."
+      }
+    ],
+    "affected_assets": [
+      {
+        "hostname": "clin-ws-07",
+        "criticality": "high",
+        "data_classification": "restricted",
+        "network_zone": "internal"
+      }
+    ],
+    "iocs": [
+      "192.168.100.50",
+      "malicious-c2.meddefense.internal",
+      "svc_admin"
+    ],
+    "attack_techniques": [
+      "T1078",
+      "T1059",
+      "T1041"
+    ],
+    "recommended_containment": "isolate_host",
+    "related_incidents": [
+      "INC-20260326-0001",
+      "INC-20260326-0003"
+    ]
+  },
+  {
+    "incident_id": "INC-20260326-0003",
+    "summary": "Confirmed security incident on target host meddb-01 triggered by rule patient_data_access requiring immediate containment.",
+    "timeline": [
+      {
+        "timestamp": "2026-03-26T02:14:08Z",
+        "hostname": "meddb-01",
+        "event_category": "detection",
+        "description": "Rule patient_data_access triggered on asset meddb-01 with high fidelity IOC and baseline violation."
+      }
+    ],
+    "affected_assets": [
+      {
+        "hostname": "meddb-01",
+        "criticality": "critical",
+        "data_classification": "restricted",
+        "network_zone": "internal"
+      }
+    ],
+    "iocs": [
+      "192.168.100.50",
+      "malicious-c2.meddefense.internal",
+      "svc_admin"
+    ],
+    "attack_techniques": [
+      "T1078",
+      "T1059",
+      "T1041"
+    ],
+    "recommended_containment": "disable_account",
+    "related_incidents": [
+      "INC-20260326-0001",
+      "INC-20260326-0002"
+    ]
+  },
+  {
+    "incident_id": "INC-20260326-0004",
+    "summary": "Confirmed security incident on target host med-img-02 triggered by rule medical_segment_egress requiring immediate containment.",
+    "timeline": [
+      {
+        "timestamp": "2026-03-26T02:14:08Z",
+        "hostname": "med-img-02",
+        "event_category": "detection",
+        "description": "Rule medical_segment_egress triggered on asset med-img-02 with high fidelity IOC and baseline violation."
+      }
+    ],
+    "affected_assets": [
+      {
+        "hostname": "med-img-02",
+        "criticality": "critical",
+        "data_classification": "restricted",
+        "network_zone": "internal"
+      }
+    ],
+    "iocs": [
+      "192.168.100.50",
+      "malicious-c2.meddefense.internal",
+      "svc_admin"
+    ],
+    "attack_techniques": [
+      "T1078",
+      "T1059",
+      "T1041"
+    ],
+    "recommended_containment": "block_ip_at_egress",
+    "related_incidents": [
+      "INC-20260326-0001",
+      "INC-20260326-0002"
+    ]
+  },
+  {
+    "incident_id": "INC-20260326-0005",
+    "summary": "Confirmed security incident on target host db-patient-01 triggered by rule ssh_brute_force requiring immediate containment.",
+    "timeline": [
+      {
+        "timestamp": "2026-03-26T02:14:08Z",
+        "hostname": "db-patient-01",
+        "event_category": "detection",
+        "description": "Rule ssh_brute_force triggered on asset db-patient-01 with high fidelity IOC and baseline violation."
+      }
+    ],
+    "affected_assets": [
+      {
+        "hostname": "db-patient-01",
+        "criticality": "critical",
+        "data_classification": "restricted",
+        "network_zone": "internal"
+      }
+    ],
+    "iocs": [
+      "192.168.100.50",
+      "malicious-c2.meddefense.internal",
+      "svc_admin"
+    ],
+    "attack_techniques": [
+      "T1078",
+      "T1059",
+      "T1041"
+    ],
+    "recommended_containment": "block_source_ip",
+    "related_incidents": [
+      "INC-20260326-0001",
+      "INC-20260326-0002"
+    ]
+  },
+  {
+    "incident_id": "INC-20260326-0006",
+    "summary": "Confirmed security incident on target host clin-ws-07 triggered by rule privileged_shift_violation requiring immediate containment.",
+    "timeline": [
+      {
+        "timestamp": "2026-03-26T02:14:08Z",
+        "hostname": "clin-ws-07",
+        "event_category": "detection",
+        "description": "Rule privileged_shift_violation triggered on asset clin-ws-07 with high fidelity IOC and baseline violation."
+      }
+    ],
+    "affected_assets": [
+      {
+        "hostname": "clin-ws-07",
+        "criticality": "high",
+        "data_classification": "restricted",
+        "network_zone": "internal"
+      }
+    ],
+    "iocs": [
+      "192.168.100.50",
+      "malicious-c2.meddefense.internal",
+      "svc_admin"
+    ],
+    "attack_techniques": [
+      "T1078",
+      "T1059",
+      "T1041"
+    ],
+    "recommended_containment": "disable_account",
+    "related_incidents": [
+      "INC-20260326-0001",
+      "INC-20260326-0002"
+    ]
+  }
+]
