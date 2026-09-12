@@ -1,0 +1,56 @@
+{
+  "generated_at": "2026-03-25T15:00:00Z",
+  "findings_loaded": 8,
+  "per_interface": {
+    "cli": {
+      "total_time_seconds": 81,
+      "avg_time_seconds": 27,
+      "median_time_seconds": 38,
+      "total_actions": 15
+    },
+    "wazuh_export": {
+      "total_time_seconds": 48,
+      "avg_time_seconds": 12,
+      "median_time_seconds": 11,
+      "total_actions": 20
+    }
+  },
+  "confidence_distribution": {
+    "cli": {
+      "high": 2,
+      "medium": 1,
+      "low": 0
+    },
+    "wazuh_export": {
+      "high": 3,
+      "medium": 1,
+      "low": 0
+    }
+  },
+  "per_scenario_deltas": {
+    "anchor": {
+      "cli_time": 232,
+      "export_time": 1,
+      "delta": -231,
+      "advantage": "wazuh_export faster"
+    },
+    "scenario_a": {
+      "cli_time": 42,
+      "export_time": 1,
+      "delta": -41,
+      "advantage": "wazuh_export faster"
+    },
+    "scenario_b": {
+      "cli_time": 1,
+      "export_time": 25,
+      "delta": 24,
+      "advantage": "cli faster"
+    },
+    "scenario_c": {
+      "cli_time": 38,
+      "export_time": 21,
+      "delta": -17,
+      "advantage": "wazuh_export faster"
+    }
+  }
+}
