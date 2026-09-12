@@ -1,0 +1,32 @@
+{
+  finding_id: anchor_cli,
+  scenario_id: anchor,
+  interface: cli,
+  investigation_start: 2026-09-12T07:59:21Z,
+  investigation_end: 2026-09-12T07:59:22Z,
+  time_to_first_answer_seconds: 1,
+  actions: [
+    Read anchor manifest from /home/student/3x04_assets/anchor_event.json,
+    Filtered enriched events for host db-patient-01,
+    Evaluated time window 2026-03-25T01:15:00Z to 2026-03-25T01:47:00Z,
+    Inspected Sigma detection rule 001_ssh_brute_force,
+    Generated CLI verification package
+  ],
+  fields_touched: [
+    host,
+    computer,
+    source.ip,
+    timestamp,
+    event_id
+  ],
+  event_refs: [
+    REF-ANCHOR-001,
+    REF-ANCHOR-002
+  ],
+  attack_techniques: [
+    T1110.003
+  ],
+  hypothesis: External actors performed a 48-event SSH brute force attack against db-patient-01 resulting in a successful root authentication session.,
+  confidence: high,
+  created_at: 2026-09-12T07:59:22Z
+}
