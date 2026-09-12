@@ -1,0 +1,35 @@
+{
+  "finding_id": "scenario_c_cli",
+  "scenario_id": "scenario_c",
+  "interface": "cli",
+  "investigation_start": "2026-09-12T08:57:11Z",
+  "investigation_end": "2026-09-12T08:57:11Z",
+  "time_to_first_answer_seconds": 38,
+  "actions": [
+    "Read scenario manifest from /home/student/3x04_assets/scenarios/scenario_c_medical_egress.json",
+    "Queried network zone context from network_zones.json confirming MEDICAL_IOT segment",
+    "Filtered enriched event flows for source IP 10.2.3.2 communicating with external destination 198.51.100.73",
+    "Analyzed chronological beacon intervals and data egress volume growth",
+    "Generated finding findings/scenario_c_cli.json"
+  ],
+  "fields_touched": [
+    "source.ip",
+    "destination.ip",
+    "destination.port",
+    "bytes_out",
+    "protocol",
+    "timestamp"
+  ],
+  "event_refs": [
+    "REF-SCENARIO-C-001",
+    "REF-SCENARIO-C-002",
+    "REF-SCENARIO-C-003"
+  ],
+  "attack_techniques": [
+    "T1071.001",
+    "T1041"
+  ],
+  "hypothesis": "Medical IoT device med-mri-02 (10.2.3.2) established periodic C2 beaconing and data exfiltration over HTTPS to external IP 198.51.100.73 in violation of zone policies.",
+  "confidence": "high",
+  "created_at": "2026-09-12T08:57:11Z"
+}
