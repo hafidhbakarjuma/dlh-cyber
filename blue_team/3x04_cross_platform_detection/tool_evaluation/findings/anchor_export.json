@@ -1,0 +1,32 @@
+{
+  "finding_id": "anchor_export",
+  "scenario_id": "anchor",
+  "interface": "wazuh_export",
+  "investigation_start": "2026-09-12T08:08:19Z",
+  "investigation_end": "2026-09-12T08:08:19Z",
+  "time_to_first_answer_seconds": 1,
+  "actions": [
+    "Read exported search results from /home/student/3x04_assets/wazuh_exports/anchor_search_results.json",
+    "Evaluated KQL query expression and event hits",
+    "Loaded dashboard click path trace from /home/student/3x04_assets/wazuh_exports/anchor_dashboard_trace.json",
+    "Reconciled normalized schema fields with Wazuh attributes using field_mapping.json",
+    "Generated export-interface verification package"
+  ],
+  "fields_touched": [
+    "agent.name",
+    "source.ip",
+    "user.name",
+    "@timestamp",
+    "winlog.event_id"
+  ],
+  "event_refs": [
+    "REF-WAZUH-ANCHOR-001",
+    "REF-WAZUH-ANCHOR-002"
+  ],
+  "attack_techniques": [
+    "T1110.003"
+  ],
+  "hypothesis": "Wazuh index export confirms 47 SSH brute force authentication attempts against agent db-patient-01 matching the CLI findings under normalized schema mappings.",
+  "confidence": "high",
+  "created_at": "2026-09-12T08:08:19Z"
+}

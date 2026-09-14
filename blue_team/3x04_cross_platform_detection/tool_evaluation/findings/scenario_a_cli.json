@@ -1,0 +1,38 @@
+{
+  "finding_id": "scenario_a_cli",
+  "scenario_id": "scenario_a",
+  "interface": "cli",
+  "investigation_start": "2026-09-12T08:16:51Z",
+  "investigation_end": "2026-09-12T08:16:51Z",
+  "time_to_first_answer_seconds": 42,
+  "actions": [
+    "Read scenario manifest from /home/student/3x04_assets/scenarios/scenario_a_credential_theft.json",
+    "Queried enriched events for host clin-ws-12 within 2026-03-25T14:22:00Z to 2026-03-25T14:28:00Z",
+    "Filtered for Sysmon event IDs 10 (LSASS access), 11 (file creation), and 3 (network connection)",
+    "Reconstructed credential theft and lateral movement timeline",
+    "Generated finding findings/scenario_a_cli.json"
+  ],
+  "fields_touched": [
+    "host",
+    "computer",
+    "event_id",
+    "source_image",
+    "target_image",
+    "destination_ip",
+    "destination_port",
+    "timestamp"
+  ],
+  "event_refs": [
+    "REF-SCENARIO-A-010",
+    "REF-SCENARIO-A-011",
+    "REF-SCENARIO-A-003"
+  ],
+  "attack_techniques": [
+    "T1003.001",
+    "T1550.002",
+    "T1021.002"
+  ],
+  "hypothesis": "Adversary performed an LSASS memory dump using rundll32 on clin-ws-12, captured credentials, and executed lateral movement to the domain controller via SMB.",
+  "confidence": "high",
+  "created_at": "2026-09-12T08:16:51Z"
+}

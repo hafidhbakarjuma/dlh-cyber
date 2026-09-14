@@ -1,0 +1,34 @@
+{
+  "finding_id": "scenario_c_export",
+  "scenario_id": "scenario_c",
+  "interface": "wazuh_export",
+  "investigation_start": "2026-09-12T13:26:44Z",
+  "investigation_end": "2026-09-12T13:26:44Z",
+  "time_to_first_answer_seconds": 21,
+  "actions": [
+    "Read exported search results from /home/student/3x04_assets/wazuh_exports/scenario_c_search_results.json",
+    "Extracted source IP 10.2.3.2, destination 198.51.100.73:443, and verified source.zone metadata",
+    "Analyzed chronological beacon intervals (12-minute heartbeat pattern)",
+    "Loaded dashboard trace from /home/student/3x04_assets/wazuh_exports/scenario_c_dashboard_trace.json",
+    "Generated export-interface finding findings/scenario_c_export.json"
+  ],
+  "fields_touched": [
+    "source.ip",
+    "destination.ip",
+    "destination.port",
+    "source.zone",
+    "@timestamp"
+  ],
+  "event_refs": [
+    "REF-WAZUH-SCENARIO-C-001",
+    "REF-WAZUH-SCENARIO-C-002",
+    "REF-WAZUH-SCENARIO-C-003"
+  ],
+  "attack_techniques": [
+    "T1071.001",
+    "T1041"
+  ],
+  "hypothesis": "Wazuh index export confirms medical IoT device med-mri-02 (10.2.3.2) beaconing externally with periodic intervals, validating CLI scenario C findings via pre-indexed telemetry.",
+  "confidence": "high",
+  "created_at": "2026-09-12T13:26:44Z"
+}
