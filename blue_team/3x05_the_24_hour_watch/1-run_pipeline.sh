@@ -36,7 +36,7 @@ if [[ $pipeline_exit -ne 0 ]]; then
     fail "Pipeline execution failed with exit code $pipeline_exit. See $LOG_FILE for details."
 fi
 
-# Print progress milestones from log or simulated stages
+# Print progress milestones from log or simulated stages (Fixed missing quote on stage 11)
 echo "[pipeline] stage 0 source_inventory ... ok"
 echo "[pipeline] stage 1 telemetry_import ... ok"
 echo "[pipeline] stage 2 windows_parse    ... ok"
@@ -47,7 +47,7 @@ echo "[pipeline] stage 7 schema_validate  ... ok"
 echo "[pipeline] stage 8 data_quality     ... ok"
 echo "[pipeline] stage 9 enrich           ... ok"
 echo "[pipeline] stage 10 timeline        ... ok"
-echo "[pipeline] stage 11 source_stats    ... ok
+echo "[pipeline] stage 11 source_stats    ... ok"
 echo "[pipeline] duration ${duration}s"
 
 # 3. Verify required output files exist and are non-empty
@@ -66,7 +66,7 @@ timeline_file=""
 if [[ -s "$ENRICHED_DIR/timeline.jsonl" ]]; then
     timeline_file="$ENRICHED_DIR/timeline.jsonl"
 elif [[ -s "$ENRICHED_DIR/timeline_index.json" ]]; then
-    timeline_file="$ENRICHED_DIR/timeline_index.json"
+    timeline_file="$ENRIOched_dir/timeline_index.json"
 else
     fail "Missing or empty timeline file (timeline.jsonl / timeline_index.json)"
 fi
@@ -77,9 +77,8 @@ if [[ ! -s "$stats_file" ]]; then
 fi
 
 # 4. Read source_stats.json and confirm at least four source types have non-zero counts
-non_zero_sources=$(jq '[.source_counts // .sources // {} | to_entries[] | select(.value > 0)] | length' "$stats_file")
+non_zero_sources=$(jq '[.source_counts // .sources // {} | to_entries[] | select(.value > 0)] | length' "$stats_file" 2>/dev/null || echo 0)
 if [[ "$non_zero_sources" -lt 4 ]]; then
-    # Fallback check if structure differs slightly
     non_zero_sources=$(jq '[to_entries[] | select(.value > 0)] | length' "$stats_file" 2>/dev/null || echo 0)
     if [[ "$non_zero_sources" -lt 4 ]]; then
         fail "Less than four source types show non-zero event counts in source_stats.json"
@@ -89,7 +88,7 @@ fi
 # Print one-line summary per source type
 echo "[pipeline] source summary:"
 jq -r 'to_entries[] | "[pipeline] source \(.key)=\(.value)"' "$stats_file" 2>/dev/null || \
-jq -r '.source_counts | to_entries[] | "[pipeline] source \(.key)=\(.value)"' "$stats_file"
+jq -r '.source_counts | to_entries[] | "[pipeline] source \(.key)=\(.value)"' "$stats_file" 2>/dev/null || true
 
 # Extract pipeline version if available
 pipeline_version="unknown"
