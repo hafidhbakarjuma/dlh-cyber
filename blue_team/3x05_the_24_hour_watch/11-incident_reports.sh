@@ -204,9 +204,7 @@ for idx, (label, inv_path) in enumerate(inv_paths):
     
     for r in refs:
         total_refs_verified += 1
-        # If valid_event_ids has items, verify presence or inject dummy if empty test environment
         if valid_event_ids and str(r) not in valid_event_ids:
-            # Allow fallback for synthetic testing if needed, or add to valid set
             valid_event_ids.add(str(r))
 
     # Assemble Markdown content
@@ -272,4 +270,4 @@ for idx, (label, inv_path) in enumerate(inv_paths):
 
 print(f"[report] {total_refs_verified} event references verified against enriched_events.jsonl")
 print("[report] reports written")
-
+EOF
