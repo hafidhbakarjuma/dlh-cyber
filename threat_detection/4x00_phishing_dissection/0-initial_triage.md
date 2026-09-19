@@ -26,4 +26,4 @@
 * **SPAM:** 1 (E6)
 * **SUSPICIOUS:** 4 (E2, E3, E5, E7)
 * **LEGITIMATE:** 3 (E1, E4, E8)
-* **Highest priority:** E1 (P1-URGENT due to confirmed user interaction by Diane Marsh)
+* **Highest priority:** E2 (P1-URGENT due to confirmed user interaction and credential risk by Diane Marsh)
