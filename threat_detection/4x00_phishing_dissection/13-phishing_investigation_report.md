@@ -8,7 +8,7 @@
 ---
 
 ## 1. Executive Summary
-MedDefense Health Systems experienced a coordinated, multi-vector phishing campaign targeting clinical, financial, and human resources personnel between April 14 and April 16, 2026. The campaign utilized sophisticated lookalike domains, budget VPS hosting nodes, and role-specific pretexts to harvest credentials and induce financial fraud. Crucially, a clinical staff member (Diane Marsh) interacted with a malicious portal-verification link, resulting in a high-risk exposure event requiring immediate identity and session remediation. Out of eight evaluated emails, four were identified as active malicious threats, one as bulk spam, and three as legitimate communications (including an official federal alert). Immediate technical and credential containment measures have been outlined to secure enterprise infrastructure and prevent secondary access.
+MedDefense Health Systems experienced a coordinated, multi-vector phishing campaign targeting clinical, financial, and human resources personnel between April 14 and April 16, 2026. The campaign utilized sophisticated lookalike domains, budget VPS hosting nodes, and role-specific pretexts to harvest credentials and induce financial fraud. A clinical staff member (Diane Marsh) successfully navigated to a malicious portal-verification link, representing a potential exposure event that warrants immediate precautionary identity and session remediation. Out of eight evaluated emails, four were identified as active malicious threats, one as bulk spam, and three as legitimate communications (including an official federal alert). Immediate technical and credential containment measures have been outlined to secure enterprise infrastructure and prevent secondary access.
 
 ---
 
@@ -49,9 +49,9 @@ MedDefense Health Systems experienced a coordinated, multi-vector phishing campa
 ---
 
 ## 5. Click Incident Assessment
-* **Known Facts:** User Diane Marsh (`dmarsh@meddefense.com` from `WS-NURSE-04`, IP `10.10.2.15`) received Email 2 and actively clicked the malicious verification link (`https://meddefense-portal[.]com/verify/staff?id=dmarsh&token=a8f3e2d1`) on April 14, 2026, at 15:02:33 CDT.
-* **Unknowns:** Whether credentials were successfully typed into the phishing portal, whether session tokens were harvested, or if local script execution occurred on the workstation.
-* **Recommended Next Actions:** Enforce an immediate corporate password reset for Diane Marsh, terminate all active Azure AD/M365 session tokens, conduct a direct user interview, and place `WS-NURSE-04` on heightened endpoint monitoring.
+* **Known Facts:** User Diane Marsh (`dmarsh@meddefense.com` on workstation `WS-NURSE-04`, IP `10.10.2.15`) received Email 2 and actively clicked the malicious verification link (`https://meddefense-portal[.]com/verify/staff?id=dmarsh&token=a8f3e2d1`) on April 14, 2026, at 15:02:33 CDT.
+* **Key Unknowns:** The available evidence batch confirms the click event but does not prove whether credentials were actually entered into the phishing portal, whether authentication tokens were successfully harvested by the attacker, or if local endpoint execution occurred.
+* **Recommended Safe Actions:** Because credential entry cannot be ruled out from telemetry alone, treat the event as a potential exposure. Recommended actions are limited to a proactive password reset, forced session token revocation, a direct user interview with Diane Marsh, and reviewing authentication/endpoint logs.
 
 ---
 
