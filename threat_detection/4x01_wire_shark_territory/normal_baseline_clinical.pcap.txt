@@ -1,0 +1,61 @@
+[*] Analyzing baseline capture: normal_baseline_clinical.pcap
+
+=== PROTOCOL DISTRIBUTION ===
+
+===================================================================
+Protocol Hierarchy Statistics
+Filter: 
+
+frame                                    frames:2842 bytes:928333
+  eth                                    frames:2842 bytes:928333
+    ip                                   frames:2842 bytes:928333
+      tcp                                frames:1742 bytes:824572
+        data                             frames:30 bytes:17820
+        tls                              frames:320 bytes:371464
+        nbss                             frames:24 bytes:11136
+      udp                                frames:1100 bytes:103761
+        ntp                              frames:60 bytes:5400
+          _ws.malformed                  frames:2 bytes:180
+        dns                              frames:1040 bytes:98361
+          _ws.malformed                  frames:13 bytes:1509
+===================================================================
+
+=== TOP 10 SOURCE IPS ===
+    520 10.10.1.1
+    240 10.10.1.10
+    180 10.10.20.5
+    167 10.10.2.41
+    152 10.10.2.31
+    152 10.10.2.15
+    149 10.10.2.22
+    142 10.10.2.55
+    128 10.10.2.75
+    126 10.10.2.80
+
+=== TOP 10 DESTINATION IPS ===
+    520 10.10.1.1
+    216 10.10.1.10
+    180 10.10.20.5
+    140 10.10.2.41
+    134 10.10.2.31
+    132 10.10.2.15
+    128 10.10.2.22
+    122 10.10.2.55
+    111 10.10.2.40
+    108 151.101.1.140
+
+=== DNS QUERY PROFILE ===
+Total DNS queries:
+520
+Top queried domains:
+     77 pacs.meddefense.com
+     71 outlook.office365.com
+     68 windows.com
+     66 time.windows.com
+     64 www.bing.com
+     60 login.microsoftonline.com
+     58 meddefense.com
+     56 ehr.meddefense.com
+
+=== TLS ANALYSIS ===
+Observed SNI values:
