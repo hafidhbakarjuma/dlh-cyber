@@ -1,0 +1,54 @@
+[*] Analyzing DNS exfiltration capture: dns_exfil.pcap
+
+=== DNS QUERY CLASSIFICATION ===
+Total DNS queries: 487
+Normal queries: 354
+Anomalous queries: 133
+
+=== ANOMALOUS QUERY ANALYSIS ===
+Base domain: data-sync.meddefense-portal.com
+
+Query pattern:
+  Type: TXT
+  Interval: 10-15 seconds between queries
+  Subdomain label length: 44-60 characters (avg 52)
+  Encoding: base32/base64-like high-entropy encoded labels
+
+Sample decoded queries (Attempting base64/base32 decoding):
+  Query 1: obqxi2lfnz2f64tfmnxxezb2jfcd2nbyheysy3tbnvst2u.data-sync.meddefense-portal.com
+    -> Decoded result: ¡º±‹i_Ÿ=Ÿë‹_š|q{6ö÷Úvò…ì¬Ë{[žû-Ú[Decoding failed or non-standard encoding]
+  Query 2: obqxi2lfnz2f64tfmnxxezb2jfcd2nbyheysy3tbnvst2u.data-sync.meddefense-portal.com
+    -> Decoded result: ¡º±‹i_Ÿ=Ÿë‹_š|q{6ö÷Úvò…ì¬Ë{[žû-Ú[Decoding failed or non-standard encoding]
+  Query 3: pool.ntp.org
+    -> Decoded result: ¦Š%
+  Query 4: pool.ntp.org
+    -> Decoded result: ¦Š%
+  Query 5: meddefense.com
+    -> Decoded result: ™ç]y÷§±[Decoding failed or non-standard encoding]
+
+=== DNS RESPONSE ANALYSIS ===
+Response type: TXT records
+Average response size: 60-120 bytes
+Content: encoded command or control-style responses
+
+=== EXFILTRATION VOLUME ===
+Queries: 133 in 30 minutes (~4/min)
+Average subdomain payload: 52 encoded bytes per query
+Estimated raw data exfiltrated: approximately 5187 bytes
+
+[*] This is low volume, but DNS tunneling often prioritizes
+    stealth and structured records over bulk transfer.
+
+=== DETECTION COMPARISON ===
+Metric               | Normal DNS        | Tunnel DNS          
+------------------------------------------------------------
+Query type           | A, AAAA           | TXT                 
+Subdomain length     | short             | 44-60 chars         
+Subdomain encoding   | human-readable    | encoded/high entropy
+Query rate           | variable          | regular             
+Destination domain   | known             | campaign-related    
+Time of activity     | business hours    | night activity      
+
+=== CONCLUSION ===
+The DNS traffic from billing-srv-01 is consistent with DNS tunneling
+and likely data exfiltration through TXT queries.
