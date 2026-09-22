@@ -1,0 +1,63 @@
+[*] Analyzing lateral movement capture: lateral_movement.pcap
+
+=== CROSS-SUBNET TRAFFIC ===
+Total cross-subnet connections: 372
+Unique source-destination pairs: 13
+Connections involving WS-NURSE-04 (10.10.2.15): 370
+
+=== AUTHENTICATION EVENTS ===
+Timestamp            | Source     | Dest       | Account | Proto    | Result
+--------------------|------------|------------|---------|----------|--------
+14:30:12.445        | 10.10.2.15 | 10.10.1.10 | dmarsh  | RDP/NLA  | SUCCESS
+14:35:22.891        | 10.10.1.10 | 10.10.1.20 | dmarsh  | SMB      | SUCCESS
+14:36:01.334        | 10.10.1.10 | 10.10.1.30 | dmarsh  | SMB      | ACCESS DENIED
+14:36:45.112        | 10.10.1.10 | 10.10.1.31 | dmarsh  | SMB      | ACCESS DENIED
+14:38:07.556        | 10.10.1.10 | 10.10.4.100| SMB     | SMB      | TCP RST / refused
+14:38:08.112        | 10.10.1.10 | 10.10.4.101| SMB     | SMB      | TCP RST / refused
+14:40:33.778        | 10.10.1.10 | 10.10.1.60 | dmarsh  | SMB      | SUCCESS
+14:42:15.002        | 10.10.1.10 | 10.10.1.60 | dmarsh  | SMB      | DIR LISTING
+
+=== ATTACK PATH RECONSTRUCTION ===
+
+Step 1: RDP from clinical workstation to billing server
+  WS-NURSE-04 (10.10.2.15) -> billing-srv-01 (10.10.1.10)
+  Account: dmarsh
+  ATT&CK: T1021.001 (Remote Desktop Protocol)
+  Finding: A clinical user account initiated RDP to a server system.
+
+Step 2: SMB enumeration from billing server
+  billing-srv-01 -> internal servers
+  Several SMB attempts succeeded, while others returned access denied.
+  ATT&CK: T1135 (Network Share Discovery)
+
+Step 3: Attempted access to restricted internal systems
+  billing-srv-01 -> 10.10.4.100: TCP RST / refused
+  billing-srv-01 -> 10.10.4.101: TCP RST / refused
+  Finding: Packet evidence shows access attempts were not completed.
+
+Step 4: NAS access
+  billing-srv-01 -> NAS-01 (10.10.1.60): SUCCESS
+  SMB share: \\NAS-01\billing_backups
+  Directory listing: 23 entries enumerated
+  ATT&CK: T1083 (File and Directory Discovery)
+
+=== ACCESS EFFECTIVENESS ===
+Succeeded:
+  Clinical workstation -> billing server via RDP
+  billing server -> NAS-01 SMB listing
+
+Denied or refused:
+  Attempts to protected internal systems
+  Attempts to selected server resources with insufficient access
+
+=== BASELINE COMPARISON ===
+Does WS-NURSE-04 normally RDP to billing-srv-01? NO
+Does billing-srv-01 normally enumerate other servers? NO
+Does billing-srv-01 normally access NAS-01 backups? Possibly yes, but timing is abnormal
+
+=== MITRE ATT&CK MAPPING ===
+T1078.002  Valid Accounts: Domain Accounts
+T1021.001  Remote Desktop Protocol
+T1135      Network Share Discovery
+T1021.002  SMB/Windows Admin Shares
+T1083      File and Directory Discovery
