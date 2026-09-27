@@ -1,0 +1,118 @@
+{
+  "name": "HEALTHBANE Campaign ATT&CK Mapping",
+  "version": "1.1",
+  "domain": "enterprise-attack",
+  "description": "Observed and inferred MITRE ATT&CK techniques for the HEALTHBANE campaign targeting healthcare entities.",
+  "filters": {
+    "platforms": ["Windows", "Linux", "SaaS", "Office 365"]
+  },
+  "setting": {
+    "coverColor": "#ffffff",
+    "scrollBehavior": "smooth"
+  },
+  "legendItems": [
+    {
+      "label": "Observed Technique (High Priority)",
+      "color": "#ff6666"
+    },
+    {
+      "label": "Inferred Technique (Medium Priority)",
+      "color": "#ffcc00"
+    }
+  ],
+  "techniques": [
+    {
+      "techniqueID": "T1566.001",
+      "tactic": "initial-access",
+      "score": 100,
+      "color": "#ff6666",
+      "comment": "OBSERVED: Delivery of malicious PDF invoices via email."
+    },
+    {
+      "techniqueID": "T1566.002",
+      "tactic": "initial-access",
+      "score": 100,
+      "color": "#ff6666",
+      "comment": "OBSERVED: Spearphishing links pointing to fraudulent credential harvesting portals."
+    },
+    {
+      "techniqueID": "T1192",
+      "tactic": "initial-access",
+      "score": 50,
+      "color": "#ffcc00",
+      "comment": "INFERRED: Broad sector-wide automated phishing distribution."
+    },
+    {
+      "techniqueID": "T1204.002",
+      "tactic": "execution",
+      "score": 100,
+      "color": "#ff6666",
+      "comment": "OBSERVED: Users opening PDF attachments and clicking embedded URI links."
+    },
+    {
+      "techniqueID": "T1059.003",
+      "tactic": "execution",
+      "score": 50,
+      "color": "#ffcc00",
+      "comment": "INFERRED: Execution of helper scripts following document engagement."
+    },
+    {
+      "techniqueID": "T1566",
+      "tactic": "credential-access",
+      "score": 100,
+      "color": "#ff6666",
+      "comment": "OBSERVED: Phishing pages designed to harvest staff usernames and passwords."
+    },
+    {
+      "techniqueID": "T1588.002",
+      "tactic": "credential-access",
+      "score": 50,
+      "color": "#ffcc00",
+      "comment": "INFERRED: Acquisition of credential harvesting frameworks and templates."
+    },
+    {
+      "techniqueID": "T1539",
+      "tactic": "credential-access",
+      "score": 50,
+      "color": "#ffcc00",
+      "comment": "INFERRED: Potential follow-up session token hijacking on fake SSO portals."
+    },
+    {
+      "techniqueID": "T1027",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "color": "#ff6666",
+      "comment": "OBSERVED: Obfuscated URI actions and redirect links within PDF object streams."
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "score": 100,
+      "color": "#ff6666",
+      "comment": "OBSERVED: HTTPS beaconing to C2 domains and external VPS infrastructure."
+    },
+    {
+      "techniqueID": "T1573.001",
+      "tactic": "command-and-control",
+      "score": 50,
+      "color": "#ffcc00",
+      "comment": "INFERRED: Standard TLS encryption utilized for C2 and exfiltration channels."
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "score": 100,
+      "color": "#ff6666",
+      "comment": "OBSERVED: Outbound transmission of harvested credentials and billing data."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffcc00",
+      "#ff6666"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "showSubtechniques": true
+}
