@@ -1,1 +1,1 @@
-Threat Hunting
+THREAT_DETECTION
