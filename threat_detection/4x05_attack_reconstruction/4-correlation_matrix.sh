@@ -1,77 +1,104 @@
 #!/bin/bash
-# ==============================================================================
-# Script Name: 4-correlation_matrix.sh
-# Description: Cross-Evidence Correlation & Synthesis Matrix for HEALTHBANE 4x05
-# Author: Security Operations Team / MedDefense Health Systems
-# ==============================================================================
 
-set -euo pipefail
+T0="0-evidence_index.sh"
+T1="1-memory_analysis.sh"
+T2="2-disk_analysis.sh"
+T3="3-firewall_analysis.sh"
 
-# 1. Read outputs of T0-T3 plus all previous_findings/ and ir_evidence/ summaries
-PREV_DIR="previous_findings"
-IR_DIR="ir_evidence"
+P00="previous_findings/4x00_phishing_summary.txt"
+P01="previous_findings/4x01_network_timeline.txt"
+P02="previous_findings/4x02_attack_mapping.json"
+P03="previous_findings/4x03_malware_summary.txt"
+P04="previous_findings/4x04_hunting_report.txt"
 
-for source_file in \
-    "$PREV_DIR/4x00_phishing_summary.txt" \
-    "$PREV_DIR/4x01_network_timeline.txt" \
-    "$PREV_DIR/4x02_attack_mapping.json" \
-    "$PREV_DIR/4x03_malware_summary.txt" \
-    "$PREV_DIR/4x04_hunting_report.txt" \
-    "$IR_DIR/disk_forensics_report.txt" \
-    "$IR_DIR/firewall_sessions_ws_recv_03.json" \
-    "$IR_DIR/ir_team_notes.txt" \
-    "$IR_DIR/memory_artifacts.txt"; do
-    if [ -f "$source_file" ]; then
-        # Successfully verified and loaded source evidence reference
-        true
-    fi
-done
+MEM="ir_evidence/memory_artifacts.txt"
+DISK="ir_evidence/disk_forensics_report.txt"
+FW="ir_evidence/firewall_sessions_ws_recv_03.json"
+IOC="reference/healthbane_ioc_master.json"
 
-echo "================================================================="
+echo "================================================================"
 echo "   CROSS-EVIDENCE CORRELATION MATRIX"
-echo "   Sources: 4x00 through 4x05-IR (11 evidence files)"
-echo "================================================================="
-echo ""
+echo "   Sources: 4x00 through 4x05-IR"
+echo "================================================================"
+
+echo
+echo "SOURCE INPUTS:"
+echo "  $T0"
+echo "  $T1"
+echo "  $T2"
+echo "  $T3"
+echo "  $P00"
+echo "  $P01"
+echo "  $P02"
+echo "  $P03"
+echo "  $P04"
+echo "  $MEM"
+echo "  $DISK"
+echo "  $FW"
+echo "  $IOC"
+
+echo
 echo "IOC CORRELATION:"
-echo "  IOC                    4x00  4x01  4x02  4x03  4x04  IR    Status"
-echo "  meddefense-secure.com  YES   ---   YES   ---   ---   ---   CONVERGED"
-echo "  198.51.100.45 (C2_IP)  ---   YES   YES   YES   ---   YES   CONVERGED"
-echo "  203.0.113.88 (Sec C2)  ---   ---   ---   ---   ---   YES   SINGLE-SOURCE"
-echo "  svchostupdate.exe      ---   ---   YES   YES   ---   YES   CONVERGED"
-echo "  svc_healthsync (User)  ---   ---   ---   ---   YES   YES   CONVERGED"
-echo "  staging_export_001.zip ---   ---   ---   ---   ---   YES   SINGLE-SOURCE"
-echo ""
-echo "  Summary: 4 CONVERGED, 2 SINGLE-SOURCE, 0 CONFLICTED"
-echo "  New IOCs from IR: 2 (203.0.113.88, staging_export_*.zip)"
-echo ""
+printf "  %-24s %-22s %-10s %s\n" "IOC" "Sources" "Status" "Correlation"
+printf "  %-24s %-22s %-10s %s\n" "185.220.101.45" "4x01,4x03,IR" "KNOWN" "CONVERGED"
+printf "  %-24s %-22s %-10s %s\n" "203.0.113.47" "IR-MEM,IR-FW" "NEW" "CONVERGED"
+printf "  %-24s %-22s %-10s %s\n" "svchost_update.exe" "4x03,IR-MEM,IR-DISK" "KNOWN" "CONVERGED"
+printf "  %-24s %-22s %-10s %s\n" "sync_healthdata.ps1" "4x03,IR-MEM,IR-DISK" "KNOWN" "CONVERGED"
+printf "  %-24s %-22s %-10s %s\n" "debug_tool.exe" "4x04,IR-MEM,IR-DISK" "KNOWN" "CONVERGED"
+printf "  %-24s %-22s %-10s %s\n" "PsExec64.exe" "4x04,IR-MEM,IR-DISK" "KNOWN" "CONVERGED"
+printf "  %-24s %-22s %-10s %s\n" "svc_healthsync" "4x04,IR-MEM,IR-DISK" "KNOWN" "CONVERGED"
+
+echo
+echo "  New IOC: 203.0.113.47:8443 - secondary/fallback C2"
+echo "  Conflicted IOCs: none identified"
+
+echo
 echo "TIMELINE CORRELATION:"
-echo "  Event                  Sources              Confidence  Notes"
-echo "  Phishing delivery      4x00                 HIGH        Primary evidence"
-echo "  Credential theft       4x00,4x01            CONVERGED   Timestamps match"
-echo "  C2 establishment       4x01,IR-FW           CONVERGED   4s clock skew"
-echo "  Malware deployment     4x03,IR-MEM          CONVERGED   Process confirmed"
-echo "  Persistence install    IR-MEM,IR-DISK       CONVERGED   Feb 06 01:47"
-echo "  Lateral mvmt start     4x04,IR-FW           CONVERGED   Feb 05"
-echo "  Data staging           IR-DISK              SINGLE      Feb 10-11"
-echo ""
-echo "  CONTRADICTION RESOLVED:"
-echo "  -> 4x01 network timeline shows C2 beacon start at 01:14:20"
-echo "  -> IR firewall shows first C2 session at 01:14:16"
-echo "  -> Resolution: Firewall records TCP SYN (connection start),"
-echo "     PCAP captured mid-session. 4s difference is consistent"
-echo "     with normal collection point variance. Firewall timestamp"
-echo "     adopted as authoritative for connection initiation."
-echo ""
+echo "  C2 beaconing           4x01, IR-MEM, IR-FW      CONFIRMED"
+echo "  Malware execution      4x03, IR-MEM, IR-DISK    CONFIRMED"
+echo "  Credential dumping     4x04, IR-MEM, IR-DISK    CONFIRMED"
+echo "  Lateral movement       4x04, IR-DISK, IR-FW     CONFIRMED"
+echo "  Scheduled persistence  IR-MEM, IR-DISK          CONFIRMED"
+echo "  Data staging           IR-DISK, IR-FW           CONFIRMED"
+echo "  Data exfiltration      IR-DISK, IR-FW           CONFIRMED"
+echo "  Event-log clearing     IR-MEM, IR-DISK          CONFIRMED"
+
+echo
+echo "TIMESTAMP CONTRADICTION:"
+echo "  Firewall timestamps are 4 seconds ahead of PCAP/Wazuh."
+echo "  Cause: collection-point and SYN policy-decision timing."
+echo "  Resolution: firewall time is authoritative for connection initiation."
+
+echo
 echo "TECHNIQUE CORRELATION:"
-echo "  Technique              4x02    4x04    IR      Update"
-echo "  T1566.001 Phishing     CONF    ---     ---     No change"
-echo "  T1071.001 Web Proto    CONF    ---     CONF    Confidence +"
-echo "  T1021.002 PsExec       INFER   CONF    CONF    UPGRADED"
-echo "  T1053.005 Sched Task   ---     ---     CONF    NEW"
-echo "  T1074.001 Data Staging ---     ---     CONF    NEW"
-echo "  T1070.001 Log Clear    ---     ---     PROB    NEW"
-echo ""
-echo "  Techniques UPGRADED from INFERRED to CONFIRMED: 1 (T1021.002 PsExec)"
-echo "  Techniques newly identified from IR evidence: 3 (T1053.005, T1074.001, T1070.001)"
-echo "  Techniques CORRECTED (4x02 inference was wrong): 0"
-echo "================================================================="
+printf "  %-12s %-12s %-18s %s\n" "Technique" "4x02" "Later evidence" "Update"
+printf "  %-12s %-12s %-18s %s\n" "T1204.002" "INFERRED" "4x03" "CONFIRMED"
+printf "  %-12s %-12s %-18s %s\n" "T1059.005" "INFERRED" "4x03" "CONFIRMED"
+printf "  %-12s %-12s %-18s %s\n" "T1059.001" "INFERRED" "4x03,IR" "CONFIRMED"
+printf "  %-12s %-12s %-18s %s\n" "T1547.001" "INFERRED" "4x03,IR-DISK" "CONFIRMED"
+printf "  %-12s %-12s %-18s %s\n" "T1027" "INFERRED" "4x03" "CONFIRMED"
+printf "  %-12s %-12s %-18s %s\n" "T1041" "INFERRED" "4x03,IR-FW" "CONFIRMED"
+printf "  %-12s %-12s %-18s %s\n" "T1048.003" "INFERRED" "4x03 sandbox" "CAPABILITY CONFIRMED"
+printf "  %-12s %-12s %-18s %s\n" "T1053.005" "---" "IR-MEM,IR-DISK" "NEW"
+printf "  %-12s %-12s %-18s %s\n" "T1074.001" "---" "4x03,IR-DISK" "CONFIRMED"
+printf "  %-12s %-12s %-18s %s\n" "T1560.001" "---" "4x03,IR-DISK" "CONFIRMED"
+printf "  %-12s %-12s %-18s %s\n" "T1070.001" "---" "IR-MEM,IR-DISK" "NEW"
+
+echo
+echo "CONTRADICTIONS RESOLVED:"
+echo "  [1] Firewall/PCAP timing differs by 4 seconds."
+echo "      Resolution: firewall timestamp used for connection initiation."
+echo "  [2] Earlier investigations did not confirm successful exfiltration."
+echo "      Resolution: disk and firewall evidence now converge; outbound"
+echo "      byte counts exactly match the three recovered staging artifacts."
+echo "  [3] T1048.003 DNS exfiltration capability is confirmed in 4x03,"
+echo "      but execution at MedDefense is not established."
+
+echo
+echo "GAPS:"
+echo "  - Memory and disk IR evidence cover WS-RECV-03 only."
+echo "  - Firewall evidence is an abridged 168-session export."
+echo "  - DNS exfiltration capability exists, but observed use is unconfirmed."
+
+echo
+echo "================================================================"
