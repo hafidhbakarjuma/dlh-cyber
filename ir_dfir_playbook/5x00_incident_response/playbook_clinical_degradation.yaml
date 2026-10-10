@@ -1,0 +1,80 @@
+playbook_id: "PB-CLIN-002"
+title: "Clinical Service Degradation and Radiology PACS Incident Playbook"
+owner_role: "Technical_Lead"
+
+applies_to:
+  triggers:
+    - "Radiology PACS/imaging server unresponsiveness or high latency reported by Emergency Department nurses"
+    - "SIEM or EDR alert indicating anomalous process execution, unauthorized admin login, or suspicious outbound traffic on PACS infrastructure"
+  indicators:
+    - "Performance Indicator: High CPU/disk I/O driven by scheduled database re-indexing, DICOM batch transfers, or routine backup jobs"
+    - "Incident Indicator: Unauthorized PowerShell execution, unexpected outbound connection to external C2 IPs, or anomalous administrative credential usage"
+
+severity_mapping:
+  initial: "SEV2"
+  escalate_if:
+    - "Radiology service degradation severely impacts emergency patient care across multiple clinical departments"
+    - "Confirmed malware, unauthorized lateral movement, or active ransomware encryption detected on clinical imaging servers"
+
+immediate_actions:
+
+  - step: "Contact on-call Clinical Operations Lead and Chief Medical Officer to establish situational awareness and coordinate prior to any containment action"
+    owner: "IR_Commander"
+    timebox_minutes: 10
+
+  - step: "Perform rapid EDR and netflow triage to differentiate standard performance bottlenecks from an active security incident"
+    owner: "Technical_Lead"
+    timebox_minutes: 15
+
+evidence_preservation:
+
+  - artifact: "System performance metrics, Windows event logs, and live EDR telemetry"
+    method: "Export performance counters and live process memory dump via EDR console"
+    before_step: "Service restart, throttling, or network segmentation"
+
+  - artifact: "DICOM PACS database transaction logs and core switch netflows"
+    method: "Extract application transaction logs and core switch flow telemetry"
+    before_step: "Network micro-segmentation or port restriction"
+
+containment_actions:
+
+  - step: "Evaluate containment trade-off decision point"
+    owner: "Technical_Lead"
+    decision_point: "Determine whether to activate hospital downtime procedures (investigating offline safely) versus continuing live service with elevated EDR monitoring, service throttling, and targeted micro-segmentation."
+    trade_off: "Investigating under downtime guarantees patient safety but halts digital radiology workflows; continuing service maintains workflow but risks malware lateral movement."
+
+  - step: "Service throttling and connection limiting"
+    owner: "Technical_Lead"
+    decision_point: "None"
+    trade_off: "Stabilizes server resource utilization but slows down non-emergency batch image transfers."
+
+  - step: "Account restriction (suspending non-essential service and third-party vendor accounts)"
+    owner: "Technical_Lead"
+    decision_point: "None"
+    trade_off: "Cuts off potential attacker access vectors without disabling core clinical user authentication."
+
+  - step: "Targeted network micro-segmentation"
+    owner: "Technical_Lead"
+    decision_point: "Approved by On-Call Clinical Operations Lead"
+    trade_off: "Isolates potentially compromised management ports while keeping ER DICOM query paths open."
+
+eradication_actions:
+
+  - "Isolate and remediate malicious processes, unauthorized binaries, or backdoors via EDR"
+
+  - "Apply emergency security patches or close unapproved listening ports on PACS server"
+
+recovery_validation:
+
+  check: "Verify DICOM query/retrieve response times and EDR clean status"
+  criterion: "ER image retrieval latency returns to normal baseline under 3 seconds and zero malicious security alerts fire for 4 consecutive hours"
+
+communication_plan:
+
+  - audience: "Clinical Operations Lead"
+    trigger: "Activation of clinical downtime procedures or targeted network segmentation affecting ER"
+    template: "clinical_downtime_notification_template.txt"
+
+  - audience: "IR_Commander"
+    trigger: "Completion of triage differentiation between performance and security incident"
+    template: "incident_status_update_template.txt"
