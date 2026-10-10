@@ -56,10 +56,10 @@ roles:
 escalation:
   SEV4:
     on_detection:
-      - SOC Analyst
       - Scribe
+      - Technical_Lead
     on_confirmation:
-      - SOC Lead
+      - IR_Commander
     on_scope_expansion:
       - IR_Commander
     time_threshold_minutes_to_escalate: 240
