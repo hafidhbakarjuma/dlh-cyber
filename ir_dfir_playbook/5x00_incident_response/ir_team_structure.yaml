@@ -1,0 +1,98 @@
+roles:
+  IR_Commander:
+    primary: James Chen, SOC Lead
+    backup: Robert Kim, Infrastructure Lead
+    responsibilities:
+      - Owns the incident through closure
+      - Runs the incident bridge and timeline
+      - Authorizes containment actions within authority ceiling
+    authority_ceiling: SEV2
+
+  Technical_Lead:
+    primary: Priya Patel, Senior Systems Engineer
+    backup: Marcus Vance, Network Security Engineer
+    responsibilities:
+      - Directs technical containment and eradication actions
+      - Coordinates forensic data acquisition and malware analysis
+      - Oversees system restoration and validation
+    authority_ceiling: SEV2
+
+  Communications_Lead:
+    primary: Sarah Jenkins, PR Director
+    backup: David Ross, Internal Communications Manager
+    responsibilities:
+      - Drafts internal and external status updates
+      - Manages stakeholder communications and media inquiries
+      - Coordinates public-facing messaging with executive sponsor
+    authority_ceiling: SEV3
+
+  Legal_Liaison:
+    primary: Elena Rostova, Senior Corporate Counsel
+    backup: Michael Chang, Compliance Officer
+    responsibilities:
+      - Advises on regulatory obligations and HIPAA compliance
+      - Oversees breach notification assessments and timelines
+      - Reviews external disclosures for legal exposure
+    authority_ceiling: SEV1
+
+  Executive_Sponsor:
+    primary: Dr. Arthur Pendelton, Chief Information Security Officer
+    backup: Dr. Brenda Thorne, Chief Executive Officer
+    responsibilities:
+      - Authorizes high-impact operational disruptions or downtime
+      - Interfaces with the Board of Directors and key stakeholders
+      - Approves external regulatory notifications and public statements
+    authority_ceiling: SEV1
+
+  Scribe:
+    primary: Alex Rivera, Junior SOC Analyst
+    backup: Chloe Vance, Compliance Analyst
+    responsibilities:
+      - Maintains a real-time chronological incident log
+      - Records all decisions, containment actions, and approvals
+      - Archives all evidence and communication artifacts for post-incident review
+    authority_ceiling: SEV4
+
+escalation:
+  SEV4:
+    on_detection:
+      - SOC Analyst
+      - Scribe
+    on_confirmation:
+      - SOC Lead
+    on_scope_expansion:
+      - IR_Commander
+    time_threshold_minutes_to_escalate: 240
+
+  SEV3:
+    on_detection:
+      - IR_Commander
+      - Technical_Lead
+    on_confirmation:
+      - Communications_Lead
+    on_scope_expansion:
+      - Legal_Liaison
+    time_threshold_minutes_to_escalate: 120
+
+  SEV2:
+    on_detection:
+      - IR_Commander
+      - Technical_Lead
+    on_confirmation:
+      - Communications_Lead
+      - Legal_Liaison
+    on_scope_expansion:
+      - Executive_Sponsor
+    time_threshold_minutes_to_escalate: 60
+
+  SEV1:
+    on_detection:
+      - IR_Commander
+      - Technical_Lead
+      - Executive_Sponsor
+    on_confirmation:
+      - Communications_Lead
+      - Legal_Liaison
+    on_scope_expansion:
+      - Executive_Sponsor
+    time_threshold_minutes_to_escalate: 15
