@@ -1,0 +1,56 @@
+playbook_id: "<PB-XXX: Unique identifier for this specific incident response playbook>"
+title: ""
+owner_role: "<Which IR role executes and owns this playbook, e.g., Technical_Lead>"
+
+applies_to:
+triggers:
+  - "<Detection rule ID, SIEM alert condition, or initial notification source>"
+indicators:
+  - "<IOC type, file hash pattern, domain, or observable behavioral pattern>"
+
+severity_mapping:
+  initial: "<SEV1-4: Baseline severity level when this playbook is triggered>"
+  escalate_if:
+    - "<Condition, scope expansion, or threshold breach that raises the severity level>"
+
+immediate_actions:
+
+  step: "<First containment or triage action taken within the initial 15-minute window>"
+  owner: ""
+  timebox_minutes:
+
+  evidence_preservation:
+
+    artifact: "<What forensic artifact, memory dump, or log file must be captured>"
+    method: "<Exact tool, command, or protocol used to preserve the artifact>"
+    before_step: ""
+
+  containment_actions:
+
+    step: "<Specific technical containment action, e.g., network isolation or account disablement>"
+    owner: ""
+    decision_point: "<Condition or authorization gate required before proceeding, if applicable>"
+    trade_off: ""
+
+  eradication_actions:
+
+    - "<Specific malware removal, patch application, backdoor elimination, or credential reset action>"
+
+  recovery_validation:
+
+    check: "<Validation procedure, health check, or integrity scan performed to confirm safety>"
+    criterion: ""
+
+  communication_plan:
+
+    audience: "<Role, stakeholder group, or external entity to be notified>"
+    trigger: ""
+    template: ""
+
+  escalation_triggers:
+
+    - "<Condition, operational roadblock, or scope growth that mandates escalating severity or team notification>"
+
+post_incident_tasks:
+
+  - "<Task, documentation gap, or detection tuning item handed off to the post-incident review>"
