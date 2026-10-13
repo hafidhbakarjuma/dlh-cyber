@@ -1,198 +1,69 @@
-# Eradication Checklist: IR-2026-0414-01
 
-## Overview
+# Containment Decision: IR-2026-0414-01
 
-This checklist defines the step-by-step eradication actions required to eliminate adversary access, execution, credentials, and persistence across process, network, credential, and host configuration surfaces.
+**Incident:** IR-2026-0414-01  
+**Severity:** SEV2  
+**Affected endpoint:** WST-WS-031, West Campus Laboratory  
+**Account:** MEDDEFENSE\dmarsh  
+**Decision owner:** James Chen, IR Commander  
+**Status:** Proposed — awaiting approval and completion of Task 2 evidence preservation
 
-**Important:** Run commands only on authorized incident-response systems. Validate target identifiers and preserve required evidence before terminating processes, disabling accounts, deleting persistence, or changing firewall policy. Commands and expected results must be verified in the actual environment before sign-off.
+## Candidate strategies
 
-## 1. Process Surface Eradication
+### A. Network isolation — Quarantine VLAN
 
-### Step 1.1: Terminate Malicious Execution Chain
+- **Action:** Move WST-WS-031 to quarantine VLAN 999. Block ordinary inbound and outbound network traffic, including communication with `185.220.101.47:443`. Permit only authorized forensic access from the IR jumpbox.
+- **Attacker effect:** Severs the observed external communication path and prevents further network-based activity from this endpoint. Malicious processes may continue running locally.
+- **Evidence effect:** Preserves powered-on memory, processes, files, and persistence mechanisms. Existing network connections may close during isolation.
+- **Patient care effect:** One laboratory workstation loses access to clinical systems. Laboratory staff must use an approved alternative workstation. Availability of spare workstations must be confirmed with the laboratory lead.
+- **Time to execute:** Approximately 5 minutes after network-team readiness.
+- **Reversibility:** Reversible through restoration of the original VLAN and access controls, subject to IR authorization.
 
-- **Target processes:** `msbuild.exe` (PID `4812`) and parent `powershell.exe` (PID `3304`).
-- **Execution command (PowerShell, elevated where required):**
+### B. Host power-off
 
-  ```powershell
-  Stop-Process -Id 4812, 3304 -Force
-  ```
+- **Action:** Shut down WST-WS-031 immediately and keep it offline for forensic examination.
+- **Attacker effect:** Stops running malicious processes and all network communication on the workstation.
+- **Evidence effect:** Destroys live memory, active connections, and transient process state. Disk evidence may remain available, but an abrupt shutdown can affect filesystem consistency.
+- **Patient care effect:** Immediately removes the workstation from laboratory service. Any unsaved clinical work may be lost.
+- **Time to execute:** Approximately 1 minute once authorized.
+- **Reversibility:** The workstation can be powered on again, but lost volatile evidence cannot be recovered.
 
-- **Verification command:**
+### C. Selective process termination and firewall egress block
 
-  ```powershell
-  Get-CimInstance Win32_Process |
-      Where-Object {
-          $_.ProcessId -in 4812, 3304 -or
-          ($_.ExecutablePath -like 'C:\Users\dmarsh\AppData\Local\Temp\*')
-      } |
-      Select-Object ProcessId, ParentProcessId, Name, ExecutablePath, CommandLine
-  ```
+- **Action:** Block outbound traffic to `185.220.101.47:443` using endpoint or network firewall controls. After evidence capture, terminate verified malicious processes associated with `update.exe` (PID 7204), `powershell.exe` (PID 7812), and `MSBuild.exe` (PID 8104). Confirm current process identities before termination.
+- **Attacker effect:** Interrupts the known execution chain and observed destination. Other malicious processes or alternate destinations could remain active.
+- **Evidence effect:** Destroys memory and runtime state of terminated processes. Retains the remainder of the running workstation and its existing files.
+- **Patient care effect:** May allow normal laboratory applications and network services to continue, but process termination could have unintended effects.
+- **Time to execute:** Approximately 5–10 minutes, including process verification and firewall configuration.
+- **Reversibility:** Firewall rules and ordinary process execution can be restored, but terminated process state cannot be recovered.
 
-- **Expected verification output:** No results for the specified PIDs or suspicious execution from the identified temporary directory. Investigate any new process using the same suspicious path or command line.
-- **Rollback plan:** Process termination is not reversible. If a legitimate process was stopped, restart it through the approved service or user-session procedure only after the host is confirmed clean.
+## Chosen strategy: A — Network isolation
 
-## 2. Credential Surface Eradication
+**Rationale:** Network isolation provides the strongest balance between stopping the observed external communication and preserving the workstation for continued forensic examination. Unlike power-off, it retains volatile memory and running processes; unlike selective termination, it does not depend on identifying every malicious process or destination. It is also reversible, although the laboratory workstation will temporarily lose access to clinical systems. Before execution, the laboratory lead must confirm an acceptable patient-care workaround, and the network team must verify that forensic jumpbox access remains available. The strategy is preferred only after Task 2 volatile evidence capture is complete.
 
-### Step 2.1: Revoke Active User Sessions and Refresh Tokens
+## Execution window
 
-- **Target account:** `dmarsh` (Daniel Marsh)
-- **Execution commands (Microsoft Graph PowerShell and Active Directory PowerShell):**
+- **Evidence preservation completion:** Pending — confirm Task 2 captures and SHA-256 verification.
+- **Containment execution start:** Pending — record the actual UTC start time during Task 4.
+- **Target handoff interval:** No more than 5 minutes between confirmed evidence preservation and containment initiation, subject to approval and patient-safety requirements.
+- **During the interval:** Maintain active monitoring of WST-WS-031 and its external connections. Do not reset credentials, terminate processes, or reboot the host before the preservation handoff.
+- **Recordkeeping:** Enter actual UTC preservation completion and containment start timestamps in `incident_timeline.md`. Do not substitute estimated times for observed events.
 
-  ```powershell
-  # Revoke Microsoft Entra ID sign-in sessions / refresh tokens
-  Revoke-MgUserSignInSession -UserId "dmarsh@contoso-health.org"
+## Approval
 
-  # Temporarily disable the on-premises Active Directory account
-  Set-ADUser -Identity "dmarsh" -Enabled $false
-  ```
+- **Approving authority:** James Chen, SOC Lead and IR Commander.
+- **Approval status:** Pending explicit authorization.
+- **Approval requirement:** Confirm the proposed quarantine scope, forensic access, laboratory operational impact, and rollback readiness.
+- **Documentation:** Record the actual approval time, approver, and decision in the incident timeline before executing Task 4.
 
-  If the environment uses Microsoft Entra ID, disable the cloud account separately where authorized:
+## Rollback plan
 
-  ```powershell
-  Update-MgUser -UserId "dmarsh@contoso-health.org" -AccountEnabled:$false
-  ```
+1. If quarantine unexpectedly disrupts patient care, immediately notify James Chen and the laboratory lead.
+2. Verify whether laboratory work can continue on an approved alternative workstation.
+3. If clinical operations cannot safely continue, request IR Commander authorization for rollback.
+4. Have the network team restore the original VLAN assignment and approved network policies.
+5. If the host must reconnect, consider a temporary targeted egress block as an alternative, recognizing that it provides weaker containment.
+6. Confirm clinical connectivity and continue enhanced monitoring for suspicious processes and outbound connections.
+7. Record the rollback authorization, UTC execution time, reason, and outcome in `incident_timeline.md`.
 
-  Perform a password reset through the organization's approved identity procedure. Require a password change at the next sign-in after the account is safely re-enabled, if appropriate.
-
-- **Verification commands:**
-
-  ```powershell
-  Get-ADUser -Identity "dmarsh" -Properties Enabled, PasswordLastSet |
-      Select-Object Name, Enabled, PasswordLastSet
-
-  Get-MgUser -UserId "dmarsh@contoso-health.org" `
-      -Property AccountEnabled, RefreshTokensValidFromDateTime |
-      Select-Object AccountEnabled, RefreshTokensValidFromDateTime
-  ```
-
-- **Expected verification output:** The on-premises account is disabled (`Enabled: False`); the Entra ID account is disabled (`AccountEnabled: False`) if cloud-account disabling was performed; and the token-valid-from timestamp reflects the session-revocation operation. Confirm the actual returned values rather than assuming success.
-- **Rollback plan:** Re-enable accounts only after credential reset, identity verification with Daniel Marsh through an approved out-of-band channel, and incident-lead authorization. Review sign-in logs and revoke sessions again if compromise is still suspected.
-
-## 3. Network Surface Eradication
-
-### Step 3.1: Perimeter Firewall and Proxy Block
-
-- **Target artifact:** Suspected command-and-control (C2) IP address `185.220.101.47`.
-- **Execution action:** Add a deny rule through the organization's approved firewall management interface (for example, Palo Alto Networks or Fortinet). Use a unique rule name such as `BLOCK_C2_IR-2026-0414-01`, restrict the scope appropriately, enable logging, and commit/publish the change according to local procedures.
-
-  **Note:** Firewall CLI syntax differs by vendor and version. The following is a conceptual example, not a universal copy-and-paste command:
-
-  ```text
-  Rule name: BLOCK_C2_IR-2026-0414-01
-  Destination: 185.220.101.47
-  Action: Deny / Drop
-  Logging: Enabled
-  ```
-
-- **Verification commands:** Verify the rule is installed and logging as expected in the firewall management interface. From an authorized test host, confirm that a connection attempt is blocked and correlate the test timestamp with firewall logs. For example:
-
-  ```bash
-  curl -k -sS -o /dev/null -w '%{http_code}\n' --connect-timeout 5 --max-time 8 https://185.220.101.47
-  ```
-
-- **Expected verification output:** A blocked connection may result in a timeout, connection failure, or a vendor-specific deny log. A `000` curl status means curl did not receive an HTTP response; by itself, it does **not** prove that the firewall rule caused the failure. Confirm using firewall logs and policy inspection.
-- **Rollback plan:** Remove or disable the rule only with incident-lead/network-owner approval if the IP is confirmed to be legitimate shared infrastructure or the block causes an approved operational impact. Document the evidence and compensating controls.
-
-## 4. Persistence Surface Eradication
-
-### Step 4.1: Scheduled Tasks Audit and Removal
-
-- **Target artifacts:** Tasks created or modified around `02:40Z`–`03:00Z`, especially under `\Microsoft\Windows\` or the task root. Validate the timeline against event logs and task action paths.
-- **Execution command (for the confirmed malicious task only):**
-
-  ```powershell
-  Unregister-ScheduledTask -TaskName "Updater_WST_031" -Confirm:$false
-  ```
-
-  If the task is not in the root task folder, specify its verified task path with `-TaskPath`.
-
-- **Verification command:**
-
-  ```powershell
-  Get-ScheduledTask |
-      Where-Object {
-          $_.TaskName -eq "Updater_WST_031" -or
-          $_.TaskName -like "*Update*"
-      } |
-      Select-Object TaskName, TaskPath, State
-
-  Get-ScheduledTask |
-      ForEach-Object {
-          $task = $_
-          foreach ($action in $task.Actions) {
-              [pscustomobject]@{
-                  TaskName  = $task.TaskName
-                  TaskPath  = $task.TaskPath
-                  Execute   = $action.Execute
-                  Arguments = $action.Arguments
-              }
-          }
-      } |
-      Where-Object {
-          $_.Execute -match 'AppData\\Local\\Temp|powershell|msbuild|wscript|cscript'
-      } |
-      Format-Table -AutoSize
-  ```
-
-- **Expected verification output:** The confirmed malicious task `Updater_WST_031` is absent. Any remaining unusual tasks or actions referencing suspicious binaries, script hosts, or temporary directories are investigated before sign-off.
-- **Rollback plan:** Restore a task only if investigation determines it was legitimate and the task definition has been preserved. Do not restore a confirmed malicious task.
-
-### Step 4.2: Registry Run Keys and WMI Event Consumer Audit
-
-- **Target locations:**
-  - `HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run`
-  - `HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run`
-  - WMI permanent event subscriptions in `root\subscription`
-- **Execution command (only after confirming the value is malicious and preserving its details):**
-
-  ```powershell
-  Remove-ItemProperty `
-      -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" `
-      -Name "WinHealthUpdate" `
-      -ErrorAction SilentlyContinue
-  ```
-
-- **Verification commands:**
-
-  ```powershell
-  Get-ItemProperty `
-      -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
-            "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
-
-  Get-CimInstance -Namespace root\subscription -ClassName __EventFilter
-  Get-CimInstance -Namespace root\subscription -ClassName __EventConsumer
-  Get-CimInstance -Namespace root\subscription -ClassName __FilterToConsumerBinding
-  ```
-
-- **Expected verification output:** No suspicious Run-key values remain, and WMI event filters, consumers, and bindings have been reviewed. No unknown WMI consumers remain without an explanation. Do not assume every WMI consumer is malicious; validate ownership and behavior.
-- **Rollback plan:** Restore a removed registry value only if it is confirmed legitimate and its original data has been preserved. Recreate WMI subscriptions only from a verified, approved definition.
-
-## 5. Summary Verification Sign-off
-
-Complete the status and evidence fields only after the commands and independent checks have been performed. Do not mark a row `PASSED` solely because an execution command returned without an obvious error.
-
-| Surface | Eradication action | Verification status | Verified by | Evidence / timestamp (UTC) |
-|---|---|---|---|---|
-| Process | Terminated confirmed malicious `msbuild.exe` (PID `4812`) and `powershell.exe` (PID `3304`); checked for related execution | Pending verification | On-call SOC analyst | |
-| Credential | Revoked Entra ID sessions/tokens and disabled the account in the applicable identity systems | Pending verification | On-call SOC analyst / IAM | |
-| Network | Applied and verified perimeter block for `185.220.101.47`; reviewed deny logs | Pending verification | On-call SOC analyst / Network team | |
-| Persistence | Removed confirmed malicious scheduled task `Updater_WST_031`; audited Run keys and WMI subscriptions | Pending verification | On-call SOC analyst / Endpoint team | |
-
-## 6. Final Eradication Gate
-
-Before closing eradication, confirm all of the following:
-
-- [ ] Evidence was preserved before destructive changes where feasible.
-- [ ] The malicious process chain and related execution artifacts are no longer present.
-- [ ] The affected identity's sessions/tokens were revoked and credentials were reset according to policy.
-- [ ] The network block is active and supported by firewall policy/log evidence.
-- [ ] Scheduled tasks, registry Run keys, and WMI persistence surfaces were reviewed.
-- [ ] Relevant endpoint, identity, and network logs were checked for signs of re-entry.
-- [ ] All changes, command outputs, timestamps, exceptions, and approvers were recorded.
-- [ ] The incident lead approved the transition to recovery and heightened monitoring.
-
-**Incident ID:** `IR-2026-0414-01`  
-**Eradication owner:** ____________________  
-**Incident lead:** ____________________  
-**Completion time (UTC):** ____________________  
-**Final status:** Pending verification / Passed / Failed
+**Rollback target:** Approximately 5 minutes after authorization, subject to network-team capability. Never restore unrestricted connectivity without approval and explicit acceptance of the residual security risk.
