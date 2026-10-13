@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # ==============================================================================
 # recovery_validation.sh
 # Repo: dlh-cyber_security
