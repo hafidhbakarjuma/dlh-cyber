@@ -1,0 +1,25 @@
+This function belongs to a malicious kernel module. 
+	
+What is the base memory address of this module?
+	 
+What is the function name in the malicious kernel module that performs cleanup?
+	 
+
+Before the kernel panic, a suspicious process was running with sudo privileges, What was the process name?
+	
+What is the name of the function at the top of the kernel's call stack at time of the crash?
+	
+What is the absolute path of the malicious file that caused the kernel crash?
+	 
+What was the kernel's fatal panic bug message?
+
+Which command-line utility was leveraged by the previous process to trigger the crash?
+	
+The crash was triggered by a specific process. What was the PID of the active process that caused the panic?
+	
+When did the server crash? (UTC)
+Format: ****-**-** **:**:**
+
+What is the assigned IP address of the server at time of crash?
+
+What is the hostname of the crashed server?
