@@ -19,8 +19,8 @@ if ! command -v sha256sum &> /dev/null; then
 fi
 
 # Baseline establishment mode if hashes.txt does not exist
-if [ ! -f "$HES_FILE" ] && [ ! -f "$HASHES_FILE" ]; then
-    touch "$HES_FILE" 2>/dev/null || touch "$HASHES_FILE"
+if [ ! -f "$HASHES_FILE" ]; then
+    touch "$HASHES_FILE"
     for id in ART-001 ART-002 ART-003; do
         file="${ARTIFACTS[$id]}"
         if [ -f "$file" ]; then
@@ -29,11 +29,8 @@ if [ ! -f "$HES_FILE" ] && [ ! -f "$HASHES_FILE" ]; then
             echo "[BASELINE_SET] $id $file  sha256=$hash"
             echo "$TIMESTAMP,$ACTOR,$id,BASELINE_SET,$hash,$hash" >> "$LOG_FILE"
         else
-            # Fallback for demonstration/testing if files are not present locally yet
-            dummy_hash=$(echo -n "$file" | sha256sum | awk '{print $1}')
-            echo "$id $file $dummy_hash" >> "$HASHES_FILE"
-            echo "[BASELINE_SET] $id $file  sha256=$dummy_hash"
-            echo "$TIMESTAMP,$ACTOR,$id,BASELINE_SET,$dummy_hash,$dummy_hash" >> "$LOG_FILE"
+            echo "Error: Required artifact $file not found for baseline establishment." >&2
+            exit 1
         fi
     done
     echo "Baseline written to hashes.txt. Run again to verify."
@@ -44,15 +41,17 @@ fi
 FAILED=0
 for id in ART-001 ART-002 ART-003; do
     file="${ARTIFACTS[$id]}"
+    
     if [ ! -f "$file" ]; then
-        # Check against expected baseline if file is missing in sandbox environment
-        expected=$(grep "^$id " "$HASHES_FILE" | awk '{print $3}')
-        computed="$expected"
-    else
-        computed=$(sha256sum "$file" | awk '{print $1}')
+        echo "[FAIL] $id $file  expected=EXISTS computed=MISSING"
+        echo "$TIMESTAMP,$ACTOR,$id,FAIL,MISSING,MISSING" >> "$LOG_FILE"
+        FAILED=1
+        continue
     fi
     
+    computed=$(sha256sum "$file" | awk '{print $1}')
     expected=$(grep "^$id " "$HASHES_FILE" | awk '{print $3}')
+    
     if [ -z "$expected" ]; then
         expected="UNKNOWN"
     fi
