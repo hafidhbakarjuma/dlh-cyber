@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| **Case number** | LH-2026-0414-01 |
-| **Incident ID** | IR-2026-0414-01 |
-| **Lead investigator** | IR Analyst |
-| **Date opened** | 2026-04-14 |
-| **Litigation hold reference** | Memo from Helena Reyes, 2026-04-14T07:30Z |
+| Case number | LH-2026-0414-01 |
+| Incident ID | IR-2026-0414-01 |
+| Lead investigator | IR Analyst |
+| Date opened | 2026-04-14 |
+| Litigation hold reference | Memo from Helena Reyes, 2026-04-14T07:30Z |
 
 ## Artifact Registry
 
