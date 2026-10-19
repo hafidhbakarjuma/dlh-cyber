@@ -1,0 +1,81 @@
+- phase: Credential phishing and submission
+  att_ck_technique: T1566.002 + T1078
+  controls_expected:
+    - Secure Email Gateway (SEG) URL reputation and detonation
+    - Multi-Factor Authentication (MFA) Conditional Access policies
+    - Phishing reporting mechanism
+  controls_fired:
+    - User report button (post-submission)
+  controls_missed:
+    - SEG link analysis failed to flag lookalike domain (ms0365-support.login-verification.click)
+    - Conditional Access policy failed to challenge novel/unrecognized login context
+  gap_severity: critical
+  gap_reason: Email gateway permitted delivery of sophisticated phishing link and authentication controls lacked risk-based step-up MFA.
+
+- phase: VPN access using stolen credentials from a foreign IP
+  att_ck_technique: T1078
+  controls_expected:
+    - VPN geo-velocity and impossible travel detection
+    - IP reputation filtering (blocking Tor exit nodes and anonymous proxies)
+    - Risk-based authentication alerts
+  controls_fired: []
+  controls_missed:
+    - VPN gateway geo-location access restrictions
+    - Automated threat intelligence blocklist for high-risk IP (185.220.101.47)
+  gap_severity: critical
+  gap_reason: VPN gateway permitted successful login from a known Tor exit node without triggering anomaly alerts or blocking access.
+
+- phase: PowerShell -> MSBuild LOLBin execution
+  att_ck_technique: T1127.001
+  controls_expected:
+    - Endpoint Detection and Response (EDR) behavioral monitoring
+    - Attack Surface Reduction (ASR) rules blocking script engines from spawning child processes
+    - Script Block Logging (Event ID 4104)
+  controls_fired:
+    - Sysmon process creation logging (Event ID 1)
+  controls_missed:
+    - EDR real-time behavioral block rule for PowerShell executing MSBuild with inline tasks
+    - ASR rule enforcement for Office/scripting application child process creation
+  gap_severity: high
+  gap_reason: Telemetry successfully captured execution events, but preventative behavioral rules and blocking controls failed to stop the LOLBin execution.
+
+- phase: C2 beaconing to external IPs
+  att_ck_technique: T1071.001
+  controls_expected:
+    - Next-Gen Firewall (NGFW) URL/IP reputation filtering
+    - Egress filtering and outbound connection monitoring
+    - IDS/IPS beaconing signatures
+  controls_fired:
+    - Sysmon network connection events (Event ID 3)
+  controls_missed:
+    - NGFW categorization and blocking of unclassified external infrastructure
+    - EDR threat intelligence feed correlation for malicious C2 IP (91.234.99.107)
+  gap_severity: high
+  gap_reason: Outbound beaconing traffic to malicious external IPs was logged post-facto but not intercepted or blocked by perimeter security controls.
+
+- phase: LSASS credential access and Kerberos ticket extraction
+  att_ck_technique: T1003.001 + T1558.003
+  controls_expected:
+    - Credential Guard / RunAsPPL enforcement
+    - EDR process access detection and prevention for LSASS handle requests
+    - Sysmon ProcessAccess monitoring (Event ID 10)
+  controls_fired: []
+  controls_missed:
+    - Protected Process Light (PPL) configuration on endpoint class
+    - EDR rule alerting on unauthorized handle access to LSASS memory
+  gap_severity: critical
+  gap_reason: Absence of Credential Guard / RunAsPPL enabled direct memory reading and ticket harvesting without endpoint resistance.
+
+- phase: Lateral movement and PHI access
+  att_ck_technique: T1550.003 + T1078
+  controls_expected:
+    - Internal network segmentation between general workstations and PHI databases
+    - Pass-the-Ticket / abnormal Kerberos ticket usage detection
+    - Zero Trust internal access policies
+  controls_fired:
+    - Windows Security event logs recording successful service ticket requests
+  controls_missed:
+    - Internal firewall micro-segmentation preventing workstation-to-database lateral connections
+    - Anomaly detection rules for forged or stolen ticket utilization
+  gap_severity: critical
+  gap_reason: Flat internal network architecture and lack of micro-segmentation permitted seamless lateral movement using harvested Kerberos tickets to reach PHI data stores.
