@@ -1,0 +1,38 @@
+title: PowerShell Spawning Trusted Developer Utility (LOLBin Proxy Execution)
+id: f482c3d1-e8f9-4b10-a2bc-3e91d574682a
+status: test
+description: Detects Windows PowerShell, PowerShell Core, or Windows Script Host spawning trusted developer and compiler binaries (such as MSBuild, CSC, VBC) to execute uncompiled C# code or proxy execution via inline XML/scripts.
+references:
+- https://attack.mitre.org/techniques/T1127/001/
+- https://lolbas-project.github.io/lolbas/Binaries/Msbuild/
+- https://lolbas-project.github.io/lolbas/Binaries/Csc/
+author: MedDefense IR Team
+date: 2026-10-19
+tags:
+- attack.execution
+- attack.t1127.001
+- attack.defense_evasion
+logsource:
+category: process_creation
+product: windows
+detection:
+selection_parent:
+ParentImage|endswith:
+- '\powershell.exe'
+- '\pwsh.exe'
+- '\wscript.exe'
+- '\cscript.exe'
+selection_child:
+Image|endswith:
+- '\MSBuild.exe'
+- '\csc.exe'
+- '\vbc.exe'
+- '\jsc.exe'
+- '\dfsvc.exe'
+- '\RegAsm.exe'
+- '\RegSvcs.exe'
+condition: selection_parent and selection_child
+falsepositives:
+- Developer build scripts or automated Visual Studio / CI-CD pipeline tasks executed locally via PowerShell scripts.
+- Administrative maintenance scripts compiling custom management utilities or .NET code dynamically.
+level: high
