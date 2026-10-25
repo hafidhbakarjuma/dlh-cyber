@@ -1,0 +1,56 @@
+capabilities:
+  - capability_id: CAP-01
+    name: supply_chain_detection
+    expected_behavior: Rapidly pivot from treating the alert as a standard perimeter breach to identifying the trusted vendor's signed update channel as the compromise vector.
+    gap_hypothesis: Teams will waste hours trying to find external lateral movement or credential stuffing, hesitating to investigate a vendor-supplied agent that has valid cryptographic signatures.
+    tested_by_inject: INJ-01, INJ-02
+    evaluation_owner: Lead Facilitator / IR Lead
+
+  - capability_id: CAP-02
+    name: vendor_communication
+    expected_behavior: Establish formal, secure, and authenticated communication channels with Nexus support and security leadership, requesting immediate attestation of blast radius and supply chain integrity.
+    gap_hypothesis: The organization relies on standard account manager contacts rather than incident response escalation paths, resulting in delayed technical answers from the vendor.
+    tested_by_inject: INJ-02, INJ-03
+    evaluation_owner: Third-Party Risk / Legal Counsel
+
+  - capability_id: CAP-03
+    name: business_continuity_decision
+    expected_behavior: Weigh patient care impacts against security risk to make a timely, well-documented decision to isolate or disconnect the Nexus FHIR API integration across sites.
+    gap_hypothesis: Clinical leadership will push back against taking scheduling offline, causing paralysis or indefinite deferral of containment actions due to lack of a pre-approved offline continuity playbook.
+    tested_by_inject: INJ-03, INJ-06
+    evaluation_owner: Operations / Incident Commander
+
+  - capability_id: CAP-04
+    name: phi_exposure_assessment
+    expected_behavior: Systematically scope which patient demographics, appointment notes, and clinical identifiers were accessible or exfiltrated through the compromised API endpoint.
+    gap_hypothesis: The data scoping process will be chaotic, conflating general system availability loss with actual record exfiltration and failing to differentiate between sites.
+    tested_by_inject: INJ-04, INJ-05
+    evaluation_owner: Privacy Officer / Data Protection Lead
+
+  - capability_id: CAP-05
+    name: hipaa_notification_posture
+    expected_behavior: Coordinate closely with legal counsel and Nexus to determine exact timeline and liability under the HIPAA Breach Notification Rule, recognizing Business Associate reporting duties.
+    gap_hypothesis: Legal and compliance teams will wait indefinitely for Nexus to formally declare a breach rather than proactively assessing MedDefense's direct regulatory notification clock.
+    tested_by_inject: INJ-04, INJ-06
+    evaluation_owner: Legal Counsel / Compliance Lead
+
+  - capability_id: CAP-06
+    name: data_integrity_response
+    expected_behavior: Identify and quarantine potentially altered appointment records, establishing an out-of-band audit trail to verify patient schedule accuracy before restoring service.
+    gap_hypothesis: The team will focus entirely on confidentiality (data theft) while missing integrity risks (tampered appointment times or clinical instructions), leading to patient safety hazards.
+    tested_by_inject: INJ-05, INJ-07
+    evaluation_owner: Clinical Director / Database Administrator
+
+  - capability_id: CAP-07
+    name: crisis_communications
+    expected_behavior: Issue precise, coordinated, and vetted internal and external holding statements that maintain stakeholder trust without prematurely admitting liability or unverified facts.
+    gap_hypothesis: Premature or conflicting statements will be released to staff or external media due to a lack of pre-scripted templates and unclear sign-off authority between PR and Legal.
+    tested_by_inject: INJ-06, INJ-07
+    evaluation_owner: Communications Director
+
+  - capability_id: CAP-08
+    name: executive_briefing_under_pressure
+    expected_behavior: Deliver a concise, high-impact situational report to executive leadership and the board summarizing risk, actions taken, and projected timeline within tight constraints.
+    gap_hypothesis: Briefings will descend into technical minutiae about EDR logs and hashes rather than addressing business risk, financial exposure, regulatory clock, and patient safety impact.
+    tested_by_inject: INJ-07, INJ-08
+    evaluation_owner: Executive Coach / Lead Facilitator
