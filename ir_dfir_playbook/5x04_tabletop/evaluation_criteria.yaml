@@ -1,0 +1,109 @@
+criteria:
+  - inject_id: INJ-00
+    capability_tested: CAP-01
+    pass_criteria:
+      - Incident is declared within the first five minutes of the inject; severity is stated with explicit reasoning
+      - At least two roles are notified by name within the inject window
+      - Evidence collection is initiated before any containment action is discussed
+    fail_indicators:
+      - Incident is not declared; team continues treating this as a monitoring alert
+      - Containment actions are proposed before any evidence collection step is named
+      - Vendor Nexus is not mentioned as a dimension of the alert within the inject window
+    finding_if_fail: >
+      The team did not declare a formal incident within the first inject window and proposed
+      containment before establishing an evidence collection baseline. This gap indicates the
+      severity classification criteria do not produce consistent results under ambiguous initial
+      conditions. Recommended action: add a Tier 2 escalation trigger for vendor-origin traffic
+      anomalies to the severity matrix, and require evidence preservation as the first named
+      action in the credential exposure and malware playbooks (owner: SOC Lead; deadline: 14 days).
+
+  - inject_id: INJ-01
+    capability_tested: CAP-01
+    pass_criteria:
+      - Event is re-classified to SEV-1 upon receiving Nexus build pipeline advisory
+      - All three site agent hosts running version 4.2.1 are identified and scoped
+      - Firewall-level C2 blocking or host isolation preparation is initiated immediately despite valid code signatures
+    fail_indicators:
+      - Team hesitates to take action because the malicious update package carries a valid cryptographic signature from Nexus
+      - Site agent hosts are not comprehensively identified across all three locations
+      - Incident severity remains unchanged despite supply chain compromise confirmation
+    finding_if_fail: >
+      The team demonstrated dangerous hesitation when confronted with a signed software update from a trusted vendor, failing to recognize that code-signing certificates can be compromised. This exposes an assumption flaw in software supply chain validation. Recommended action: update the software supply chain incident playbook to mandate immediate host isolation and certificate revocation checks whenever a vendor issues a build pipeline compromise bulletin (owner: IR Lead / IT Director; deadline: 10 days).
+
+  - inject_id: INJ-02
+    capability_tested: CAP-02
+    pass_criteria:
+      - Emergency BAA communication channels are invoked to demand formal threat telemetry from Nexus legal and security teams
+      - Epic FHIR API service account permissions and token validity are audited immediately
+      - Key rotation for all Nexus integration tokens is explicitly authorized or scheduled
+    fail_indicators:
+      - Team relies solely on standard account manager ticketing channels without escalating to vendor security leadership
+      - Epic API integration permissions are assumed to be least-privilege without verification
+      - No action is taken to rotate tokens or restrict external API access
+    finding_if_fail: >
+      The organization lacked an established escalation path for third-party vendor security breaches, relying on routine support channels that delayed vital technical answers. Additionally, API integration permissions were not audited. Recommended action: establish a dedicated third-party security incident escalation checklist within the BAA management framework, and enforce automated least-privilege audits for all external SaaS API service accounts (owner: Third-Party Risk Manager / Database Administrator; deadline: 21 days).
+
+  - inject_id: INJ-03
+    capability_tested: CAP-03
+    pass_criteria:
+      - A formal structured risk discussion occurs between IT/Security and Clinical Leadership
+      - The CEO or Incident Commander makes an explicit, documented decision balancing patient safety against security containment
+      - A manual downtime scheduling procedure is activated concurrently with agent/network isolation
+    fail_indicators:
+      - Security unilaterally disconnects systems without consulting clinical leadership, causing immediate disruption to patient care
+      - Clinical leadership vetoes containment without proposing compensating controls or risk mitigations
+      - The decision is indefinitely deferred due to deadlock between security and operations
+    finding_if_fail: >
+      A severe operational deadlock occurred between security containment requirements and clinical scheduling needs due to the absence of a pre-approved business continuity and downtime protocol for the Nexus vendor. Recommended action: co-author a mandatory clinical downtime procedure with the Clinical Director that defines exact fallback steps and decision thresholds for emergency SaaS disconnects (owner: Clinical Director / IT Director; deadline: 14 days).
+
+  - inject_id: INJ-04
+    capability_tested: CAP-04
+    pass_criteria:
+      - A dedicated PHI scoping team is immediately formed to evaluate the 12,000 extracted records and 1.2 GB outbound transfer
+      - Legal counsel initiates the HIPAA Breach Notification risk assessment without waiting for Nexus's self-reporting
+      - The direct 60-day regulatory notification clock for MedDefense as a covered entity is formally recognized
+    fail_indicators:
+      - Team assumes MedDefense has no notification obligations because the breach originated at the Business Associate (Nexus)
+      - PHI scope is guessed or generalized rather than systematically quantified across sites and record types
+      - Legal counsel defers regulatory posture entirely to the vendor's public statements
+    finding_if_fail: >
+      The compliance and legal teams incorrectly assumed that third-party vendor breaches insulate MedDefense from direct HIPAA notification duties, risking severe regulatory penalties. Recommended action: revise the HIPAA Incident Response SOP to clarify that covered entities maintain independent breach assessment and notification obligations regardless of vendor self-reporting timelines (owner: Legal Counsel / Privacy Officer; deadline: 7 days).
+
+  - inject_id: INJ-05
+    capability_tested: CAP-06
+    pass_criteria:
+      - Write permissions for the Nexus FHIR API account are revoked immediately upon discovering altered appointment times
+      - An out-of-band point-in-time audit of Epic scheduling logs is initiated against pre-compromise backups
+      - Clinical verification protocols are established for all active oncology and surgical schedules for the day
+    fail_indicators:
+      - Team focuses solely on confidentiality (data theft) while ignoring appointment data integrity and patient safety hazards
+      - Modified appointment records go undetected or unverified across active clinic schedules
+      - No manual verification protocol is enacted for patient care workflows affected by tampered records
+    finding_if_fail: >
+      The response team suffered from confidentiality tunnel vision, failing to investigate data integrity risks and patient safety hazards caused by unauthorized appointment record modifications. Recommended action: incorporate database integrity auditing and clinical schedule verification checkpoints into the standard incident response checklist for API compromises (owner: Database Administrator / Clinical Director; deadline: 10 days).
+
+  - inject_id: INJ-06
+    capability_tested: CAP-07
+    pass_criteria:
+      - A pre-approved crisis holding statement is drafted, reviewed by Legal, and released within the reporter's deadline
+      - The statement maintains operational transparency while withholding unverified technical specifics and vendor names
+      - Internal communications are sent to staff, and the Board of Directors is formally notified of the media inquiry
+    fail_indicators:
+      - Spokesperson or staff release premature, unverified statements or name the vendor without legal vetting
+      - Conflicting messages are communicated internally versus externally
+      - The media inquiry deadline passes without a coordinated response, leading to speculative reporting
+    finding_if_fail: >
+      The organization lacked pre-scripted holding templates for third-party supply chain incidents, resulting in friction between PR and Legal during active media pressure. Recommended action: develop pre-approved crisis communication templates specifically addressing vendor-origin security events and media inquiries (owner: Communications Director / Legal Counsel; deadline: 14 days).
+
+  - inject_id: INJ-07
+    capability_tested: CAP-08
+    pass_criteria:
+      - An executive briefing is delivered to the CEO and Board covering business risk, regulatory status, and operational recovery within the time limit
+      - The team firmly refuses vendor reconnection requests until independent third-party code validation and key rotation are complete
+      - Open technical questions and unverified assumptions are explicitly acknowledged rather than minimized
+    fail_indicators:
+      - Briefing descends into technical EDR log minutiae rather than focusing on business risk, regulatory exposure, and patient safety
+      - The team agrees to reconnect the compromised vendor system prematurely under operational pressure without independent verification
+      - Unresolved forensic uncertainties are glossed over as "handled"
+    finding_if_fail: >
+      The executive brief failed to distill complex technical findings into actionable business risk metrics, and the team caved to vendor pressure to reconnect before verifying supply chain integrity. Recommended action: establish a mandatory Board-level executive summary template and a strict go/no-go vendor reconnection gate requiring independent security sign-off (owner: IR Lead / Executive Sponsor; deadline: 7 days).
