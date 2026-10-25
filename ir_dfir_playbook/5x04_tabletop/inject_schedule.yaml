@@ -75,7 +75,7 @@ injects:
       patient records (names, DOBs, SSNs, insurance details, clinical notes) created 24 hours ago. Firewall logs reveal
       a 1.2 GB outbound transfer from the West Campus agent host during the same timeframe.
     capability_tested: CAP-04
-    decision_point: Is this an confirmed HIPAA breach? Does MedDefense notify OCR and patients immediately, or wait for Nexus to report it?
+    decision_point: Is this a confirmed HIPAA breach? Does MedDefense notify OCR and patients immediately, or wait for Nexus to report it?
     roles_challenged:
       - Helena Reyes (Legal Counsel)
       - Privacy Officer / Data Protection Lead
@@ -105,31 +105,16 @@ injects:
     time_minutes: 120
     delivery: facilitator reads aloud
     situation: >
-      A local investigative reporter contacts MedDefense PR, stating a source revealed patient data was stolen from
-      MedDefense via a third-party vendor breach, and patient appointments are being canceled. The reporter gives a 30-minute deadline before publishing.
+      A local investigative reporter contacts MedDefense PR giving a 30-minute deadline regarding leaked patient data. Simultaneously,
+      Nexus claims their build environment is clean and demands API reconnection. However, MedDefense IR cannot verify if persistent backdoors
+      remain within the signed binary or if internal Epic API keys were exfiltrated. The CEO demands an immediate executive brief for the Board.
     capability_tested: CAP-07
-    decision_point: What holding statement is released? Do you disclose Nexus by name? Who signs off on public communications?
+    decision_point: What holding statement is released? Do you reconnect the API under operational pressure despite unresolved residual risks? How do you brief the Board on technical unknowns?
     roles_challenged:
       - Communications Director
       - Helena Reyes (Legal Counsel)
       - Dr. Patricia Morales (CEO / Executive Sponsor)
-    expected_response: >
-      Issue an approved holding statement acknowledging an ongoing IT system incident, emphasizing patient care continuity and safety;
-      refrain from naming vendor or confirming specific PHI breach details pending full forensic verification; notify Board of Directors.
-
-  - id: INJ-07
-    time_minutes: 140
-    delivery: facilitator reads aloud
-    situation: >
-      The exercise reaches its conclusion phase. Nexus claims their build environment is clean and requests MedDefense reconnect the API.
-      However, MedDefense IR cannot verify if persistent backdoors remain within the signed update binary or if internal Epic API keys were exfiltrated.
-      The CEO demands an executive status brief for the Board in 10 minutes regarding residual risk and operational recovery.
-    capability_tested: CAP-08
-    decision_point: Do you allow reconnection to restore business operations despite unverified residual risk? How do you brief the Board on unresolved technical unknowns?
-    roles_challenged:
-      - Dr. Patricia Morales (CEO / Executive Sponsor)
       - Sarah Park (IT Director)
-      - Helena Reyes (Legal Counsel)
     expected_response: >
-      Deliver a clear executive brief detailing breach status, regulatory clock, and patient safety controls; refuse immediate vendor reconnection
-      until independent third-party code auditing and key rotation are completed; highlight open forensic questions and remediation roadmap.
+      Issue an approved holding statement acknowledging an ongoing IT incident without leaking unverified specifics or vendor names;
+      deliver a Board brief covering regulatory clocks and patient safety; refuse vendor reconnection pending independent audit, leaving residual code integrity as an explicit open question.
