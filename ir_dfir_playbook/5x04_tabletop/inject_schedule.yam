@@ -1,0 +1,135 @@
+injects:
+  - id: INJ-00
+    time_minutes: 0
+    delivery: facilitator reads aloud
+    situation: >
+      The SOC has flagged unusual outbound traffic from the Nexus scheduling agent host at the West Campus
+      to 193.42.100.77, an IP associated with bulletproof hosting infrastructure. The alert fired 45 minutes
+      ago showing periodic outbound connections on a 4-hour cycle. The Nexus system is currently operational,
+      and patient scheduling is running normally across all three sites. No other anomalies have been detected.
+    capability_tested: CAP-01
+    decision_point: Declare an incident? What severity? Who is notified in the first 15 minutes?
+    roles_challenged:
+      - James Chen (SOC / IR Lead)
+      - Sarah Park (IT Director)
+    expected_response: >
+      Incident declared at SEV-2 minimum; Incident Commander assigned; SOC begins initial evidence gathering
+      and memory/network analysis without interrupting live agent execution; legal and communications leads alerted.
+
+  - id: INJ-01
+    time_minutes: 20
+    delivery: facilitator reads aloud
+    situation: >
+      Nexus Security issues an urgent bulletin: their CI/CD build pipeline was breached by an APT group,
+      resulting in a compromised, validly signed agent update (v4.2.1) pushed automatically 3 days ago.
+      MedDefense's agent hosts across all three sites run v4.2.1. Nexus confirms the agent executes arbitrary C2
+      commands, but has no patch available. EDR now confirms all three site agents are actively beaconing.
+    capability_tested: CAP-01
+    decision_point: How do you pivot from a single host anomaly to a broad supply chain compromise? Does the valid signature delay containment?
+    roles_challenged:
+      - James Chen (SOC / IR Lead)
+      - Robert Kim (Database Administrator)
+    expected_response: >
+      Re-classify event to SEV-1; identify all three site agent hosts; scope the deployment window (3 days);
+      contain outbound network access to C2 IPs at firewall level while preparing for system isolation.
+
+  - id: INJ-02
+    time_minutes: 40
+    delivery: facilitator reads aloud
+    situation: >
+      Nexus Account Management is contacted. They admit they cannot confirm if customer patient databases
+      or Epic integration credentials were compromised. Simultaneously, IR reveals the Nexus FHIR API service
+      account holds excessive permissions in Epic, including direct write access to patient demographic and appointment tables.
+    capability_tested: CAP-02
+    decision_point: How do you handle vendor unresponsiveness and unverified vendor attestation? What immediate identity/credential revoking steps are authorized?
+    roles_challenged:
+      - Marcus Webb (Third-Party Risk / Vendor Manager)
+      - Helena Reyes (Legal Counsel)
+      - James Chen (SOC / IR Lead)
+    expected_response: >
+      Invoke emergency BAA escalation paths; immediately rotate Epic FHIR API keys/tokens used by Nexus;
+      demand full forensic timeline and attestation from Nexus legal/security leads.
+
+  - id: INJ-03
+    time_minutes: 60
+    delivery: facilitator reads aloud
+    situation: >
+      Security recommends severing all network connections and shutting down Nexus agent hosts immediately to stop
+      C2 traffic. The Clinical Director vehemently objects: disconnecting Nexus halts automated appointment processing for
+      3,500 weekly patients across 3 sites, leading to missed surgeries, lost diagnostic schedules, and severe patient safety risks.
+    capability_tested: CAP-03
+    decision_point: Do you take Nexus offline immediately or keep it running to preserve clinical workflows? Who holds ultimate authority to override clinical operations?
+    roles_challenged:
+      - Sarah Park (IT Director)
+      - Clinical Director representative
+      - Dr. Patricia Morales (CEO / Executive Sponsor)
+    expected_response: >
+      Formal risk trade-off discussion between IT, Security, and Clinical Leadership; decision made by Incident Commander/CEO
+      to isolate agents while initiating manual downtime scheduling procedures across all sites.
+
+  - id: INJ-04
+    time_minutes: 80
+    delivery: facilitator reads aloud
+    situation: >
+      Forensic triage of the Nexus database staging directory shows an unencrypted CSV export file containing 12,000
+      patient records (names, DOBs, SSNs, insurance details, clinical notes) created 24 hours ago. Firewall logs reveal
+      a 1.2 GB outbound transfer from the West Campus agent host during the same timeframe.
+    capability_tested: CAP-04
+    decision_point: Is this an confirmed HIPAA breach? Does MedDefense notify OCR and patients immediately, or wait for Nexus to report it?
+    roles_challenged:
+      - Helena Reyes (Legal Counsel)
+      - Privacy Officer / Data Protection Lead
+      - Dr. Patricia Morales (CEO / Executive Sponsor)
+    expected_response: >
+      Determine that MedDefense's direct 60-day HIPAA Breach Notification clock has started; establish PHI scoping team;
+      refuse to wait for Nexus's self-reporting; prepare initial breach notification strategy for executive sign-off.
+
+  - id: INJ-05
+    time_minutes: 100
+    delivery: facilitator reads aloud
+    situation: >
+      A clinic nurse at the South Campus reports that three patient appointment times for today's oncology infusions
+      were silently modified in Epic, causing double-bookings and a missed chemotherapy appointment. Forensics confirms
+      the modifications originated from the compromised Nexus FHIR API service account 12 hours ago.
+    capability_tested: CAP-06
+    decision_point: How do you audit and restore appointment data integrity across 3,500 active weekly records when write permissions were abused?
+    roles_challenged:
+      - Clinical Director representative
+      - Robert Kim (Database Administrator)
+      - James Chen (SOC / IR Lead)
+    expected_response: >
+      Declare a patient safety data integrity incident; revoke write access immediately; initiate point-in-time database audit
+      comparing Epic logs against offline backups prior to the 3-day window; issue clinical verification protocols for all scheduled procedures.
+
+  - id: INJ-06
+    time_minutes: 120
+    delivery: facilitator reads aloud
+    situation: >
+      A local investigative reporter contacts MedDefense PR, stating a source revealed patient data was stolen from
+      MedDefense via a third-party vendor breach, and patient appointments are being canceled. The reporter gives a 30-minute deadline before publishing.
+    capability_tested: CAP-07
+    decision_point: What holding statement is released? Do you disclose Nexus by name? Who signs off on public communications?
+    roles_challenged:
+      - Communications Director
+      - Helena Reyes (Legal Counsel)
+      - Dr. Patricia Morales (CEO / Executive Sponsor)
+    expected_response: >
+      Issue an approved holding statement acknowledging an ongoing IT system incident, emphasizing patient care continuity and safety;
+      refrain from naming vendor or confirming specific PHI breach details pending full forensic verification; notify Board of Directors.
+
+  - id: INJ-07
+    time_minutes: 140
+    delivery: facilitator reads aloud
+    situation: >
+      The exercise reaches its conclusion phase. Nexus claims their build environment is clean and requests MedDefense reconnect the API.
+      However, MedDefense IR cannot verify if persistent backdoors remain within the signed update binary or if internal Epic API keys were exfiltrated.
+      The CEO demands an executive status brief for the Board in 10 minutes regarding residual risk and operational recovery.
+    capability_tested: CAP-08
+    decision_point: Do you allow reconnection to restore business operations despite unverified residual risk? How do you brief the Board on unresolved technical unknowns?
+    roles_challenged:
+      - Dr. Patricia Morales (CEO / Executive Sponsor)
+      - Sarah Park (IT Director)
+      - Helena Reyes (Legal Counsel)
+    expected_response: >
+      Deliver a clear executive brief detailing breach status, regulatory clock, and patient safety controls; refuse immediate vendor reconnection
+      until independent third-party code auditing and key rotation are completed; highlight open forensic questions and remediation roadmap.
