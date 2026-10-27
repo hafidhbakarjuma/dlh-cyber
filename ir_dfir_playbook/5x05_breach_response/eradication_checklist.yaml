@@ -1,0 +1,91 @@
+incident_id: IR-2026-0420-01
+eradication_date: 2026-04-20
+author: On-Call IR Analyst
+actions:
+  - id: ERAD-001
+    category: beacon_process
+    target_host: CS-WS-101
+    description: Terminate rogue beacon process (PID 7318 - svchost32.exe)
+    command_or_action: "taskkill /f /pid 7318"
+    verification_command: "tasklist /fi \"pid eq 7318\""
+    expected_verification_result: "INFO: No tasks are running with the specified criteria."
+    status: COMPLETED
+    executed_at: "2026-04-20T21:30:00Z"
+    executed_by: "On-Call IR Analyst"
+
+  - id: ERAD-002
+    category: beacon_process
+    target_host: "CS-WS-104, CS-WS-107, CS-WS-112, FILE-SVR-01"
+    description: Terminate rogue beacon processes and service-spawned instances across all laterally compromised hosts
+    command_or_action: "Get-Process -Name svchost32 -ErrorAction SilentlyContinue | Stop-Process -Force"
+    verification_command: "Get-Process -Name svchost32 -ErrorAction SilentlyContinue"
+    expected_verification_result: "Empty (No processes returned)"
+    status: COMPLETED
+    executed_at: "2026-04-20T21:32:00Z"
+    executed_by: "On-Call IR Analyst"
+
+  - id: ERAD-003
+    category: persistence
+    target_host: "CS-WS-101, CS-WS-104, CS-WS-107, CS-WS-112, FILE-SVR-01"
+    description: Remove malicious Windows Service WinHealthSvc across all infected hosts
+    command_or_action: "sc delete WinHealthSvc"
+    verification_command: "sc query WinHealthSvc"
+    expected_verification_result: "The specified service does not exist as an installed service."
+    status: COMPLETED
+    executed_at: "2026-04-20T21:33:00Z"
+    executed_by: "On-Call IR Analyst"
+
+  - id: ERAD-004
+    category: staged_payload
+    target_host: "CS-WS-101, CS-WS-104, CS-WS-107, CS-WS-112"
+    description: Remove ransomware staging scripts (encryption_staging.ps1 / stage_encrypt.bat) and beacon binaries
+    command_or_action: "Remove-Item -Path C:\\Windows\\System32\\encryption_staging.ps1, C:\\ProgramData\\Microsoft\\svchost32.exe -Force"
+    verification_command: "Test-Path C:\\Windows\\System32\\encryption_staging.ps1"
+    expected_verification_result: "False"
+    status: COMPLETED
+    executed_at: "2026-04-20T21:35:00Z"
+    executed_by: "On-Call IR Analyst"
+
+  - id: ERAD-005
+    category: credential
+    target_host: Active Directory
+    description: Force password reset for all user accounts compromised during dwell period (jdoe / coord_user)
+    command_or_action: "Set-ADUser -Identity jdoe -ChangePasswordAtNextLogon $true"
+    verification_command: "Get-ADUser -Identity jdoe -Properties PasswordExpired"
+    expected_verification_result: "PasswordExpired = True"
+    status: COMPLETED
+    executed_at: "2026-04-20T21:40:00Z"
+    executed_by: "Identity Admin"
+
+  - id: ERAD-006
+    category: kerberos
+    target_host: Domain Controllers / Affected Hosts
+    description: Invalidate all active Kerberos TGTs and session tickets for compromised accounts
+    command_or_action: "klist purge -li 0x3e7"
+    verification_command: "klist tickets"
+    expected_verification_result: "No tickets found."
+    status: COMPLETED
+    executed_at: "2026-04-20T21:45:00Z"
+    executed_by: "Identity Admin"
+
+  - id: ERAD-007
+    category: network
+    target_host: Perimeter Firewall
+    description: Implement permanent egress block and DNS sinkhole for C2 domain staging.office365-cdn.net and IP 45.152.66.114
+    command_or_action: "firewall-cmd --permanent --add-rich-rule='rule family=\"ipv4\" destination address=\"45.152.66.114\" drop'"
+    verification_command: "nslookup staging.office365-cdn.net"
+    expected_verification_result: "Address: 127.0.0.1 (Sinkhole active)"
+    status: COMPLETED
+    executed_at: "2026-04-20T21:50:00Z"
+    executed_by: "Network Admin"
+
+  - id: ERAD-008
+    category: machine_account
+    target_host: "CS-WS-101, CS-WS-104, CS-WS-107, CS-WS-112, FILE-SVR-01"
+    description: Rotate Active Directory computer account passwords for all five affected hosts to invalidate exported machine credentials
+    command_or_action: "Reset-ComputerAccount -ComputerName CS-WS-101, CS-WS-104, CS-WS-107, CS-WS-112, FILE-SVR-01"
+    verification_command: "Test-ComputerSecureChannel -Server DC01"
+    expected_verification_result: "True"
+    status: COMPLETED
+    executed_at: "2026-04-20T21:55:00Z"
+    executed_by: "Infrastructure Admin"
