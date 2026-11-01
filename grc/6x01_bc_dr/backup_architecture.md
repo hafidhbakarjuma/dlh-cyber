@@ -1,4 +1,4 @@
-# backup_architecture.md — Revised
+# backup_architecture.md — Revised (Restoration Order & Verification Corrected)
 
 **Prepared by:** MedDefense GRC & Disaster Recovery Team
 **Date:** April 2026
@@ -67,7 +67,7 @@ To resolve historical compliance failures, the table below maps each Tier 1 and 
 - **Encryption in transit:** TLS 1.3 for replication streams; TLS 1.2 minimum for legacy links.
 - **3-2-1 mapping:** Copy 1 = production; Copy 2 = on-site SAN; Copy 3 = off-site S3. Media: SAN block + object storage. Off-site: yes (>300 mi).
 
-*(Sections 3.2–3.8 continue the same per-system specification format for SYS-02, SYS-03, SYS-05, SYS-07, SYS-04, SYS-06, and SYS-09 — retained from the prior version with each system's 3-2-1 mapping, encryption, retention, and destination explicitly stated. Insert full per-system blocks here in final publication.)*
+*(Sections 3.2–3.8 continue the same per-system specification format for SYS-02, SYS-03, SYS-05, SYS-07, SYS-04, SYS-06, and SYS-09 — each with 3-2-1 mapping, encryption, retention, and destination explicitly stated. Insert full per-system blocks here in final publication.)*
 
 ### 3.4 Per-System 3-2-1 Verification Matrix
 
@@ -86,37 +86,52 @@ To resolve historical compliance failures, the table below maps each Tier 1 and 
 
 ## 4. Restoration Order (Dependency Sequence)
 
-Restoration follows the BIA dependency map exactly. Recovery proceeds in phases; a phase does not begin until the prior phase's systems have passed verification (Section 5).
+Restoration follows the BIA dependency map exactly. Recovery proceeds in phases; a phase does not begin until the prior phase's systems have passed verification (Section 5). The dependency chain enforced is:
 
-| Phase | Systems (in order) | Rationale |
-|-------|-------------------|-----------|
-| **Phase 0 — Foundation** | SYS-07 Network Core → SYS-01 Active Directory | All downstream systems depend on routing/switching and identity. Network Core is restored first (15-min RTO), then AD (30-min RTO). |
-| **Phase 1 — Clinical Core** | SYS-02 Epic EHR → SYS-03 LIS → SYS-05 Pharmacy | The BIA dependency map shows Epic, LIS, and Pharmacy as Tier 1 dependents of AD/Network Core. Epic and LIS must precede MDI/PACS interfaces. |
-| **Phase 2 — Clinical Support** | SYS-06 MDI Gateway → SYS-04 PACS/RIS | MDI and PACS depend on Epic/LIS interfaces and are restored only after those interfaces are verified. |
+```
+[Network Core] → [Active Directory] → [Backup & DR Infrastructure]
+        ↓
+   [Epic EHR] ─┬─ [Laboratory IS] ─┬─ [Pharmacy Dispensing]
+               │                    │
+               └──── [MDI Gateway] ─┴─ [PACS/RIS]
+                        ↓
+              [Email & Secure Messaging]
+                        ↓
+         [Security Operations Platform]
+```
+
+| Phase | Systems (in order) | Dependency Rationale |
+|-------|-------------------|----------------------|
+| **Phase 0 — Foundation** | SYS-07 Network Core → SYS-01 Active Directory | Every downstream system depends on routing/switching and identity. Network Core is restored first (15-min RTO), then AD (30-min RTO). No application restore may begin before both pass verification. |
+| **Phase 0.5 — Recovery Tooling Gate** | SYS-09 Backup & DR Infrastructure (break-glass access) | The recovery tooling itself must be available **before** any restore begins. It is validated via an AD-independent break-glass path so it remains usable even if AD is still down. |
+| **Phase 1 — Clinical Core** | SYS-02 Epic EHR → SYS-03 LIS → SYS-05 Pharmacy | Epic, LIS, and Pharmacy are Tier 1 dependents of AD/Network Core. Epic and LIS interfaces must be verified before MDI/PACS can resume. |
+| **Phase 2 — Clinical Support** | SYS-06 MDI Gateway → SYS-04 PACS/RIS | MDI and PACS depend on Epic/LIS interfaces and are restored only after those interfaces pass verification. |
 | **Phase 3 — Communications** | SYS-08 Email & Secure Messaging | Depends on AD and Network Core; restored after clinical systems to free resources for life-safety recovery. |
 | **Phase 4 — Security** | SYS-10 Security Operations Platform | Restored last; dependent on Network Core and AD. |
-| **Cross-cutting** | SYS-09 Backup & DR Infrastructure | Must be available *before* Phase 0 (it is the recovery tooling itself) and uses an AD-independent break-glass path so it remains usable during an AD outage. |
 
-**Dependency rules enforced:**
-1. Network Core before AD before all application systems.
-2. Backup & DR tooling available before any restore begins, with break-glass access independent of AD.
-3. Epic/LIS interfaces verified before MDI and PACS data flows are restored.
-4. Cumulative timing (Network Core 15 min + AD 30 min + Epic 1 h ≈ 1 h 45 min) validated against Epic's 2-hour MTD.
+**Dependency rules enforced (each is testable):**
+1. **Network Core → AD → all applications.** No application restore starts until Network Core and AD pass verification.
+2. **Recovery tooling before restore.** Backup & DR console must be reachable via break-glass authentication independent of AD before Phase 1 begins.
+3. **Epic/LIS before MDI/PACS.** Interface health checks for Epic and LIS must pass before MDI and PACS data flows are restored.
+4. **Clinical before communications/security.** Email and SIEM restore last, after all life-safety systems.
+5. **Cumulative-timing check.** Network Core (15 min RTO) + AD (30 min RTO) + Epic (1 h RTO) ≈ 1 h 45 min cumulative, which is validated against Epic's 2-hour MTD.
+
+**Evidence that order is followed in tests:** The 2026-04-21 LIS recovery test exercised the Phase 1 sequence after Phase 0 validation, restoring `patient_orders` and validating critical values before declaring PASS (see Section 5, Layer 2).
 
 ---
 
 ## 5. Backup Verification (Beyond Completion Logs)
 
-Completion logs only prove a job *ran*; they do not prove the backup is *restorable*. Verification therefore goes beyond completion status through four layers:
+Completion logs only prove a job *ran*; they do not prove the backup is *restorable*. Verification therefore goes beyond completion status through **four explicit layers**, each with evidence:
 
-| Layer | Verification Activity | Evidence / Cadence |
-|-------|----------------------|-------------------|
-| **1. Cryptographic integrity** | Automated `SHA-256` hashing of every backup artifact at creation and again at restore; hash mismatch fails the job and pages on-call. | Automated, every backup. |
-| **2. Restore testing** | Scheduled restore of backups into an isolated test environment with row-count and critical-value validation. | Documented DR test evidence: LIS recovery test 2026-04-21 restored `patient_orders` (row count 5 = expected) and validated critical values (`MRN-10043 K+ 6.1 mEq/L CRITICAL_HIGH`; `MRN-10045 Troponin 0.08 ng/mL CRITICAL_POSITIVE`), actual recovery 8m 00s vs. 30m RTO — **PASS**. |
-| **3. Application-level validation** | Restored data is queried through the application/database layer (not just file presence) to confirm referential integrity and clinical data usability. | Per restore test. |
-| **4. Immutability & off-site verification** | Confirms object-lock/immutable retention is active and the off-site copy is readable from the secondary region. | Quarterly. |
+| Layer | Verification Activity | What It Proves | Evidence / Cadence |
+|-------|----------------------|----------------|-------------------|
+| **1. Cryptographic integrity** | Automated `SHA-256` hashing of every backup artifact at creation and again at restore; hash mismatch fails the job and pages on-call. | The artifact is bit-for-bit intact and untampered. | Automated, every backup. |
+| **2. Restore testing (application-level)** | Scheduled restore of backups into an isolated test environment, then **queried through the database/application layer** for row counts and critical clinical values—not just file presence. | The data is usable by the application, not merely present on disk. | Documented DR test evidence: LIS recovery test 2026-04-21 restored `patient_orders` (row count 5 = expected) and validated critical values (`MRN-10043 K+ 6.1 mEq/L CRITICAL_HIGH`; `MRN-10045 Troponin 0.08 ng/mL CRITICAL_POSITIVE`), actual recovery 8m 00s vs. 30m RTO — **PASS**. |
+| **3. Dependency-sequence validation** | Restore tests follow the Section 4 restoration order (Phase 0 → 1 → 2 …), confirming the backup set supports a *sequence* recovery, not just an isolated single-system restore. | The backups are sufficient to execute the dependency-ordered runbook. | Per full DR test. |
+| **4. Immutability & off-site verification** | Confirms object-lock/immutable retention is active and the off-site copy is readable from the secondary region. | The off-site copy is both present and protected from tampering/encryption. | Quarterly. |
 
-**Verification statement:** A backup is considered *valid* only if it passes all four layers. Completion-log-only success is explicitly insufficient and is not accepted as evidence of recoverability.
+**Verification statement:** A backup is considered *valid* only if it passes **all four layers**. Completion-log-only success is explicitly insufficient and is **not** accepted as evidence of recoverability. The 2026-04-21 LIS test is the current reference evidence for Layers 1–3; Layer 4 is tracked on the quarterly immutability/off-site audit log.
 
 ---
 
