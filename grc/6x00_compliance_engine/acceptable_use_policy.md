@@ -39,49 +39,60 @@ The following activities are strictly prohibited on all MedDefense systems, devi
 - **Unauthorized Privilege Escalation:** Attempting to access systems, applications, data files, or network segments that fall outside your specifically assigned role and permissions.
 - **Unapproved AI & Third-Party Platforms:** Inputting, uploading, or processing patient data or internal MedDefense documentation into external Artificial Intelligence (AI) tools, public web services, or third-party web platforms that lack an executed Business Associate Agreement (BAA) and IT Security approval.
 
-## 5. Protected Health Information (PHI) Handling Obligations
+## 5. Patient Information (PHI) Handling Rules
 
-Users must strictly limit their access, use, and disclosure of patient data to the minimum amount necessary to perform their immediate clinical or administrative duty. Patient information must never be left visible on unattended screens or transferred outside secure, encrypted MedDefense storage systems.
+As a staff member, you are responsible for keeping patient records private and secure at all times:
 
-## 6. Remote Access
+- **Only Look at What You Need:** Only open patient records when you are directly caring for that patient or performing your specific job duties. Looking up records of family, friends, celebrities, or patients not assigned to you is strictly illegal and prohibited.
+- **Lock Your Computer Screen:** Always lock your computer screen (press Windows Key + L) whenever you step away from your desk or computer station, even for a moment. Never leave patient data visible on screens where patients or visitors can see it.
+- **Keep Data Inside MedDefense:** Never copy, email, text, or store patient details on personal phones, personal emails, or outside cloud accounts.
 
-Authorized remote access to MedDefense internal networks and clinical applications is permitted only via IT-managed devices running mandatory security software and endpoint protection. Users are strictly prohibited from connecting to MedDefense systems or accessing sensitive data over public or unencrypted Wi-Fi networks unless an encrypted MedDefense Virtual Private Network (VPN) connection is active.
+## 6. Working Remotely and Away from the Office
 
-## 7. Reporting Obligations
+If you work from home or away from a clinical facility, follow these operational rules:
 
-Users must report any observed or suspected security events immediately upon discovery.
+- **Use MedDefense Devices Only:** Only work on MedDefense-issued laptops or computers. You are strictly forbidden from logging into patient systems or handling work emails from personal home computers, personal phones, or tablets.
+- **Never Use Open Public Wi-Fi Directly:** Never connect to public Wi-Fi (such as coffee shop, hotel, or airport Wi-Fi) without turning on your MedDefense VPN software first. If your connection drops, stop working until the VPN reconnects.
+- **Keep Your Workspace Private:** Work in a private area where family members, visitors, or the public cannot view your screen or overhear confidential patient phone calls.
 
-**What to Report:**
+## 7. Reporting Security Incidents and Mistakes
 
-- Phishing emails, unexpected password reset requests, or suspicious messages
-- Anomalous system behavior, unexpected pop-ups, or performance degradation indicative of malware
-- Lost, stolen, or misplaced devices (laptops, encrypted drives, mobile devices)
-- Accidental or unauthorized disclosures of PHI or confidential data
+You must report security concerns immediately upon noticing them. Reporting a mistake right away helps protect our patients and system.
 
-**How to Report:**
+**What You Must Report:**
 
-- **IT Security Helpdesk Phone:** Dial Ext. 4357 (HELP) / (555) 019-4357 for immediate security emergencies.
-- **IT Security Portal:** Submit an urgent ticket via https://helpdesk.meddefense.internal under "Security Incident".
+- Suspected phishing emails or unexpected requests for your password.
+- Lost or stolen MedDefense equipment (laptops, badges, phones, or USB drives).
+- Unusual computer behavior, such as unexpected pop-ups or frozen screens.
+- Accidental sending of patient data to the wrong email address or fax number.
 
-**When to Report:** Immediately upon discovery (within 15 minutes of occurrence or identification).
+**How and When to Report:**
 
-## 8. Consequences of Violation
+- **Phone (Immediate Emergencies):** Call IT Security at Ext. 4357 (HELP) or (555) 019-4357.
+- **Ticket Portal:** Submit a report online at https://helpdesk.meddefense.internal under "Security Incident".
+- **Timing:** You must report immediately upon discovery (within 15 minutes).
 
-Violations of this policy will be investigated by IT Security and Human Resources. Non-compliance is subject to HR disciplinary action up to and including immediate termination of employment or contract cancellation. Furthermore, unauthorized access to or disclosure of PHI may constitute a formal violation of the HIPAA Security and Privacy Rules, exposing the individual to personal civil and criminal legal liability.
+## 8. Consequences of Policy Violation
 
-## 9. Acknowledgment and Review
+MedDefense maintains a zero-tolerance stance for intentional policy breaches, unauthorized patient record viewing, and gross negligence:
 
-All new employees and covered individuals must review and sign this policy during onboarding prior to receiving system access credentials. All active employees are required to review and re-acknowledge this policy annually during mandatory compliance training.
+- **Disciplinary Action:** Violating any part of this policy will lead to immediate investigation by IT Security and HR, resulting in disciplinary action up to and including immediate termination of employment or immediate cancellation of contract.
+- **Personal Legal Liability:** Unauthorized viewing, theft, or misuse of patient records (PHI) is a violation of federal law under HIPAA. Individuals who violate these rules face personal fines and federal criminal prosecution independent of MedDefense.
+
+## 9. Mandatory Acknowledgment and Review
+
+- **New Hires & Temporary Staff:** Every new employee, traveling nurse, contractor, and locum tenens physician must read, sign, and accept this policy prior to receiving any system login credentials.
+- **Annual Renewal:** All active workforce members must re-read and sign this policy annually during required compliance training.
 
 ---
 
 ## Policy Acknowledgment Form
 
-I acknowledge that I have received, read, and understand the MedDefense Health Systems Acceptable Use Policy (POL-AUP-2026-01). I agree to abide by all terms and conditions outlined herein. I understand that failure to comply with this policy may result in disciplinary action up to and including termination of employment and potential legal liability.
+I acknowledge that I have received, read, and understand the MedDefense Health Systems Acceptable Use Policy (POL-AUP-2026-01). I agree to abide by all terms and operational rules outlined herein. I understand that failure to comply with this policy will result in disciplinary action up to and including termination of employment, contract cancellation, and personal legal liability under federal law.
 
-**Employee Name:** ________________________________________
+**Employee / Staff Member Name:** ________________________________________
 
-**Department:** ____________________________________________
+**Department / Agency:** ____________________________________________
 
 **Signature:** _____________________________________________
 
