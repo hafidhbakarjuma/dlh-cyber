@@ -7,8 +7,8 @@ My learning path toward a firewall and network security role, documented with no
 | Course | Status | Date |
 |---|---|---|
 | Fortinet NSE 1: Information Security Awareness | ✅ Completed | November 2026 |
-| Fortinet NSE 2 | 🔜 Next | |
-| Fortinet NSE 3 | 🔜 Planned | |
+| Fortinet NSE 2 | ✅ Completed | November 2026 |
+| Fortinet NSE 3 | 🔜 Next | |
 | FCP: FortiGate Administrator (formerly NSE 4) | 🎯 Goal | |
 
 ## NSE 1 Modules Completed
