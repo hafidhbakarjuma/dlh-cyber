@@ -1,0 +1,66 @@
+{
+  "ioc": "198.51.100.42",
+  "type": "ipv4",
+  "ip_class": "documentation",
+  "reverse_dns": "NXDOMAIN",
+  "feed_result": {
+    "in_malicious_feed": false,
+    "in_benign_list": false
+  },
+  "score": 30,
+  "verdict": "INVESTIGATE",
+  "enriched_at": "2026-11-11T23:30:31Z"
+}
+{
+  "ioc": "cobalt-beacon.shop",
+  "type": "domain",
+  "ip_class": "N/A",
+  "reverse_dns": "N/A",
+  "feed_result": {
+    "in_malicious_feed": false,
+    "in_benign_list": false
+  },
+  "score": 30,
+  "verdict": "INVESTIGATE",
+  "enriched_at": "2026-11-11T23:30:31Z"
+}
+{
+  "ioc": "203.0.113.99",
+  "type": "ipv4",
+  "ip_class": "documentation",
+  "reverse_dns": "NXDOMAIN",
+  "feed_result": {
+    "in_malicious_feed": false,
+    "in_benign_list": false
+  },
+  "score": 30,
+  "verdict": "INVESTIGATE",
+  "enriched_at": "2026-11-11T23:30:31Z"
+}
+{
+  "ioc": "192.168.1.100",
+  "type": "ipv4",
+  "ip_class": "private",
+  "reverse_dns": "NXDOMAIN",
+  "feed_result": {
+    "in_malicious_feed": false,
+    "in_benign_list": false
+  },
+  "score": 0,
+  "verdict": "ALLOW",
+  "enriched_at": "2026-11-11T23:30:31Z",
+  "note": "Private address range; internal network traffic"
+}
+{
+  "ioc": "8.8.8.8",
+  "type": "ipv4",
+  "ip_class": "public",
+  "reverse_dns": "dns.google",
+  "feed_result": {
+    "in_malicious_feed": false,
+    "in_benign_list": false
+  },
+  "score": 30,
+  "verdict": "INVESTIGATE",
+  "enriched_at": "2026-11-11T23:30:31Z"
+}
