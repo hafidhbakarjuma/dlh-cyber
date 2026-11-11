@@ -1,0 +1,11 @@
+[
+  {
+    "queued_at": "2026-11-11T23:45:48Z",
+    "host": "WST-WS-031",
+    "alert_id": "ALT-20260428-007",
+    "case_id": "CASE-20261111-001",
+    "reason": "LSASS Memory (T1003.001) from IP 198.51.100.42 (verdict: INVESTIGATE) by user svc_helpdesk (DA: True)",
+    "action_required": "Analyst must authorize isolation via EDR console before execution",
+    "status": "pending_authorization"
+  }
+]

@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 import sys
 import json
@@ -27,7 +28,6 @@ def load_privileged_accounts(path: str = "privileged_accounts.json") -> tuple[se
     try:
         with open(path, "r") as f:
             data = json.load(f)
-            # Handle list or dict structures commonly found in IAM inventories
             if isinstance(data, dict):
                 domain_admins = set(data.get("domain_admins", []))
                 server_admins = set(data.get("server_admins", []))
@@ -105,20 +105,12 @@ def main():
             ip_verdict = "INVESTIGATE"
             enrichment_result = {"ioc": source_ip, "verdict": "INVESTIGATE", "score": 30}
 
-    # 3. Check Privileged Accounts
-            domain_admins, server_admins = load_privileged_accounts(args.priv_accounts)
+    # 3. Check Privileged Accounts (Correctly indented)
+    domain_admins, server_admins = load_privileged_accounts(args.priv_accounts)
     is_da = username in domain_admins
-    is_sa = username in server_admins or is_da # Domain admins are often also server admins
+    is_sa = username in server_admins or is_da  # Domain admins are often also server admins
 
     # 4. Decision Logic Matrix
-    # Matrix mapping:
-    # BLOCK + Any DA/SA -> Critical, escalate, write to isolation queue
-    # INVESTIGATE + DA (True) -> Critical, escalate, write to isolation queue
-    # INVESTIGATE + DA (False) + SA (True/False) -> High, manual review (no isolation queue)
-    # ALLOW + DA (True) -> High, escalate: privileged account anomaly, write to isolation queue (or escalate with queue)
-    # ALLOW + SA (True) -> Medium, manual review
-    # ALLOW + False/False -> Medium, manual review
-    
     write_to_queue = False
     if ip_verdict == "BLOCK":
         playbook_verdict = "ESCALATE"
